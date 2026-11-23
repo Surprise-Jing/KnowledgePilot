@@ -1,34 +1,30 @@
-"""Knowledge base routes. Owner: A."""
-
-from uuid import uuid4
+"""Knowledge base routes. Owner: A. Contract: docs/contracts.md §3.1–§3.2."""
 
 from fastapi import APIRouter
 
 from app.deps import DB, User
-from app.schemas import KnowledgeBaseCreate, KnowledgeBaseOut
-from app.services.access import require_knowledge_base
+from app.schemas import KnowledgeBaseCreate, KnowledgeBaseOut, KnowledgeBaseUpdate
+from app.services import knowledge_bases as service
 
 router = APIRouter(prefix="/api/knowledge-bases", tags=["knowledge-bases"])
 
 
 @router.post("", response_model=KnowledgeBaseOut, status_code=201)
 def create_knowledge_base(payload: KnowledgeBaseCreate, user_id: User, db: DB):
-    kb_id = str(uuid4())
-    with db.connect() as connection:
-        connection.execute(
-            "INSERT INTO knowledge_bases(id, user_id, name) VALUES (?, ?, ?)",
-            (kb_id, user_id, payload.name),
-        )
-        return require_knowledge_base(connection, user_id, kb_id)
+    return service.create_knowledge_base(db, user_id, payload.name)
 
 
 @router.get("", response_model=list[KnowledgeBaseOut])
 def list_knowledge_bases(user_id: User, db: DB):
     with db.connect() as connection:
-        return [
-            dict(row)
-            for row in connection.execute(
-                "SELECT * FROM knowledge_bases WHERE user_id=? ORDER BY created_at, id",
-                (user_id,),
-            )
-        ]
+        return service.list_knowledge_bases(connection, user_id)
+
+
+@router.patch("/{kb_id}", response_model=KnowledgeBaseOut)
+def rename_knowledge_base(kb_id: str, payload: KnowledgeBaseUpdate, user_id: User, db: DB):
+    return service.rename_knowledge_base(db, user_id, kb_id, payload.name)
+
+
+@router.delete("/{kb_id}", status_code=204)
+def delete_knowledge_base(kb_id: str, user_id: User, db: DB):
+    service.delete_knowledge_base(db, user_id, kb_id)

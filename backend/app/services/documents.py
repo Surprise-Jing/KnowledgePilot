@@ -1,26 +1,41 @@
-"""Document read services shared by HTTP routes, Agent tools and the MCP server. Owner: A.
+"""Document services shared by HTTP routes, Agent tools and the MCP server. Owner: A.
 
 `list_files` and `read_document_range` were delivered first (milestone M1) as the stable
 interface the tool layer builds on; see docs/contracts.md §3.4. Both check ownership
-themselves, so callers never need to query tables directly."""
+themselves, so callers never need to query tables directly. The upload / rename / move /
+delete services below implement docs/contracts.md §3.1–§3.2."""
 
+import hashlib
+import logging
+import sqlite3
+from collections.abc import Callable, Iterable
+from pathlib import Path
+from uuid import uuid4
+
+from app.db import Database
 from app.errors import AppError
-from app.schemas import ChunkOut, DocumentRange, FileEntry, FileListing, Location
-from app.services.access import require_document, require_knowledge_base
+from app.schemas import ChunkOut, DocumentRange, DocumentUpdate, FileEntry, FileListing, Location
+from app.services.access import require_document, require_folder_in, require_knowledge_base
+
+logger = logging.getLogger(__name__)
 
 MAX_LIST_LIMIT = 50
 MIN_READ_CHARS = 500
 MAX_READ_CHARS = 8000
+SUPPORTED_SUFFIXES = {".txt", ".pdf", ".docx"}
+
+FolderMap = dict[str, tuple[str | None, str]]
 
 
-def _load_folders(connection, kb_id: str) -> dict[str, tuple[str | None, str]]:
+def load_folders(connection, kb_id: str) -> FolderMap:
+    """Map folder id → (parent_id, name) for one knowledge base."""
     rows = connection.execute(
         "SELECT id, parent_id, name FROM folders WHERE knowledge_base_id=?", (kb_id,)
     ).fetchall()
     return {row["id"]: (row["parent_id"], row["name"]) for row in rows}
 
 
-def _folder_paths(folders: dict[str, tuple[str | None, str]]) -> dict[str, list[str]]:
+def _folder_paths(folders: FolderMap) -> dict[str, list[str]]:
     """Map each folder id to its names from the root. The move API rejects cycles; the visited
     set only keeps a corrupted tree from looping forever."""
     paths: dict[str, list[str]] = {}
@@ -42,7 +57,8 @@ def _folder_paths(folders: dict[str, tuple[str | None, str]]) -> dict[str, list[
     return paths
 
 
-def _subtree(folders: dict[str, tuple[str | None, str]], root_id: str) -> set[str]:
+def subtree(folders: FolderMap, root_id: str) -> set[str]:
+    """`root_id` and all of its descendants."""
     children: dict[str, list[str]] = {}
     for folder_id, (parent_id, _) in folders.items():
         if parent_id is not None:
@@ -54,6 +70,34 @@ def _subtree(folders: dict[str, tuple[str | None, str]], root_id: str) -> set[st
             result.add(current)
             stack.extend(children.get(current, []))
     return result
+
+
+def _folder_scope(
+    folders: FolderMap, folder_id: str | None, recursive: bool
+) -> Callable[[str | None], bool]:
+    """Predicate on a document's folder_id: inside `folder_id` (None = root), including
+    descendants when `recursive`, otherwise only direct children."""
+    if folder_id is not None and folder_id not in folders:
+        raise AppError(404, "folder_not_found", "目录不存在")
+    if not recursive:
+        return lambda doc_folder: doc_folder == folder_id
+    if folder_id is None:
+        return lambda doc_folder: True
+    scope = subtree(folders, folder_id)
+    return lambda doc_folder: doc_folder in scope
+
+
+def remove_stored_files(files: Iterable[tuple[str, str]]) -> None:
+    """Unlink the original files of `(document_id, path)` pairs after their rows were deleted
+    and committed. A failure leaves only an orphaned file, so it is logged instead of turning a
+    committed delete into an error."""
+    for document_id, path in files:
+        try:
+            Path(path).unlink(missing_ok=True)
+        except OSError as exc:
+            logger.warning(
+                "Failed to remove stored file of document %s: %s", document_id, type(exc).__name__
+            )
 
 
 def list_files(
@@ -71,20 +115,9 @@ def list_files(
     if offset < 0 or not 1 <= limit <= MAX_LIST_LIMIT:
         raise AppError(422, "invalid_argument", f"offset 不能小于 0，limit 取值 1–{MAX_LIST_LIMIT}")
     require_knowledge_base(connection, user_id, kb_id)
-    folders = _load_folders(connection, kb_id)
-    if folder_id is not None and folder_id not in folders:
-        raise AppError(404, "folder_not_found", "目录不存在")
+    folders = load_folders(connection, kb_id)
+    included = _folder_scope(folders, folder_id, recursive)
     paths = _folder_paths(folders)
-    if recursive:
-        scope = None if folder_id is None else _subtree(folders, folder_id)
-
-        def included(doc_folder):
-            return scope is None or doc_folder in scope
-    else:
-
-        def included(doc_folder):
-            return doc_folder == folder_id
-
     rows = connection.execute(
         """SELECT id, knowledge_base_id, folder_id, filename, file_type, status, error
         FROM documents WHERE knowledge_base_id=?""",
@@ -143,14 +176,7 @@ def read_document_range(
     for row in cursor:
         if chunks and used + len(row["content"]) > max_chars:
             break
-        chunks.append(
-            ChunkOut(
-                id=row["id"],
-                ordinal=row["ordinal"],
-                content=row["content"],
-                location=Location.from_row(row),
-            )
-        )
+        chunks.append(_chunk_out(row))
         used += len(row["content"])
     next_ordinal = chunks[-1].ordinal + 1
     has_more = next_ordinal < total
@@ -163,3 +189,170 @@ def read_document_range(
         next_ordinal=next_ordinal if has_more else None,
         total_chunks=total,
     )
+
+
+def _chunk_out(row) -> ChunkOut:
+    return ChunkOut(
+        id=row["id"],
+        ordinal=row["ordinal"],
+        content=row["content"],
+        location=Location.from_row(row),
+    )
+
+
+# ---- HTTP document management (docs/contracts.md §3.1, §3.2) ----
+
+
+def list_documents(
+    connection,
+    user_id: str,
+    kb_id: str,
+    *,
+    folder_id: str | None = None,
+    recursive: bool = True,
+) -> list[dict]:
+    """Documents of one knowledge base in upload order, scoped like `list_files`. The defaults
+    (root, recursive) return every document, as the endpoint did before folders existed."""
+    require_knowledge_base(connection, user_id, kb_id)
+    included = _folder_scope(load_folders(connection, kb_id), folder_id, recursive)
+    rows = connection.execute(
+        "SELECT * FROM documents WHERE knowledge_base_id=? ORDER BY created_at, id", (kb_id,)
+    ).fetchall()
+    return [dict(row) for row in rows if included(row["folder_id"])]
+
+
+def list_chunks(connection, user_id: str, document_id: str) -> list[ChunkOut]:
+    require_document(connection, user_id, document_id)
+    rows = connection.execute(
+        "SELECT * FROM chunks WHERE document_id=? ORDER BY ordinal", (document_id,)
+    ).fetchall()
+    return [_chunk_out(row) for row in rows]
+
+
+def check_upload_target(connection, user_id: str, kb_id: str, folder_id: str | None) -> None:
+    require_knowledge_base(connection, user_id, kb_id)
+    if folder_id is not None:
+        require_folder_in(connection, kb_id, folder_id)
+
+
+def _find_duplicate(connection, kb_id: str, digest: str) -> dict | None:
+    row = connection.execute(
+        "SELECT * FROM documents WHERE knowledge_base_id=? AND sha256=?", (kb_id, digest)
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def create_document(
+    db: Database,
+    user_id: str,
+    kb_id: str,
+    upload_dir: Path,
+    *,
+    filename: str | None,
+    content: bytes,
+    folder_id: str | None,
+    max_bytes: int,
+) -> dict:
+    """Store an upload as a queued document and return its row with a `duplicate` flag.
+    `content` may be one byte longer than `max_bytes` so oversize uploads are detected
+    without reading the whole stream. Same content in the same knowledge base returns the
+    existing record (possibly in another folder) with `duplicate: True`; the caller only
+    schedules ingestion for new records."""
+    name = Path((filename or "").replace("\\", "/")).name
+    suffix = Path(name).suffix.lower()
+    if suffix not in SUPPORTED_SUFFIXES:
+        raise AppError(415, "unsupported_format", "仅支持 TXT（UTF-8 或 GBK）、PDF、DOCX")
+    if len(content) > max_bytes:
+        raise AppError(413, "file_too_large", "文件超过上传大小限制")
+    if not content:
+        raise AppError(400, "empty_file", "不能上传空文件")
+    digest = hashlib.sha256(content).hexdigest()
+
+    with db.connect() as connection:
+        check_upload_target(connection, user_id, kb_id, folder_id)
+        if found := _find_duplicate(connection, kb_id, digest):
+            return {**found, "duplicate": True}
+
+    document_id = str(uuid4())
+    path = (upload_dir / f"{document_id}{suffix}").resolve()
+    # Write the file outside any transaction so no database lock is held during disk I/O.
+    path.write_bytes(content)
+    try:
+        with db.connect() as connection:
+            # The write lock makes the target checks and the insert atomic: the knowledge base
+            # or folder cannot be deleted in between and leave this row orphaned.
+            connection.execute("BEGIN IMMEDIATE")
+            check_upload_target(connection, user_id, kb_id, folder_id)
+            connection.execute(
+                """INSERT INTO documents
+                (id, knowledge_base_id, folder_id, filename, file_type, size_bytes, sha256, path,
+                 status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'queued')""",
+                (document_id, kb_id, folder_id, name, suffix[1:], len(content), digest, str(path)),
+            )
+            row = dict(
+                connection.execute("SELECT * FROM documents WHERE id=?", (document_id,)).fetchone()
+            )
+    except sqlite3.IntegrityError:
+        # A concurrent upload of the same content won the unique constraint.
+        path.unlink(missing_ok=True)
+        with db.connect() as connection:
+            found = _find_duplicate(connection, kb_id, digest)
+        if found:
+            return {**found, "duplicate": True}
+        raise
+    except Exception:
+        path.unlink(missing_ok=True)
+        raise
+    return {**row, "duplicate": False}
+
+
+def requeue_failed_document(db: Database, user_id: str, document_id: str) -> dict:
+    """Mark a failed document as queued again; the caller schedules ingestion."""
+    with db.connect() as connection:
+        require_document(connection, user_id, document_id)
+        changed = connection.execute(
+            """UPDATE documents SET status='queued', error=NULL, updated_at=CURRENT_TIMESTAMP
+            WHERE id=? AND status='failed'""",
+            (document_id,),
+        ).rowcount
+        if not changed:
+            raise AppError(409, "document_not_failed", "仅失败的文档可以重试")
+        return require_document(connection, user_id, document_id)
+
+
+def update_document(db: Database, user_id: str, document_id: str, changes: DocumentUpdate) -> dict:
+    """Rename and/or move a document within its knowledge base. Renaming only changes the
+    display name: `file_type`, the stored file and the parsed chunks stay as they are."""
+    fields = changes.model_fields_set
+    with db.connect() as connection:
+        # Lock first so the target folder cannot be deleted between the check and the update.
+        connection.execute("BEGIN IMMEDIATE")
+        document = require_document(connection, user_id, document_id)
+        filename = changes.filename if "filename" in fields else document["filename"]
+        folder_id = changes.folder_id if "folder_id" in fields else document["folder_id"]
+        if "folder_id" in fields and folder_id is not None:
+            # Only same-knowledge-base moves are supported; another base's folder is "missing".
+            require_folder_in(connection, document["knowledge_base_id"], folder_id)
+        connection.execute(
+            """UPDATE documents SET filename=?, folder_id=?, updated_at=CURRENT_TIMESTAMP
+            WHERE id=?""",
+            (filename, folder_id, document_id),
+        )
+        return require_document(connection, user_id, document_id)
+
+
+def delete_document(db: Database, user_id: str, document_id: str) -> None:
+    """Idempotent: a missing or foreign document is a no-op, so the caller cannot tell them
+    apart. Chunks and vectors are removed by cascade; the file is removed after commit."""
+    with db.connect() as connection:
+        row = connection.execute(
+            """SELECT d.id, d.path FROM documents d
+            JOIN knowledge_bases k ON k.id = d.knowledge_base_id
+            WHERE d.id=? AND k.user_id=?""",
+            (document_id, user_id),
+        ).fetchone()
+        if row is None:
+            return
+        connection.execute("DELETE FROM documents WHERE id=?", (document_id,))
+    remove_stored_files([(row["id"], row["path"])])

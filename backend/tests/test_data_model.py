@@ -61,10 +61,15 @@ def test_users_cannot_see_each_others_data(client):
         ("get", f"/api/documents/{document['id']}"),
         ("get", f"/api/documents/{document['id']}/chunks"),
         ("post", f"/api/documents/{document['id']}/retry"),
-        ("delete", f"/api/documents/{document['id']}"),
+        ("patch", f"/api/documents/{document['id']}"),
     ]:
-        response = client.request(method, url, headers=as_user("bob"))
+        response = client.request(method, url, headers=as_user("bob"), json={"filename": "x.txt"})
         assert response.status_code == 404, (method, url)
+    # Deletes are idempotent (docs/contracts.md §1): a foreign document answers 204 like a
+    # missing one, and nothing happens to it.
+    assert (
+        client.delete(f"/api/documents/{document['id']}", headers=as_user("bob")).status_code == 204
+    )
     search = {"query": "私有笔记", "knowledge_base_ids": [alice_kb]}
     assert client.post("/api/search", json=search, headers=as_user("bob")).status_code == 404
     # Mixing an owned and a foreign knowledge base is rejected rather than silently filtered.

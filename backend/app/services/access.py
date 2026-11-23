@@ -49,3 +49,25 @@ def require_document(connection, user_id: str, document_id: str) -> dict:
     if row is None:
         raise AppError(404, "document_not_found", "文档不存在")
     return dict(row)
+
+
+def require_folder(connection, user_id: str, folder_id: str) -> dict:
+    row = connection.execute(
+        """SELECT f.* FROM folders f JOIN knowledge_bases k ON k.id = f.knowledge_base_id
+        WHERE f.id=? AND k.user_id=?""",
+        (folder_id, user_id),
+    ).fetchone()
+    if row is None:
+        raise AppError(404, "folder_not_found", "目录不存在")
+    return dict(row)
+
+
+def require_folder_in(connection, kb_id: str, folder_id: str) -> dict:
+    """Check that `folder_id` belongs to `kb_id`. Callers have already checked that the user
+    owns `kb_id`, so a folder of another knowledge base (or another user) reads as missing."""
+    row = connection.execute(
+        "SELECT * FROM folders WHERE id=? AND knowledge_base_id=?", (folder_id, kb_id)
+    ).fetchone()
+    if row is None:
+        raise AppError(404, "folder_not_found", "目录不存在")
+    return dict(row)
