@@ -6,14 +6,14 @@ D 分三个阶段：
 
 | 阶段 | 时间 | 内容 |
 | --- | --- | --- |
-| D1 | 现在，先于 A/B 实现 | 契约测试（预期失败）、`ScriptedLLM`、现有后端审查 |
+| D1 | 与 A1/B1 并行 | 契约测试（预期失败）、现有后端审查 |
 | D2 | Round 2 | 20 条评测集、评测脚本、基线结果 |
 | D3 | 每次集成后 | 回归测试、真实模型冒烟脚本、合并代码审查 |
 
 ## 0. 工作方式
 
 - 从 `dev` 分支创建独立 worktree，分支名按阶段：`d1-contract-tests`、`d2-eval`、`d3-regression`。只在该分支提交，不 push、不合并。
-- **只修改**：`backend/tests/contract/**`、`backend/tests/fakes/**`、`backend/tests/e2e/**`、`scripts/smoke.py`、`docs/reviews/**`、`eval/**`、`docs/eval-report.md`。
+- **只修改**：`backend/tests/contract/**`、`backend/tests/e2e/**`、`scripts/smoke.py`、`docs/reviews/**`、`eval/**`、`docs/eval-report.md`。
 - **不修改 `backend/app/**`**。发现产品代码缺陷时写入审查报告，由主 Agent 分派。
 - 测试以契约为准，不要按某个实现去猜。契约不清楚的地方写进报告的“未解决问题”，不要自行假设。
 - 除 `scripts/smoke.py` 和 `eval/` 外，测试不得访问网络或依赖模型密钥；每次测试使用 `tmp_path` 下的独立数据目录。
@@ -22,7 +22,7 @@ D 分三个阶段：
 
 ### 1.1 基础设施
 
-**`backend/tests/fakes/llm.py`：`ScriptedLLM`**，实现 `app.llm.base.LLMClient`：
+**`backend/tests/fakes/llm.py`：`ScriptedLLM`**，由 B1 提供并维护（D 复用；需要新能力时在报告中提出）。它应满足：
 
 - 构造参数为若干“轮”。每轮是 `LLMEvent` 列表或一个异常（如 `AppError(504, "model_timeout", …)`）。每次调用 `stream()` 消费一轮；轮数用完时抛出断言错误，提示脚本不足。
 - 记录每次调用收到的 `messages` 和 `tools`（`calls` 属性），供断言上下文内容。
@@ -136,7 +136,7 @@ D 分三个阶段：
 ### 2.3 脚本：`eval/run.py`
 
 - 每次在全新的临时数据目录中建库并导入语料，等待解析完成。
-- `--mode retrieval`：只调用检索，不需要模型；对 `PK_RETRIEVER=cosine|bm25|hybrid` 分别计算 Hit@1、Hit@3、Hit@5、MRR。这是算法优化（A2）的对照基准。
+- `--mode retrieval`：只调用检索，不需要模型；对 `PK_RETRIEVER=cosine|bm25|vector|hybrid` 分别计算 Hit@1、Hit@3、Hit@5、MRR。这是算法优化（A2）的对照基准。
 - `--mode agent`：从 `backend/.env` 读取真实模型配置运行完整对话；统计回答要点命中率、引用正确率（引用位置与 `relevant` 重叠）、工具调用成功率、平均工具调用次数、首字延迟与总耗时（P50 / P95）、token 用量。
 - 结果写入 `eval/results/<时间>-<模式>-<策略>.json`（已被 Git 忽略），并输出 Markdown 汇总表。
 - 不在日志或结果中写入 API Key。

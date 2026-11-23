@@ -120,10 +120,10 @@ HTTP 错误与工具错误共用一套 `code`：`invalid_argument`、`invalid_us
 | 所有者 | 文件 |
 | --- | --- |
 | 主 Agent | `AGENTS.md`、`CLAUDE.md`、`docs/contracts.md`、`docs/tasks.md`、`docs/data-model.md`、`README.md`、`.gitignore`、`start.sh`、`backend/pyproject.toml`、`backend/uv.lock`、`backend/.env.example`、`backend/app/{main,config,db,errors,schemas,deps,logging_setup}.py`、`backend/app/llm/base.py`、`backend/app/api/__init__.py`、`backend/tests/test_platform.py`、`frontend/package.json` 的依赖增减 |
-| A 数据与文件 | `backend/app/api/{knowledge_bases,folders,documents}.py`、`backend/app/services/{access,knowledge_bases,folders,documents,ingestion}.py`、`backend/tests/test_{folders,documents_manage}.py`、`backend/tests/test_data_model.py` |
-| B 检索与 Agent | `backend/app/api/{search,conversations}.py`、`backend/app/services/{retrieval,answering,conversations}.py`、`backend/app/tools/**`、`backend/app/llm/**`（`base.py` 除外）、`backend/app/agent/**`、`backend/tests/test_{tools,agent,sse,api}.py` |
+| A 数据与文件 | `backend/app/api/{knowledge_bases,folders,documents}.py`、`backend/app/services/{access,knowledge_bases,folders,documents,ingestion}.py`、`backend/app/services/{retrieval,embeddings}.py` 与 `backend/app/reindex.py`（向量检索已完成，Round 1 冻结，只修缺陷）、`backend/tests/test_{folders,documents_manage,knowledge_bases,documents_service,data_model,retrieval}.py`；`backend/tests/test_api.py` 中因契约变更（删除幂等、`duplicate`）需要调整的断言 |
+| B 工具与 Agent | `backend/app/api/{search,conversations}.py`、`backend/app/services/{answering,conversations}.py`、`backend/app/tools/**`、`backend/app/llm/**`（`base.py` 除外）、`backend/app/agent/**`、`backend/tests/test_{tools,agent,sse,conversations}.py`、`backend/tests/fakes/**`（`ScriptedLLM` 由 B1 提供，D 复用） |
 | C 前端 | `frontend/**`（初始依赖按 [docs/briefs/C-frontend.md](briefs/C-frontend.md) 白名单，之外的依赖需报告主 Agent） |
-| D 测试与审查 | `backend/tests/contract/**`、`backend/tests/fakes/**`、`backend/tests/e2e/**`、`scripts/smoke.py`、`docs/reviews/**`、第二轮起 `eval/**`、`docs/eval-report.md` |
+| D 测试与审查 | `backend/tests/contract/**`、`backend/tests/e2e/**`、`scripts/smoke.py`、`docs/reviews/**`、第二轮起 `eval/**`、`docs/eval-report.md` |
 | E MCP（第二轮） | `backend/app/mcp_server.py`、`skills/knowledgepilot/**`、`backend/tests/test_mcp.py` |
 
 规则：
@@ -173,7 +173,7 @@ D1 依据 `contracts.md` 编写 `tests/contract/`：目录树与防环、重命�
 | B2 工具失败降级 | 工具超时/失败分类；有限重试（同参数最多 1 次）；`read_document` 失败转用已检索片段；部分回答并说明缺失；全部计入步数上限；轨迹中标出降级动作 | Round 1 |
 | E MCP＋Skill | stdio MCP Server 复用同一工具注册表与权限（`PK_MCP_USER_ID`）；`skills/knowledgepilot/SKILL.md`、Claude Desktop/Inspector 调用示例 | Round 1 工具层；依赖待确认 |
 | D2 评测 | `eval/corpus/`（公开资料）、`eval/cases.jsonl` 20 条（单库、多库、多轮指代、工具选择、引用定位、无结果、异常各若干）；`eval/run.py` 输出检索 Hit@5/MRR（无需模型）与回答/引用/工具成功率/耗时（真实模型）；产出基线结果 | Round 1 |
-| A2 算法优化 | 检索：BM25（中文单字＋双字词项）＋可选与现有余弦的 RRF 融合，`PK_RETRIEVER=cosine\|bm25\|hybrid` 切换；预计算词项统计避免每次重分词。本轮 `services/retrieval.py` 所有权从 B 转给 A | 先实现，D2 检索评测就绪后对照 |
+| A2 算法优化 | 已提前完成：BM25、BGE-M3 向量、BM25＋向量 RRF 混合检索（`PK_RETRIEVER`）。Round 2 只做 D2 评测对照与调参 | D2 检索评测 |
 | C2 前端完善 | 引用点击跳转原文范围、轨迹中的错误/降级展示、空状态与异常提示、删除确认、解析状态自动刷新 | Round 1 |
 
 ### Integration 2 + 收尾（D2 下午到晚上）
