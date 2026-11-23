@@ -1,4 +1,4 @@
-# KnowledgePilot 共享契约 v1.3
+# KnowledgePilot 共享契约 v1.4
 
 > **只有主 Agent（Tech Lead）可以修改本文件。** Subagent 发现契约不合理或缺失时，停止相关部分，在返回报告的“是否修改公共接口”中写明建议，由主 Agent 决定并更新本文件与变更记录。
 >
@@ -85,6 +85,8 @@
 | PATCH | `/api/documents/{document_id}` | `DocumentUpdate {filename?, folder_id?}` | `DocumentOut`；只允许同库移动（跨库移动不在本期范围），目标目录不在同库 → `folder_not_found`；重命名不改变 `file_type` 与解析结果 |
 
 文件名、目录名不得包含 `/` 或 `\`。同一目录下文件可重名（以 ID 区分）。
+
+上传表单字段 `folder_id` 和列表查询参数 `folder_id` 为空字符串时等同于省略，表示知识库根目录（便于 HTML 表单提交）。
 
 ### 3.3 会话、提问与轨迹（B 负责）
 
@@ -251,6 +253,7 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 | v1.1 | 2026-11-23 | LLM 类型落地到 `app/llm/base.py`；`app.state.llm_factory` 默认 `None`；`ScriptedLLM` 归 D；`.env` 只需三项模型配置 |
 | v1.2 | 2026-11-23 | BGE-M3 Embedding、vector/BM25+vector hybrid；schema v3 持久化向量；新增错误码和重建命令；聊天和 Embedding 分开配置 |
 | v1.3 | 2026-11-23 | `ToolContext` 增加 `settings`；`.env.example` 只保留聊天与 Embedding 的核心配置 |
+| v1.4 | 2026-11-23 | 上传与列表的 `folder_id` 空字符串表示根目录 |
 
 ## 9. 检索策略与向量持久化
 

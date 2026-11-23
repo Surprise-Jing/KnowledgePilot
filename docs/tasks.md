@@ -135,7 +135,8 @@ HTTP 错误与工具错误共用一套 `code`：`invalid_argument`、`invalid_us
 
 ### Phase 0 — 主 Agent 串行（D1 上午，约 2 小时）
 
-> 状态（2026-11-22）：第 2–5 步已完成，26 项测试与 Ruff 通过，实测服务启动、统一错误与 `X-Request-Id` 正常；待第 1、6 步（提交）。
+> 状态（2026-11-23）：Phase 0 已完成并提交；A1 已合入 `dev`（44d3f46），B1 进行中。
+> 原状态（2026-11-22）：第 2–5 步已完成，26 项测试与 Ruff 通过，实测服务启动、统一错误与 `X-Request-Id` 正常；待第 1、6 步（提交）。
 
 1. 经用户确认后提交当前基线（`backend/`、`docs/`、`examples/`、`README.md`），修正 `.gitignore`。
 2. 纯重构：把 `main.py` 拆成 `app/api/*` 路由模块，`main.py` 只做装配；19 项测试保持全绿。
