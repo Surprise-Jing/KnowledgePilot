@@ -77,7 +77,7 @@ def upload_document(
     except Exception:
         path.unlink(missing_ok=True)
         raise
-    background_tasks.add_task(ingest, db, document_id)
+    background_tasks.add_task(ingest, db, document_id, settings)
     return _get_document(db, user_id, document_id)
 
 
@@ -118,7 +118,13 @@ def read_document(document_id: str, user_id: User, db: DB):
 
 
 @router.post("/api/documents/{document_id}/retry", response_model=DocumentOut, status_code=202)
-def retry_document(document_id: str, user_id: User, db: DB, background_tasks: BackgroundTasks):
+def retry_document(
+    document_id: str,
+    user_id: User,
+    db: DB,
+    background_tasks: BackgroundTasks,
+    settings: AppSettings,
+):
     with db.connect() as connection:
         require_document(connection, user_id, document_id)
         changed = connection.execute(
@@ -128,7 +134,7 @@ def retry_document(document_id: str, user_id: User, db: DB, background_tasks: Ba
         ).rowcount
     if not changed:
         raise AppError(409, "document_not_failed", "仅失败的文档可以重试")
-    background_tasks.add_task(ingest, db, document_id)
+    background_tasks.add_task(ingest, db, document_id, settings)
     return _get_document(db, user_id, document_id)
 
 

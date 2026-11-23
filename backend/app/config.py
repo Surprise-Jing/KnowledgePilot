@@ -25,6 +25,15 @@ class Settings(BaseSettings):
     tool_timeout: float = Field(default=15, gt=0)
     context_budget_chars: int = Field(default=24000, ge=2000)
     # Retrieval strategy, switchable for evaluation (docs/tasks.md Round 2).
-    retriever: Literal["cosine", "bm25", "hybrid"] = "cosine"
+    retriever: Literal["cosine", "bm25", "vector", "hybrid"] = "cosine"
+    embedding_base_url: str = ""
+    embedding_model: str = "bge-m3"
+    embedding_api_key: SecretStr = SecretStr("")
+    embedding_dimensions: int = Field(default=1024, ge=1, le=65536)
+    embedding_timeout: float = Field(default=45, gt=0)
+    embedding_batch_size: int = Field(default=32, ge=1, le=256)
+    # Change this when a provider replaces weights behind the same model name.
+    embedding_revision: str = "1"
+    retrieval_candidates: int = Field(default=50, ge=10, le=1000)
     # User identity for the stdio MCP server, which has no HTTP headers.
     mcp_user_id: str = "demo"

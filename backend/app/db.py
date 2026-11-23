@@ -2,7 +2,7 @@ import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 # Schema v1. Statements run one by one inside the migration transaction
 # (executescript would commit implicitly). The table design is documented in docs/data-model.md.
@@ -206,7 +206,17 @@ def _migrate_v2(connection):
     connection.execute("ALTER TABLE citations ADD COLUMN location_json TEXT")
 
 
-MIGRATIONS = {1: _migrate_v1, 2: _migrate_v2}
+def _migrate_v3(connection):
+    connection.execute("""CREATE TABLE chunk_embeddings (
+        chunk_id TEXT PRIMARY KEY REFERENCES chunks(id) ON DELETE CASCADE,
+        profile TEXT NOT NULL,
+        dimensions INTEGER NOT NULL CHECK (dimensions > 0),
+        vector BLOB NOT NULL,
+        CHECK (length(vector) = dimensions * 4)
+    )""")
+
+
+MIGRATIONS = {1: _migrate_v1, 2: _migrate_v2, 3: _migrate_v3}
 
 
 class Database:

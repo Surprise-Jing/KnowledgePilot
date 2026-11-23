@@ -1,8 +1,8 @@
-# KnowledgePilot 共享契约 v1.1
+# KnowledgePilot 共享契约 v1.2
 
 > **只有主 Agent（Tech Lead）可以修改本文件。** Subagent 发现契约不合理或缺失时，停止相关部分，在返回报告的“是否修改公共接口”中写明建议，由主 Agent 决定并更新本文件与变更记录。
 >
-> 对应代码：请求/响应模型 `backend/app/schemas.py`，错误类型 `backend/app/errors.py`，配置 `backend/app/config.py`，数据库 `backend/app/db.py`（schema v2）。代码与本文冲突时以本文为准，并报告主 Agent。
+> 对应代码：请求/响应模型 `backend/app/schemas.py`，错误类型 `backend/app/errors.py`，配置 `backend/app/config.py`，数据库 `backend/app/db.py`（schema v3）。代码与本文冲突时以本文为准，并报告主 Agent。
 
 ## 1. 通用约定
 
@@ -48,6 +48,11 @@
 | `model_error` | 502 | 模型服务返回错误或无效响应 | 是 |
 | `model_timeout` | 504 | 模型请求超过 `PK_LLM_TIMEOUT` | 是 |
 | `internal_error` | 500 | 未预期异常（已记录日志） | 是 |
+| `embedding_not_configured` | 503 | 向量检索未配置 Embedding 地址或模型 | 否 |
+| `embedding_error` | 502 | Embedding HTTP/格式/维度/数值错误 | 是 |
+| `embedding_timeout` | 504 | Embedding 请求超时 | 是 |
+| `embedding_index_not_ready` | 409 | 所选范围成功文档的向量缺失或配置签名不匹配 | 否（先重建） |
+| `embedding_index_changed` | 409 | 重建期间文档被删除或重新解析 | 否（重新执行重建） |
 
 ## 3. HTTP API
 
@@ -243,3 +248,17 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 | --- | --- | --- |
 | v1.0 | 2026-11-22 | 初版：统一错误、目录/文件管理、会话与 SSE、工具与 Agent、MCP、前端集成；schema v2 |
 | v1.1 | 2026-11-23 | LLM 类型落地到 `app/llm/base.py`；`app.state.llm_factory` 默认 `None`；`ScriptedLLM` 归 D；`.env` 只需三项模型配置 |
+| v1.2 | 2026-11-23 | BGE-M3 Embedding、vector/BM25+vector hybrid；schema v3 持久化向量；新增错误码和重建命令；聊天和 Embedding 分开配置 |
+
+## 9. 检索策略与向量持久化
+
+- `PK_RETRIEVER=cosine|bm25|vector|hybrid`，默认 `cosine` 保持无密钥调试兼容；`.env.example` 推荐 `hybrid`，必须填写 Embedding 地址。
+- `vector` 为 BGE-M3 稠密向量余弦检索；`hybrid` 为 BM25 与稠密向量两路召回，按 RRF `sum(1/(60+rank))` 融合（rank 从 1 起）。不是 BGE-M3 原生稀疏或 ColBERT 接口。
+- 每路取最多 `PK_RETRIEVAL_CANDIDATES`（默认 50，至少 top_k）个正分候选，稳定排序后按内容去重并截取 top_k。向量余弦、BM25、RRF 分数不可跨策略比较，也不是置信度。
+- API 请求和 SearchHit 结构不变；服务层 `search(db, user_id, request, settings=None)` 增加可选配置，HTTP 显式传入应用配置；独立工具调用不传时读取 Settings。
+- Embedding 使用 `{PK_EMBEDDING_BASE_URL}/embeddings`，请求 `{model, input: string[], encoding_format: "float"}`，模型默认 `bge-m3`，默认维度 1024。按响应 index 还原顺序并归一化；拒绝缺项、重复 index、错误维度、非有限值和零向量。密钥为空时不发 Authorization，供免认证本地服务使用。
+- 网络请求不持有 DB 连接；用户与知识库校验在发送查询前完成，并在请求返回后再次校验。仅检索所选库的 success 文档。
+- schema v3 新增 `chunk_embeddings`；真实向量存于同一个 `knowledge.db`，使用小端 float32 BLOB 和精确扫描，不是 ANN 索引或独立向量数据库服务。片段外键级联清理向量。
+- vector/hybrid 模式的入库只有在全部向量生成并与片段原子提交后才标 success；失败标 failed 并可重试，不回退假向量或词频结果。
+- 向量签名包含服务地址、模型、维度和 `PK_EMBEDDING_REVISION`，不含密钥；同名模型更换权重时手动提升 revision。配置签名不匹配或旧数据没有向量时返回 409，不隐式调用模型重建历史数据。
+- 停止应用后执行 `uv run --directory backend python -m app.reindex --user-id demo`，为该用户所有 success 文档补建/重建向量；逐文档事务，失败保留该文档旧向量，已完成文档不会回滚。模型故障不自动降级。重建不改片段 ID，保留引用映射。

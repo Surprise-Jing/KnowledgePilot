@@ -96,3 +96,14 @@ erDiagram
 - **v0 → v1**：首日原型的数据库没有版本号。迁移时保留知识库（归属到 `demo` 用户）、文档记录和原文件。旧片段的位置是展示文本，无法可靠地转成结构化字段，因此会删除旧片段，并把文档标记为失败，提示“数据模型已升级，请重新解析”，用户点击重试即可重建片段。原文件缺失的文档会提示删除后重新上传。
 - **v1 → v2**：只做 `ALTER TABLE ADD COLUMN`，为 Agent 轨迹补充字段：`tool_calls.result_json`（截断后的结构化工具结果）、`runs.dropped_citations`（模型引用了但本次工具未返回的标记，JSON 数组，默认 `[]`）、`citations.location_json`（结构化来源位置）。
 - 后续字段变更应新增迁移函数并提升版本号，不能修改已发布的迁移。
+
+### v3：稠密向量持久化
+
+新增 `chunk_embeddings(chunk_id PRIMARY KEY, profile, dimensions, vector)`。
+`chunk_id` 外键指向 `chunks.id`，删除片段时级联删除。`vector` 为归一化后的
+小端 float32 BLOB，长度必须等于 `dimensions * 4`；`profile` 为服务地址、模型、
+维度和手动 revision 的 SHA-256，不包含 API Key。
+
+v2 → v3 仅新增表，原文和成功状态不变，迁移过程不调用模型。旧数据需显式执行
+`python -m app.reindex --user-id <用户ID>`。向量与片段在同一个数据库中，无新增
+`vectors/` 目录；当前执行精确余弦扫描，适用于小规模本地应用，不是 ANN。

@@ -11,12 +11,12 @@ router = APIRouter(tags=["search"])
 
 
 @router.post("/api/search", response_model=list[SearchHit])
-def search_documents(payload: SearchRequest, user_id: User, db: DB):
-    return search(db, user_id, payload)
+def search_documents(payload: SearchRequest, user_id: User, db: DB, settings: AppSettings):
+    return search(db, user_id, payload, settings)
 
 
 @router.post("/api/chat", response_model=AnswerOut, deprecated=True)
 def chat(payload: SearchRequest, user_id: User, db: DB, settings: AppSettings):
     """Legacy retrieve-then-answer endpoint kept for debugging. The Agent uses
     POST /api/conversations/{id}/messages."""
-    return answer(settings, payload.query, search(db, user_id, payload))
+    return answer(settings, payload.query, search(db, user_id, payload, settings))

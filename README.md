@@ -27,7 +27,7 @@ Agentic Personal Knowledge Workspace（个人知识管理智能助手）：让�
 
 **检索**
 - 按一个或多个知识库检索，返回内容、来源文件、位置和相关度，去重后排序。
-- 当前算法为中文单字/双字及英文词项的词频余弦相似度，作为后续算法优化的基线。
+- 支持词频余弦基线、BM25、BGE-M3 API 稠密向量检索及 BM25 + 向量 RRF 混合检索。
 
 **单轮问答（调试接口）**
 - `POST /api/chat`：检索后回答，默认为原文摘录，也可配置为调用模型；回答中的 `[1]` 对应返回的来源。正式的 Agent 对话接口开发中。
@@ -35,8 +35,8 @@ Agentic Personal Knowledge Workspace（个人知识管理智能助手）：让�
 **工程基础**
 - 统一错误结构 `{"error": {"code", "message", "retryable", "details"}}`，参数校验错误也使用该结构；未预期异常记录日志后返回 `internal_error`。
 - JSON 结构化日志，每个请求有 `X-Request-Id`，与后续的提问 ID 关联。
-- SQLite 持久化，带版本迁移（当前 schema v2），已为目录、会话、消息、运行、工具调用和引用建好表。
-- 26 项自动化测试，不依赖网络和模型密钥。
+- SQLite 持久化，带版本迁移（当前 schema v3），包括真实向量存储及目录、会话、消息、运行、工具调用和引用表。
+- 当前回归 60 项自动化测试通过，不依赖网络和模型密钥；BGE-M3 真实服务效果需单独联调。
 
 ### 开发中
 
@@ -54,7 +54,7 @@ uv run --directory backend uvicorn app.main:app --host 127.0.0.1 --port 8000
 
 ### 配置模型
 
-将 `backend/.env.example` 复制为 `backend/.env`，只需填写三项：
+将 `backend/.env.example` 复制为 `backend/.env`，聊天模型填写以下三项：
 
 ```bash
 PK_LLM_BASE_URL=https://你的兼容服务地址/v1
@@ -63,6 +63,32 @@ PK_LLM_API_KEY=你的密钥
 ```
 
 模型服务需兼容 OpenAI Chat Completions 并支持工具调用。`.env` 已被 Git 忽略，不要提交密钥。其余配置都有默认值，见 [后端开发说明](docs/backend.md#启动与配置)。
+
+### 配置 BGE-M3 与混合检索
+
+在 `backend/.env` 配置独立的 Embedding 服务：
+
+```dotenv
+PK_RETRIEVER=hybrid
+PK_EMBEDDING_BASE_URL=https://你的兼容服务地址/v1
+PK_EMBEDDING_MODEL=bge-m3
+PK_EMBEDDING_API_KEY=你的密钥
+PK_EMBEDDING_DIMENSIONS=1024
+```
+
+程序追加 `/embeddings`；免认证的本地服务可留空密钥。`vector` 仅使用向量，
+`hybrid` 使用 BM25 + 稠密向量 RRF 融合，`bm25` 与默认 `cosine` 不调用 Embedding。
+向量和原文片段一起持久化到 `backend/data/knowledge.db`，原文件仍在 `uploads/`。
+当前为精确向量扫描，适合本地小规模数据，无需独立向量数据库服务。
+
+已有文档切换到 vector/hybrid 后需补建向量；先停止应用，再为每个用户执行：
+
+```bash
+uv run --directory backend python -m app.reindex --user-id demo
+```
+
+更换 Embedding 服务、模型或维度后也需重建；同名模型更新权重时提升
+`PK_EMBEDDING_REVISION`。重建不改变片段 ID；模型故障会明确报错，不静默退回关键词检索。
 
 ## 测试
 

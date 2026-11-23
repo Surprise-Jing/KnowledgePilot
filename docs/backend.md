@@ -10,7 +10,7 @@
 - 同一知识库内按 SHA-256 去重，重复上传返回已有记录；失败记录需要显式重试。
 - 片段按格式合并切分：TXT 连续行合并，PDF 按页，DOCX 按标题小节合并段落，表格按表合并行；每段最多约 800 字符，超长单元按 200 字符重叠拆分。
 - 每个片段的 `location` 是结构化对象，包含类型、起止行/页/段/表格行、DOCX 标题路径和拆分时的字符范围，以及展示文本 `label`。
-- 检索使用中文单字及双字词项、英文词项的词频余弦相似度，返回前 K 项并按内容去重。分数是词项相似度，不是答案置信度。
+- 检索支持词频余弦、BM25、BGE-M3 稠密向量与 BM25 + 向量 RRF 混合检索，返回前 K 项并按内容去重。各策略分数不可互相比大小，也不是答案置信度。
 - 默认回答是检索片段的原文摘录；配置模型后通过兼容 Chat Completions 的接口生成回答。
 - SQLite 持久保存知识库、文档和片段；原文件保存在本地。删除文档同步删除片段，并清理原文件。
 
@@ -58,7 +58,7 @@ uv run --directory backend uvicorn app.main:app --host 127.0.0.1 --port 8000
 - Swagger 接口文档：<http://127.0.0.1:8000/docs>
 - OpenAPI：<http://127.0.0.1:8000/openapi.json>
 
-将 `backend/.env.example` 复制为 `backend/.env`，只需填写三项模型配置。启动命令将工作目录设置为 `backend`，因此默认数据保存在 `backend/data`。
+将 `backend/.env.example` 复制为 `backend/.env`，聊天与 Embedding 分开配置。启动命令将工作目录设置为 `backend`，因此默认数据保存在 `backend/data`。
 
 | 必填环境变量 | 用途 |
 | --- | --- |
@@ -78,12 +78,41 @@ uv run --directory backend uvicorn app.main:app --host 127.0.0.1 --port 8000
 | `PK_TOOL_TIMEOUT` | `15` | 单次工具调用超时秒数 |
 | `PK_CONTEXT_BUDGET_CHARS` | `24000` | 对话上下文预算（字符） |
 | `PK_RETRIEVER` | `cosine` | 检索策略，评测对照用 |
+| `PK_EMBEDDING_BASE_URL` | 空 | OpenAI 兼容 API 根地址，追加 `/embeddings` |
+| `PK_EMBEDDING_MODEL` | `bge-m3` | Embedding 模型 ID |
+| `PK_EMBEDDING_API_KEY` | 空 | 独立密钥；免认证本地服务可不填 |
+| `PK_EMBEDDING_DIMENSIONS` | `1024` | 严格验证服务返回维度，不向 API 强制传 dimensions |
+| `PK_EMBEDDING_TIMEOUT` | `45` | 每批请求超时秒数 |
+| `PK_EMBEDDING_BATCH_SIZE` | `32` | 每批最多文本数量 |
+| `PK_EMBEDDING_REVISION` | `1` | 同名模型变更权重后手动提升，并重建 |
+| `PK_RETRIEVAL_CANDIDATES` | `50` | 混合检索每路候选数量，至少为 top_k |
 | `PK_MCP_USER_ID` | `demo` | MCP Server 访问知识库时的用户 |
 | `PK_MAX_UPLOAD_BYTES` | `10485760` | 上传大小限制，默认 10 MiB |
 | `PK_LOG_LEVEL` | `INFO` | 日志级别 |
 | `PK_ANSWER_MODE` | `extractive` | 仅影响调试接口 `/api/chat`：`extractive` 为摘录，`openai` 为调用模型 |
 
 本地兼容服务若不校验密钥，可填其允许的占位值。模型异常会明确返回错误，不会悄悄改成摘录回答。调用外部模型会发送问题和检索片段，请只上传公开或脱敏资料。
+
+### 向量与混合检索
+
+`PK_RETRIEVER=vector` 使用 BGE-M3 稠密向量余弦；`hybrid` 使用 BM25 + 稠密向量
+RRF（k=60）。`cosine` 为原词频余弦，`bm25` 为独立关键词检索。标准 `/embeddings`
+只使用 dense 输出，不假定服务暴露 BGE-M3 的 sparse/ColBERT 功能。
+BGE-M3 默认 1024 维依据[模型官方说明](https://huggingface.co/BAAI/bge-m3)。
+
+vector/hybrid 上传时会将解析片段发给 Embedding 服务，检索时发送查询文本。
+向量归一化后以 float32 存入同一个 SQLite 的 `chunk_embeddings` 表，与片段
+原子提交、外键级联删除。当前使用精确扫描而非 ANN，时间和内存随所选范围片段数增长。
+
+旧数据迁移仅新增表，不发送历史文档。切换配置后先停止应用，然后执行
+`uv run --directory backend python -m app.reindex --user-id demo`（替换为实际用户）。
+只处理该用户 success 文档，逐文档提交；失败时该文档旧向量保留，已完成的其他文档不回滚。
+failed 文档走 retry API 重新解析；重建命令保留 chunk ID 与历史引用。
+
+配置缺失返回 `embedding_not_configured` / 503；服务失败或格式错误返回
+`embedding_error` / 502，超时 `embedding_timeout` / 504。已成功解析的旧文档缺少向量
+或签名不匹配时返回 `embedding_index_not_ready` / 409，需要重建。hybrid 不静默降级。
+重建过程中并发修改文档返回 `embedding_index_changed` / 409。错误不包含提供商响应正文。
 
 ## 最小闭环演示
 
@@ -169,7 +198,7 @@ uv run --directory backend ruff check app tests
 
 1. 用户身份由请求头直接声明，不做认证，任何人都可以冒充其他用户。这满足本地演示的隔离验收，但默认仅监听 `127.0.0.1`，不能直接作为多人服务部署。
 2. 后台任务使用进程内任务，启动时将中断任务标为失败，需手动重试。当前只支持单进程启动，不使用多个 workers；后续可迁移到持久任务队列。
-3. 检索逐次扫描指定库的片段，适合小规模演示；语义匹配、专用索引、重排和评测优化待后续实现。
+3. 检索逐次扫描指定库的片段，适合小规模演示；已支持语义向量与混合检索，ANN 专用索引、重排和真实模型效果评测仍待后续实现。
 4. 当前是固定的检索后回答流程，无模型自主选工具、多轮上下文或流式输出。工具层、Agent 循环和 MCP＋Skill 尚未实现。
 5. 目录管理接口（表已建好）、知识库重命名与删除、文件移动与重命名、前端、P1 查询分解与多文档对比等尚未实现；需求仍以功能 README 为准。
 6. 上传限制在应用读取时检查，解析器暂无独立进程资源隔离；当前面向受信任的本地演示文件。
@@ -181,7 +210,7 @@ uv run --directory backend ruff check app tests
 | --- | --- | --- |
 | FastAPI | 输入校验、接口文档和 Python 解析库便于快速联调 | 团队熟悉其他框架时可替换 HTTP 层 |
 | SQLite＋本地文件 | 无需额外服务，易于本地持久化和演示 | 多用户或并发增长后使用 PostgreSQL 与对象存储 |
-| 词项余弦检索 | 无需下载嵌入模型或配置外部密钥，方便先验证闭环 | 引入嵌入模型、向量库或混合检索 |
+| 词频/BM25 与 BGE-M3 混合检索 | 无密钥基线与语义召回可切换，SQLite 持久化便于一致性维护 | 大规模时引入 ANN 索引、重排及评测优化 |
 | 摘录＋模型适配 | 无密钥也能验证来源链路，模型接入独立于解析和检索 | 使用模型 SDK 或增加其他提供商适配 |
 | 进程内后台任务 | 首日无需维护队列服务 | 使用持久队列与独立 worker |
 

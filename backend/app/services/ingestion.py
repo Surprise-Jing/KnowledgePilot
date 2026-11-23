@@ -9,7 +9,10 @@ from uuid import uuid4
 from docx import Document
 from pypdf import PdfReader
 
+from app.config import Settings
 from app.db import Database
+from app.errors import AppError
+from app.services.embeddings import embed, pack, profile
 
 logger = logging.getLogger(__name__)
 
@@ -146,7 +149,8 @@ def build_chunks(blocks: Iterable[Block]) -> list[Chunk]:
     return chunks
 
 
-def ingest(db: Database, document_id: str):
+def ingest(db: Database, document_id: str, settings: Settings | None = None):
+    settings = settings or Settings()
     with db.connect() as connection:
         claimed = connection.execute(
             """UPDATE documents SET status='parsing', error=NULL, updated_at=CURRENT_TIMESTAMP
@@ -176,6 +180,11 @@ def ingest(db: Database, document_id: str):
             )
             for ordinal, chunk in enumerate(chunks)
         ]
+        vectors = (
+            embed(settings, [chunk.content for chunk in chunks])
+            if settings.retriever in {"vector", "hybrid"}
+            else []
+        )
         with db.connect() as connection:
             # Acquire a write lock before checking existence: deletion cannot race the insert.
             connection.execute("BEGIN IMMEDIATE")
@@ -191,16 +200,28 @@ def ingest(db: Database, document_id: str):
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 rows,
             )
+            if vectors:
+                connection.executemany(
+                    "INSERT INTO chunk_embeddings(chunk_id, profile, dimensions, vector) "
+                    "VALUES (?, ?, ?, ?)",
+                    [
+                        (row[0], profile(settings), settings.embedding_dimensions, pack(vector))
+                        for row, vector in zip(rows, vectors, strict=True)
+                    ],
+                )
             connection.execute(
                 """UPDATE documents SET status='success', error=NULL, updated_at=CURRENT_TIMESTAMP
                 WHERE id=?""",
                 (document_id,),
             )
     except Exception as exc:
-        logger.exception("Document ingestion failed: %s", document_id)
+        if isinstance(exc, AppError):
+            logger.warning("Document ingestion failed: %s (%s)", document_id, exc.code)
+        else:
+            logger.exception("Document ingestion failed: %s", document_id)
         reason = (
             str(exc)
-            if isinstance(exc, (ValueError, UnicodeError))
+            if isinstance(exc, (AppError, ValueError, UnicodeError))
             else "文档解析失败，请检查文件是否损坏或加密"
         )
         with db.connect() as connection:
