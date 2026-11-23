@@ -1,4 +1,4 @@
-# KnowledgePilot 共享契约 v1.2
+# KnowledgePilot 共享契约 v1.3
 
 > **只有主 Agent（Tech Lead）可以修改本文件。** Subagent 发现契约不合理或缺失时，停止相关部分，在返回报告的“是否修改公共接口”中写明建议，由主 Agent 决定并更新本文件与变更记录。
 >
@@ -163,6 +163,7 @@ data: {"call_id":"…","step":1,"name":"search_chunks","arguments":{"query":"…
 @dataclass
 class ToolContext:
     db: Database
+    settings: Settings             # 必须传入应用配置；search_chunks 用它选择检索策略
     user_id: str
     allowed_kb_ids: list[str]      # 本次提问选择的知识库；MCP 下为该用户全部知识库
     run_id: str | None             # MCP 调用时为 None
@@ -249,13 +250,14 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 | v1.0 | 2026-11-22 | 初版：统一错误、目录/文件管理、会话与 SSE、工具与 Agent、MCP、前端集成；schema v2 |
 | v1.1 | 2026-11-23 | LLM 类型落地到 `app/llm/base.py`；`app.state.llm_factory` 默认 `None`；`ScriptedLLM` 归 D；`.env` 只需三项模型配置 |
 | v1.2 | 2026-11-23 | BGE-M3 Embedding、vector/BM25+vector hybrid；schema v3 持久化向量；新增错误码和重建命令；聊天和 Embedding 分开配置 |
+| v1.3 | 2026-11-23 | `ToolContext` 增加 `settings`；`.env.example` 只保留聊天与 Embedding 的核心配置 |
 
 ## 9. 检索策略与向量持久化
 
 - `PK_RETRIEVER=cosine|bm25|vector|hybrid`，默认 `cosine` 保持无密钥调试兼容；`.env.example` 推荐 `hybrid`，必须填写 Embedding 地址。
 - `vector` 为 BGE-M3 稠密向量余弦检索；`hybrid` 为 BM25 与稠密向量两路召回，按 RRF `sum(1/(60+rank))` 融合（rank 从 1 起）。不是 BGE-M3 原生稀疏或 ColBERT 接口。
 - 每路取最多 `PK_RETRIEVAL_CANDIDATES`（默认 50，至少 top_k）个正分候选，稳定排序后按内容去重并截取 top_k。向量余弦、BM25、RRF 分数不可跨策略比较，也不是置信度。
-- API 请求和 SearchHit 结构不变；服务层 `search(db, user_id, request, settings=None)` 增加可选配置，HTTP 显式传入应用配置；独立工具调用不传时读取 Settings。
+- API 请求和 SearchHit 结构不变；服务层 `search(db, user_id, request, settings=None)` 增加可选配置，HTTP 显式传入应用配置；工具层（含 MCP）必须把 `ToolContext.settings` 传给 `search`，不依赖其内部读取环境变量的回退。`embedding_*` 错误在工具中按原错误码返回，`retryable` 保持一致。
 - Embedding 使用 `{PK_EMBEDDING_BASE_URL}/embeddings`，请求 `{model, input: string[], encoding_format: "float"}`，模型默认 `bge-m3`，默认维度 1024。按响应 index 还原顺序并归一化；拒绝缺项、重复 index、错误维度、非有限值和零向量。密钥为空时不发 Authorization，供免认证本地服务使用。
 - 网络请求不持有 DB 连接；用户与知识库校验在发送查询前完成，并在请求返回后再次校验。仅检索所选库的 success 文档。
 - schema v3 新增 `chunk_embeddings`；真实向量存于同一个 `knowledge.db`，使用小端 float32 BLOB 和精确扫描，不是 ANN 索引或独立向量数据库服务。片段外键级联清理向量。
