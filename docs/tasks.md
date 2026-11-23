@@ -152,8 +152,8 @@ D1 依据 `contracts.md` 编写 `tests/contract/`：目录树与防环、重命�
 
 | 任务 | 内容 | 里程碑 |
 | --- | --- | --- |
-| A1 | G1–G3；**先交付** `services/documents.py` 中的 `list_files(...)` 与 `read_document_range(...)`（签名见 contracts） | M1：两个服务函数＋测试，约 1.5 小时，主 Agent 立即合入主干并通知 B 合并 |
-| B1 | G4–G7。先做不依赖 A 的部分：工具注册表、`search_chunks`、`list_knowledge_bases`、LLM 客户端、Agent 循环、SSE、会话持久化；A-M1 合入后补 `list_files`、`read_document` | 契约测试中 B 部分全部转绿 |
+| A1 | G1–G3。M1（`services/documents.py` 的 `list_files`、`read_document_range` 及 `tests/test_documents_service.py`）已由主 Agent 先行交付到 `dev`，之后归 A 维护 | 契约测试中 A 部分全部转绿 |
+| B1 | G4–G7。M1 已在 `dev` 上，四个工具可直接实现 | 契约测试中 B 部分全部转绿 |
 | C1 | Vite + React + TS + Tailwind v4 + shadcn/ui；用户切换、知识库/目录树、文件表（状态轮询、失败原因、重试）、对话（库多选、流式、异常提示）、引用抽屉、轨迹面板；SSE 解析器单元测试（vitest）。先接已有接口，新接口按 contracts 编码 | `npm run build`、`npm test` 通过 |
 
 强依赖处理：B 对 A 的依赖仅限两个只读服务函数，通过 M1 先行交付解耦；C 只依赖契约，不使用假数据，联调在集成阶段对真实后端完成。
@@ -213,3 +213,11 @@ D1 依据 `contracts.md` 编写 `tests/contract/`：目录树与防环、重命�
 ## 7. 待确认
 
 1. 提交当前基线（worktree 隔离的前提）。
+
+## 8. 当前增量：BGE-M3 与混合检索（2026-11-23）
+
+用户已确认 OpenAI 兼容 `/embeddings`、模型 ID `bge-m3`。本增量由主 Agent 串行实现，
+临时接管 `services/{ingestion,retrieval,embeddings}.py`、`api/{documents,search}.py`、
+`app/reindex.py` 与 `tests/test_retrieval.py`；共享配置、迁移与文档仍由主 Agent 维护。
+范围：SQLite 持久化真实稠密向量、BM25、vector、BM25+vector 的 RRF hybrid、离线测试及重建命令。
+覆盖 Round 2 原 hybrid（词频余弦与 BM25 融合）定义；不引入向量数据库服务或新依赖。
