@@ -1,6 +1,6 @@
 # AGENTS.md — KnowledgePilot 协作规则
 
-所有参与开发的 Agent（主 Agent 与 Subagent）开始工作前必须阅读本文件、[docs/contracts.md](docs/contracts.md) 和 [docs/tasks.md](docs/tasks.md) 中自己的任务。
+所有参与开发的 Agent（主 Agent 与 Subagent）开始工作前必须阅读本文件、[docs/contracts.md](docs/contracts.md) 和 [docs/tasks.md](docs/tasks.md) 中自己的任务；前端和测试的完整任务说明见 [docs/briefs/](docs/briefs/)。
 
 ## 1. 项目
 
@@ -24,7 +24,7 @@ npm --prefix frontend test
 
 ## 3. 不可违反的规则
 
-1. **共享契约只能由主 Agent 修改**：`docs/contracts.md`、`AGENTS.md`、`docs/tasks.md`、`backend/app/{main,config,db,errors,schemas,deps,logging_setup}.py`、`backend/pyproject.toml`、`backend/uv.lock`、`frontend/package.json` 的依赖、`.gitignore`、`README.md`。需要改动时停下来，在报告中提出。
+1. **共享契约只能由主 Agent 修改**：`docs/contracts.md`、`AGENTS.md`、`docs/tasks.md`、`backend/app/{main,config,db,errors,schemas,deps,logging_setup}.py`、`backend/app/llm/base.py`、`backend/.env.example`、`backend/pyproject.toml`、`backend/uv.lock`、`frontend/package.json` 中白名单之外的依赖、`.gitignore`、`README.md`。需要改动时停下来，在报告中提出。
 2. **只修改自己拥有的文件**，所有权见 [docs/tasks.md 第 2 节](docs/tasks.md#2-文件所有权)。唯一例外：让 D 的契约测试通过后，可删除该测试上的 `@pytest.mark.xfail(strict=True, …)` 那一行。
 3. **不提交假数据模拟的最终功能**。测试替身（如 `ScriptedLLM`）只能放在 `tests/` 下并通过依赖注入使用；产品代码不得有假模型、假检索结果或硬编码演示数据。
 4. **不静默吞异常**。捕获后要么转换为契约中的结构化错误，要么 `logger.exception` 记录并转为 `internal_error`；不得 `except: pass`。

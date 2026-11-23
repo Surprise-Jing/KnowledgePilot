@@ -119,11 +119,11 @@ HTTP 错误与工具错误共用一套 `code`：`invalid_argument`、`invalid_us
 
 | 所有者 | 文件 |
 | --- | --- |
-| 主 Agent | `AGENTS.md`、`CLAUDE.md`、`docs/contracts.md`、`docs/tasks.md`、`docs/data-model.md`、`README.md`、`.gitignore`、`start.sh`、`backend/pyproject.toml`、`backend/uv.lock`、`backend/.env.example`、`backend/app/{main,config,db,errors,schemas,deps,logging_setup}.py`、`backend/app/api/__init__.py`、`backend/tests/test_platform.py`、`frontend/package.json` 的依赖增减 |
+| 主 Agent | `AGENTS.md`、`CLAUDE.md`、`docs/contracts.md`、`docs/tasks.md`、`docs/data-model.md`、`README.md`、`.gitignore`、`start.sh`、`backend/pyproject.toml`、`backend/uv.lock`、`backend/.env.example`、`backend/app/{main,config,db,errors,schemas,deps,logging_setup}.py`、`backend/app/llm/base.py`、`backend/app/api/__init__.py`、`backend/tests/test_platform.py`、`frontend/package.json` 的依赖增减 |
 | A 数据与文件 | `backend/app/api/{knowledge_bases,folders,documents}.py`、`backend/app/services/{access,knowledge_bases,folders,documents,ingestion}.py`、`backend/tests/test_{folders,documents_manage}.py`、`backend/tests/test_data_model.py` |
-| B 检索与 Agent | `backend/app/api/{search,conversations}.py`、`backend/app/services/{retrieval,answering,conversations}.py`、`backend/app/tools/**`、`backend/app/llm/**`、`backend/app/agent/**`、`backend/tests/test_{tools,agent,sse,api}.py`、`backend/tests/fakes/**` |
-| C 前端 | `frontend/**`（依赖变更需报告主 Agent） |
-| D 测试与审查 | `backend/tests/contract/**`、`backend/tests/e2e/**`、`scripts/smoke.py`、`docs/reviews/**`、第二轮起 `eval/**`、`docs/eval-report.md` |
+| B 检索与 Agent | `backend/app/api/{search,conversations}.py`、`backend/app/services/{retrieval,answering,conversations}.py`、`backend/app/tools/**`、`backend/app/llm/**`（`base.py` 除外）、`backend/app/agent/**`、`backend/tests/test_{tools,agent,sse,api}.py` |
+| C 前端 | `frontend/**`（初始依赖按 [docs/briefs/C-frontend.md](briefs/C-frontend.md) 白名单，之外的依赖需报告主 Agent） |
+| D 测试与审查 | `backend/tests/contract/**`、`backend/tests/fakes/**`、`backend/tests/e2e/**`、`scripts/smoke.py`、`docs/reviews/**`、第二轮起 `eval/**`、`docs/eval-report.md` |
 | E MCP（第二轮） | `backend/app/mcp_server.py`、`skills/knowledgepilot/**`、`backend/tests/test_mcp.py` |
 
 规则：

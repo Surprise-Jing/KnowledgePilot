@@ -58,20 +58,32 @@ uv run --directory backend uvicorn app.main:app --host 127.0.0.1 --port 8000
 - Swagger 接口文档：<http://127.0.0.1:8000/docs>
 - OpenAPI：<http://127.0.0.1:8000/openapi.json>
 
-需要修改配置时，将 `backend/.env.example` 复制为 `backend/.env`。启动命令将工作目录设置为 `backend`，因此默认数据保存在 `backend/data`。
+将 `backend/.env.example` 复制为 `backend/.env`，只需填写三项模型配置。启动命令将工作目录设置为 `backend`，因此默认数据保存在 `backend/data`。
 
-| 环境变量 | 默认值 | 用途 |
+| 必填环境变量 | 用途 |
+| --- | --- |
+| `PK_LLM_BASE_URL` | OpenAI 兼容服务地址，程序追加 `/chat/completions` |
+| `PK_LLM_MODEL` | 模型名称，需支持工具调用 |
+| `PK_LLM_API_KEY` | 模型密钥，只用于后端请求 |
+
+以下配置都有默认值，一般无需设置，仅在调试或评测时通过环境变量覆盖：
+
+| 可选环境变量 | 默认值 | 用途 |
 | --- | --- | --- |
 | `PK_DATA_DIR` | `data` | 数据库和原文件目录，相对于进程工作目录 |
 | `PK_DEFAULT_USER_ID` | `demo` | 请求未携带 `X-User-Id` 时使用的用户 |
-| `PK_ANSWER_MODE` | `extractive` | `extractive` 为摘录；`openai` 为真实模型 |
-| `PK_LLM_BASE_URL` | `https://api.openai.com/v1` | 兼容服务地址，程序追加 `/chat/completions` |
-| `PK_LLM_MODEL` | 空 | 模型服务实际支持的模型名称 |
-| `PK_LLM_API_KEY` | 空 | 模型密钥；只用于后端请求 |
 | `PK_LLM_TIMEOUT` | `45` | 模型请求超时秒数 |
-| `PK_MAX_UPLOAD_BYTES` | `10485760` | 应用读取文件的大小限制，默认 10 MiB |
+| `PK_LLM_STREAM` | `true` | 模型服务不支持流式工具调用时设为 `false` |
+| `PK_AGENT_MAX_STEPS` | `6` | Agent 最大执行步数 |
+| `PK_TOOL_TIMEOUT` | `15` | 单次工具调用超时秒数 |
+| `PK_CONTEXT_BUDGET_CHARS` | `24000` | 对话上下文预算（字符） |
+| `PK_RETRIEVER` | `cosine` | 检索策略，评测对照用 |
+| `PK_MCP_USER_ID` | `demo` | MCP Server 访问知识库时的用户 |
+| `PK_MAX_UPLOAD_BYTES` | `10485760` | 上传大小限制，默认 10 MiB |
+| `PK_LOG_LEVEL` | `INFO` | 日志级别 |
+| `PK_ANSWER_MODE` | `extractive` | 仅影响调试接口 `/api/chat`：`extractive` 为摘录，`openai` 为调用模型 |
 
-真实模型模式需要设置 `PK_ANSWER_MODE=openai`、`PK_LLM_MODEL`、`PK_LLM_API_KEY`。本地兼容服务若不校验密钥，可填其允许的占位值。模型异常会明确返回错误，不会悄悄改成摘录回答。调用外部模型会发送问题和检索片段，请只上传公开或脱敏资料。
+本地兼容服务若不校验密钥，可填其允许的占位值。模型异常会明确返回错误，不会悄悄改成摘录回答。调用外部模型会发送问题和检索片段，请只上传公开或脱敏资料。
 
 ## 最小闭环演示
 

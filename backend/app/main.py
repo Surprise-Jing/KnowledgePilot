@@ -37,6 +37,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.db = db
     app.state.upload_dir = upload_dir
+    # None selects the default OpenAI-compatible client; tests inject a scripted one
+    # (docs/contracts.md §5.3).
+    app.state.llm_factory = None
     app.add_middleware(RequestContextMiddleware)
 
     @app.exception_handler(AppError)

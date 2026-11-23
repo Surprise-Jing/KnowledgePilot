@@ -1,4 +1,4 @@
-# KnowledgePilot 共享契约 v1.0
+# KnowledgePilot 共享契约 v1.1
 
 > **只有主 Agent（Tech Lead）可以修改本文件。** Subagent 发现契约不合理或缺失时，停止相关部分，在返回报告的“是否修改公共接口”中写明建议，由主 Agent 决定并更新本文件与变更记录。
 >
@@ -170,7 +170,8 @@ class Tool(Protocol):
     def run(self, ctx: ToolContext, arguments: dict) -> ToolResult: ...
 ```
 
-- 注册表 `app/tools/registry.py` 提供 `list_tools()`、`openai_tool_specs()`、`execute(ctx, name, raw_arguments) -> ToolResult`。`execute` 负责：JSON 解析、按 Schema 校验（失败 → `invalid_argument`）、超时（`tool_timeout`）、未知工具（`invalid_argument`）、捕获 `AppError` 转 `ToolError`、捕获其他异常时 `logger.exception` 后转 `internal_error`。
+- 模块路径（测试依赖，固定）：`from app.tools.context import ToolContext, MarkerAllocator`（`MarkerAllocator()` 无参构造，`ToolContext` 为上面的 dataclass，字段按关键字传入）；`from app.tools.registry import list_tools, openai_tool_specs, execute`。
+- 注册表提供 `list_tools() -> list[Tool]`、`openai_tool_specs() -> list[dict]`（OpenAI `tools` 格式）、`execute(ctx, name, raw_arguments: str | dict) -> ToolResult`（同步函数）。`execute` 负责：JSON 解析、按 Schema 校验（失败 → `invalid_argument`）、超时（`tool_timeout`）、未知工具（`invalid_argument`）、捕获 `AppError` 转 `ToolError`、捕获其他异常时 `logger.exception` 后转 `internal_error`。
 - 权限：工具调用服务层（服务层校验用户归属），并额外校验知识库在 `allowed_kb_ids` 内，否则 `out_of_scope`。文档类参数通过所属知识库判断范围。
 - 引用标记：同一 run 内同一 `chunk_id` 始终得到同一个标记；`search_chunks` 与 `read_document` 返回的每个片段都带标记。
 - HTTP、应用内 Agent、MCP Server 复用同一注册表。
@@ -188,16 +189,20 @@ class Tool(Protocol):
 
 ### 5.3 LLM 客户端
 
+类型定义在 `backend/app/llm/base.py`（主 Agent 所有）：
+
 ```python
 class LLMClient(Protocol):
     model: str
     def stream(self, messages: list[dict], tools: list[dict]) -> AsyncIterator[LLMEvent]: ...
 
-LLMEvent = TextDelta(text) | ToolCallsRequested([ToolCallRequest(id, name, arguments_json)]) | UsageReport(prompt_tokens, completion_tokens)
+LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id, name, arguments_json), ...]) | UsageReport(prompt_tokens, completion_tokens)
 ```
 
+一次 `stream` 调用对应一轮模型输出：若干 `TextDelta`，轮末至多一个 `ToolCallsRequested`，可选一个 `UsageReport`。`messages` / `tools` 为 OpenAI Chat Completions 格式。
+
 - 生产实现 `app/llm/openai_compat.py`：httpx 调用 `{PK_LLM_BASE_URL}/chat/completions`，`tools` + `tool_choice: "auto"`；`PK_LLM_STREAM=true` 时 `stream: true` 并拼接 `delta.tool_calls` 分片，`false` 时一次性请求再按事件吐出。超时 `PK_LLM_TIMEOUT` → `AppError model_timeout`；HTTP/格式错误 → `model_error`。
-- 依赖注入：`app.state.llm_factory: Callable[[Settings], LLMClient]`。默认工厂在 `PK_LLM_MODEL` 或 `PK_LLM_API_KEY` 为空时抛 `model_not_configured`。测试替换为 `tests/fakes/llm.py` 中的 `ScriptedLLM`。**产品代码中不得存在脚本化/假模型路径。**
+- 依赖注入：`app.state.llm_factory`（`LLMFactory = Callable[[Settings], LLMClient]`）。值为 `None`（默认）时使用 B 在 `app/llm/` 实现的默认工厂，该工厂在 `PK_LLM_MODEL` 或 `PK_LLM_API_KEY` 为空时抛 `model_not_configured`。测试设置为返回 `ScriptedLLM` 的工厂；`ScriptedLLM` 位于 `backend/tests/fakes/llm.py`，由 D 编写，B 的测试可以复用。**产品代码中不得存在脚本化/假模型路径。**
 
 ### 5.4 Agent 循环
 
@@ -237,3 +242,4 @@ LLMEvent = TextDelta(text) | ToolCallsRequested([ToolCallRequest(id, name, argum
 | 版本 | 日期 | 变更 |
 | --- | --- | --- |
 | v1.0 | 2026-11-22 | 初版：统一错误、目录/文件管理、会话与 SSE、工具与 Agent、MCP、前端集成；schema v2 |
+| v1.1 | 2026-11-23 | LLM 类型落地到 `app/llm/base.py`；`app.state.llm_factory` 默认 `None`；`ScriptedLLM` 归 D；`.env` 只需三项模型配置 |
