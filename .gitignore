@@ -1,1 +1,16 @@
 .DS_Store
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+.env
+backend/data/
+# Office lock files
+~$*
+.~*
+# Frontend
+node_modules/
+frontend/dist/
+# Eval outputs
+eval/results/
