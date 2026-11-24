@@ -135,7 +135,7 @@ HTTP 错误与工具错误共用一套 `code`：`invalid_argument`、`invalid_us
 
 ### Phase 0 — 主 Agent 串行（D1 上午，约 2 小时）
 
-> 状态（2026-11-23）：Phase 0 已完成并提交；A1（44d3f46）、C1（9558f72）、B1（0d76b2c）已合入 `dev`；Integration 1 已完成（见下文“集成 1 结果”）。Round 2：E（bf092da）、B2（66c897a）、C2 已合入 `dev`；D2 进行中。
+> 状态（2026-11-23）：Phase 0 已完成并提交；A1（44d3f46）、C1（9558f72）、B1（0d76b2c）已合入 `dev`；Integration 1 已完成（见下文“集成 1 结果”）。Round 2 全部合入 `dev`（E、B2、C2、D2），Integration 2 已完成（见文末）。
 > 原状态（2026-11-22）：第 2–5 步已完成，26 项测试与 Ruff 通过，实测服务启动、统一错误与 `X-Request-Id` 正常；待第 1、6 步（提交）。
 
 1. 经用户确认后提交当前基线（`backend/`、`docs/`、`examples/`、`README.md`），修正 `.gitignore`。
@@ -234,3 +234,20 @@ D1 依据 `contracts.md` 编写 `tests/contract/`：目录树与防环、重命�
 `app/reindex.py` 与 `tests/test_retrieval.py`；共享配置、迁移与文档仍由主 Agent 维护。
 范围：SQLite 持久化真实稠密向量、BM25、vector、BM25+vector 的 RRF hybrid、离线测试及重建命令。
 覆盖 Round 2 原 hybrid（词频余弦与 BM25 融合）定义；不引入向量数据库服务或新依赖。
+
+
+## 集成 2 结果（2026-11-23）
+
+- 门禁：后端 284 项、前端 66 项测试通过；Ruff 覆盖 `app`、`tests`、`eval`、`scripts`；前端构建与 oxlint 通过。
+- 真实模型冒烟 `scripts/smoke.py`：7/7 通过。
+- 降级现场演示：向量服务指向不可达端口后提问，`search_chunks` 降级为 BM25（`fallback=bm25`），模型随后读取原文并在回答中说明降级，`done.degraded=true`；界面显示“回答可能不完整”提示与“已降级：关键词检索”徽标。
+- MCP：`demo_client.py` 用真实 BGE-M3 混合检索跑通 list_tools → list_knowledge_bases → search_chunks → read_document。
+
+**后续可选改进（未排期）：**
+1. 会话焦点中标注已删除的文档，避免模型误判上一轮依据（D2 E1）。
+2. TXT 切片按更小的行窗口，提高行级引用精度（D2）。
+3. 混合检索加权或改为向量优先，在评测集上对照（D2）。
+4. `MessageOut` 增加 `degraded`，省去历史会话逐条请求 run（C2）。
+5. 前端 Markdown 渲染按需加载，缩小主包（C2）。
+6. 在真实 Claude Code / Claude Desktop 中验证 MCP 配置（E）。
+7. 查询分解、多文档对比、引用聚合（P1 选做）。

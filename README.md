@@ -6,7 +6,7 @@ Agentic Personal Knowledge Workspace（个人知识管理智能助手）：让�
 
 ## 当前状态
 
-P0 主流程已打通，并已用真实模型（OpenAI 兼容服务）和 BGE-M3 混合检索完成端到端验证：建库 → 建目录 → 上传 PDF/DOCX/TXT → 解析 → 提问 → 模型自主调用工具 → 流式回答 → 引用与调用轨迹 → 追问 → 删除 → 重启后数据仍在。MCP＋Skill、工具失败降级、20 条评测在第二轮开发中。
+P0 全部完成，P1 完成 MCP＋Skill、工具失败降级、20 条评测集三项，并完成检索算法优化（BM25、BGE-M3 向量、混合检索）的对照实验。全部功能已用真实模型（OpenAI 兼容服务）和 BGE-M3 端到端验证：建库 → 建目录 → 上传 PDF/DOCX/TXT → 解析 → 提问 → 模型自主调用工具 → 流式回答 → 引用与调用轨迹 → 追问 → 删除 → 重启后数据仍在；向量服务故障时自动降级为关键词检索并在界面提示。
 
 ### 已实现
 
@@ -40,11 +40,32 @@ P0 主流程已打通，并已用真实模型（OpenAI 兼容服务）和 BGE-M3
 - 分层：路由 → 服务 → 数据库；工具层与 Agent 只调用服务层。
 - 统一错误结构 `{"error": {"code", "message", "retryable", "details"}}`；JSON 结构化日志，带请求 ID 与提问 ID。
 - SQLite 持久化与版本迁移（schema v3）。
-- 后端 191 项、前端 41 项自动化测试，不依赖网络和模型密钥。
+- 后端 284 项、前端 66 项自动化测试，不依赖网络和模型密钥。
 
-### 开发中
+**工具失败降级**（P1）
+- 可重试的工具错误自动重试一次（每次提问最多 3 次）；向量服务故障时检索自动改用 BM25；读原文失败时改用本次已检索到的片段；模型在输出前出错时重试一次。
+- 降级在轨迹中标出，回答下方提示“回答可能不完整”，模型会说明哪些内容依据有限。
 
-MCP＋Skill、工具失败降级、20 条评测与检索策略对照、前端体验完善。进度见 [docs/tasks.md](docs/tasks.md)。
+**MCP＋Skill**（P1）
+- 自带 stdio MCP Server（服务名 `knowledgepilot`），与应用内 Agent 共用同一工具注册表，参数、错误码、权限和降级完全一致。
+- 启动：`PK_MCP_USER_ID=demo uv run --directory backend python -m app.mcp_server`（通常由 MCP 客户端自动拉起）。
+- Claude Code：`claude mcp add --transport stdio --env PK_MCP_USER_ID=demo knowledgepilot -- uv run --directory <仓库绝对路径>/backend python -m app.mcp_server`。
+- 不需要 AI 客户端的调用示例：`uv run --directory backend python ../skills/knowledgepilot/scripts/demo_client.py --query "删除文档时如何清理索引"`。
+- Skill 包与更多客户端配置见 [skills/knowledgepilot/](skills/knowledgepilot/)。MCP Server 启动时只做数据库迁移，可与 Web 应用同时运行。
+
+**评测**（P1 与算法拓展）
+- 自编语料 5 份（TXT/DOCX/PDF，3 个知识库）、20 条用例，覆盖单库、多库、多轮指代、工具选择、引用定位、无结果和异常。
+- 检索对照（Hit@5 / MRR）：cosine 0.769 / 0.731，BM25 0.769 / 0.731，向量 1.000 / 0.962，混合 1.000 / 0.840。差距来自中文提问检索英文资料的跨语言用例。
+- Agent（混合检索，真实模型）：20/20 通过，引用正确率 0.793，工具调用成功率 100%，首字延迟 P50 约 6 秒。
+- 详见 [docs/eval-report.md](docs/eval-report.md)；复现：`uv run --directory backend python ../eval/run.py --help`。
+
+### 已知限制
+
+- 用户身份由请求头声明，不做认证，只适合本地演示。
+- 解析在服务进程内执行，重启时中断的任务标记为失败、需手动重试；工具超时后后台线程无法强制终止。
+- 文件只能在同一知识库内移动；不支持旧版 `.doc` 和扫描件 OCR。
+- TXT 约 800 字合并为一个片段，引用只能定位到行范围；混合检索的 RRF 会压低只被一路召回的结果，在本评测集上纯向量检索更优。
+- 查询分解、多文档对比、引用聚合（P1 选做）未实现。
 
 ## 快速开始
 
@@ -105,6 +126,8 @@ npm --prefix frontend test
 npm --prefix frontend run build
 ```
 
+真实模型冒烟（需先启动服务并配置 `backend/.env`）：`uv run --directory backend python ../scripts/smoke.py --base-url http://127.0.0.1:8000 --repo-root "$PWD"`。
+
 ## 文档
 
 | 文档 | 内容 |
@@ -112,7 +135,9 @@ npm --prefix frontend run build
 | [docs/README.md](docs/README.md) | 功能需求与验收清单 |
 | [docs/backend.md](docs/backend.md) | 后端启动、接口示例、当前边界与选型理由 |
 | [docs/data-model.md](docs/data-model.md) | 数据模型与迁移 |
-| [docs/contracts.md](docs/contracts.md) | 共享契约：API、错误码、SSE 事件、工具定义、Agent 循环 |
+| [docs/contracts.md](docs/contracts.md) | 共享契约（即 API 文档）：接口、错误码、SSE 事件、工具定义、Agent 循环、降级、MCP |
+| [docs/eval-report.md](docs/eval-report.md) | 评测报告：语料、20 条用例、检索策略对照、Agent 结果与失败分析 |
+| [skills/knowledgepilot/](skills/knowledgepilot/) | Skill 包：`SKILL.md`、MCP 客户端配置、调用示例 |
 | [docs/tasks.md](docs/tasks.md) | 开发计划、文件所有权、阶段安排 |
 | [docs/briefs/](docs/briefs/) | 前端、测试等任务说明 |
 | [AGENTS.md](AGENTS.md) | 参与开发的 Agent 必须遵守的规则 |
