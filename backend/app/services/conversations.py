@@ -214,6 +214,8 @@ def load_history(db: Database, conversation_id: str, before_message_id: str) -> 
 class SessionFocus:
     # (document_id, filename) cited by the most recent runs, most recent first.
     documents: list[tuple[str, str]] = field(default_factory=list)
+    # (filename, location_label) from citations whose source document was deleted later.
+    deleted_documents: list[tuple[str, str]] = field(default_factory=list)
     # (knowledge_base_id, name) searched by the previous question.
     last_scope: list[tuple[str, str]] = field(default_factory=list)
 
@@ -229,18 +231,28 @@ def session_focus(
             (conversation_id, exclude_run_id, FOCUS_RUNS),
         ).fetchall()
         documents: list[tuple[str, str]] = []
+        deleted_documents: list[tuple[str, str]] = []
         for run in runs:
             for row in connection.execute(
-                """SELECT document_id, filename FROM citations
-                WHERE message_id=? AND document_id IS NOT NULL ORDER BY rowid""",
+                """SELECT ci.document_id, ci.filename, ci.location_label, d.id AS live_document_id
+                FROM citations ci
+                LEFT JOIN documents d ON d.id = ci.document_id
+                WHERE ci.message_id=? ORDER BY ci.rowid""",
                 (run["assistant_message_id"],),
             ):
-                entry = (row["document_id"], row["filename"])
-                if entry not in documents:
-                    documents.append(entry)
+                if row["live_document_id"] is not None:
+                    entry = (row["live_document_id"], row["filename"])
+                    if entry not in documents:
+                        documents.append(entry)
+                else:
+                    entry = (row["filename"], row["location_label"])
+                    if entry not in deleted_documents:
+                        deleted_documents.append(entry)
     last_scope = json.loads(runs[0]["knowledge_base_ids"]) if runs else []
     return SessionFocus(
-        documents=documents, last_scope=knowledge_base_names(db, user_id, last_scope)
+        documents=documents,
+        deleted_documents=deleted_documents,
+        last_scope=knowledge_base_names(db, user_id, last_scope),
     )
 
 
