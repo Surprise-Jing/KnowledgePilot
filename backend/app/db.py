@@ -247,9 +247,16 @@ class Database:
         finally:
             connection.close()
 
-    def initialize(self):
+    def migrate(self):
+        """Create or upgrade the schema only. Safe for secondary processes such as the MCP
+        server, which must not reset work the web app is doing."""
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._migrate()
+
+    def initialize(self):
+        """Migrate, then recover work interrupted by a restart. Only the process that owns
+        background parsing and Agent runs (the web app) may call this."""
+        self.migrate()
         with self.connect() as connection:
             # Background jobs run in process. Work interrupted by a restart is made retryable
             # instead of staying in an intermediate state forever.

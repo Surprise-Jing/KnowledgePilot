@@ -166,7 +166,8 @@ def _protocol_stdout() -> anyio.AsyncFile[str]:
 
 def _startup(settings: Settings) -> McpRuntime:
     db = Database(settings.data_dir / "knowledge.db")
-    db.initialize()
+    # migrate(), not initialize(): recovery would fail parsing/answers in a running web app.
+    db.migrate()
     with db.connect() as connection:
         user_id = ensure_user(connection, settings.mcp_user_id)
     return McpRuntime(db=db, settings=settings, user_id=user_id)

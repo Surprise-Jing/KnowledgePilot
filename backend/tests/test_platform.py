@@ -115,3 +115,27 @@ def test_missing_frontend_build_means_api_only(tmp_path):
     with TestClient(create_app(settings)) as client:
         assert client.get("/").status_code == 404
         assert client.get("/health").status_code == 200
+
+
+def test_migrate_does_not_recover_in_flight_work(settings):
+    with TestClient(create_app(settings)):
+        pass
+    path = settings.data_dir / "knowledge.db"
+    connection = sqlite3.connect(path)
+    connection.execute("INSERT INTO users(id, name) VALUES ('u', 'u')")
+    connection.execute("INSERT INTO knowledge_bases(id, user_id, name) VALUES ('k', 'u', 'k')")
+    connection.execute(
+        """INSERT INTO documents(id, knowledge_base_id, filename, file_type, size_bytes, sha256,
+        path, status) VALUES ('d', 'k', 'a.txt', 'txt', 1, 'x', 'p', 'parsing')"""
+    )
+    connection.commit()
+    connection.close()
+    from app.db import Database
+
+    database = Database(path)
+    database.migrate()
+    with database.connect() as connection:
+        assert connection.execute("SELECT status FROM documents").fetchone()[0] == "parsing"
+    database.initialize()
+    with database.connect() as connection:
+        assert connection.execute("SELECT status FROM documents").fetchone()[0] == "failed"

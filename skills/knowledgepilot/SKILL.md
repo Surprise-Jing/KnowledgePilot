@@ -19,7 +19,7 @@ KnowledgePilot 是个人知识管理助手：用户在 Web 界面建知识库、
 ## 前置条件
 
 1. 安装 Python 3.11+ 与 [uv](https://docs.astral.sh/uv/)，克隆仓库后在仓库根目录执行一次 `uv sync --directory backend`。
-2. 有数据：先用 Web 应用（`./start.sh`，打开 http://127.0.0.1:8000）建知识库并上传文档，等文档状态变为“解析成功”。MCP Server 与 Web 应用读同一个数据目录（默认 `backend/data`，可用 `PK_DATA_DIR` 指定），两者可以同时运行；但 Server **启动时**会和 Web 应用启动一样执行数据库迁移与中断恢复（把“排队/解析中”的文档标为失败、把进行中的提问标为中断），因此请不要在 Web 端正在解析文档或回答问题时启动或重启 MCP Server。
+2. 有数据：先用 Web 应用（`./start.sh`，打开 http://127.0.0.1:8000）建知识库并上传文档，等文档状态变为“解析成功”。MCP Server 与 Web 应用读同一个数据目录（默认 `backend/data`，可用 `PK_DATA_DIR` 指定），两者可以同时运行。Server 启动时只执行数据库迁移，不做中断恢复，不会影响 Web 端正在进行的解析或回答。
 3. 用户身份：MCP 没有 HTTP 头，用环境变量 `PK_MCP_USER_ID` 指定以哪个用户的身份访问（默认 `demo`，与 Web 端默认用户一致）。只能访问该用户的知识库。
 4. 检索策略：Server 启动目录为 `backend/`，会读取 `backend/.env`（与 Web 应用相同）。
    - `PK_RETRIEVER=cosine` 或 `bm25`：不需要 `backend/.env`，也不需要任何模型或密钥。
