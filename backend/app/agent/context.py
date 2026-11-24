@@ -8,6 +8,8 @@ import json
 import re
 from dataclasses import dataclass
 
+from app.agent.evidence import compact_sources
+
 MARKER_PATTERN = re.compile(r"\[(c\d+)\]")
 
 
@@ -50,14 +52,18 @@ def compact_tool_results(turns: list[TurnItem], limit: int) -> None:
         if item.compacted or item.step == latest_step:
             continue
         before = _chars(item.message)
+        sources = compact_sources(json.loads(item.message["content"]), min(1200, limit // 4))
+        compacted = {
+            "ok": item.ok,
+            "summary": item.summary,
+            "note": "较早的工具结果已压缩；sources仅保留来源及短摘录，需要完整原文请重新读取",
+        }
+        if sources:
+            compacted["sources"] = sources
         item.message = {
             **item.message,
             "content": json.dumps(
-                {
-                    "ok": item.ok,
-                    "summary": item.summary,
-                    "note": "较早的工具结果已省略，仅保留摘要；需要原文请重新调用工具",
-                },
+                compacted,
                 ensure_ascii=False,
             ),
         }

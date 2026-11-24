@@ -59,9 +59,66 @@ describe('AnswerText', () => {
     expect(container.querySelector('code')?.textContent).toBe('[c1]')
   })
 
-  it('handles adjacent and two-digit markers', () => {
-    renderAnswer('A[c1][c12]B', [citation('c1'), citation('c12')])
-    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual(['c1', 'c12'])
+  it('aggregates adjacent markers and preserves access to every source', async () => {
+    const { onCitation } = renderAnswer('A[c1][c12][c1]B', [citation('c1'), {
+      ...citation('c12', '报告B.pdf'), document_id: 'doc-2', location_label: '第 4 页',
+    }])
+    const user = userEvent.setup()
+    expect(screen.getAllByRole('button')).toHaveLength(1)
+    await user.click(screen.getByRole('button', { name: '查看 2 处依据，来自 2 份文档' }))
+    expect(screen.getByText('c1 · 介绍.txt')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'c12 · 报告B.pdf 第 4 页' }))
+    expect(onCitation).toHaveBeenCalledWith('c12')
+  })
+
+  it('keeps separate conclusions and unknown markers out of the same source group', () => {
+    renderAnswer('A[c1]，B[c12]，未知[c1][c9][c12]', [citation('c1'), citation('c12')])
+    expect(screen.getAllByRole('button')).toHaveLength(4)
+    expect(screen.queryByRole('button', { name: /查看.*处依据/ })).not.toBeInTheDocument()
+  })
+
+  it('deduplicates a repeated marker without inventing extra sources', () => {
+    renderAnswer('A[c1][c1]', [citation('c1')])
+    expect(screen.getAllByRole('button')).toHaveLength(1)
+    expect(screen.getByRole('button', { name: '引用 c1：介绍.txt' })).toBeInTheDocument()
+  })
+
+  it('does not infer deleted document identity from matching filenames', async () => {
+    renderAnswer('共同结论[c1][c2]', [
+      { ...citation('c1'), document_id: null, chunk_id: null },
+      { ...citation('c2'), document_id: null, chunk_id: null },
+    ])
+    await userEvent.setup().click(screen.getByRole('button', {
+      name: '查看 2 处依据，来自 0 份可用文档，另有 2 处历史快照',
+    }))
+    expect(screen.getByRole('button', { name: /c1 · 介绍.txt/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /c2 · 介绍.txt/ })).toBeInTheDocument()
+  })
+
+  it('upgrades plain markers to a complete source group as citation events arrive', () => {
+    const { container, rerender } = renderAnswer('结论[c1][c2]', [])
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(container.textContent).toContain('[c1][c2]')
+    rerender(<AnswerText text="结论[c1][c2]" citations={[citation('c1')]} onCitation={vi.fn()} />)
+    expect(screen.getByRole('button', { name: '引用 c1：介绍.txt' })).toBeInTheDocument()
+    expect(container.textContent).toContain('[c2]')
+    rerender(<AnswerText text="结论[c1][c2]" citations={[citation('c1'), citation('c2')]}
+      onCitation={vi.fn()} />)
+    expect(screen.getByRole('button', { name: '查看 2 处依据，来自 1 份文档' })).toBeInTheDocument()
+    expect(container.textContent).not.toContain('[c2]')
+  })
+
+  it('groups multiple positions from one document in a comparison cell', async () => {
+    const { container } = renderAnswer(
+      '| 项目 | 结论 |\n| --- | --- |\n| A | 一致[c1][c2] |',
+      [citation('c1'), citation('c2')],
+    )
+    const trigger = screen.getByRole('button', { name: '查看 2 处依据，来自 1 份文档' })
+    expect(trigger.closest('td')).not.toBeNull()
+    expect(container.querySelector('table')).not.toBeNull()
+    await userEvent.setup().click(trigger)
+    expect(screen.getByRole('button', { name: /c1 · 介绍.txt/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /c2 · 介绍.txt/ })).toBeInTheDocument()
   })
 
   it('does not render raw HTML and opens links safely', () => {

@@ -7,7 +7,7 @@ from app.config import Settings
 from app.db import Database
 from app.errors import AppError
 from app.schemas import Location, SearchHit, SearchRequest
-from app.services.access import require_knowledge_bases
+from app.services.access import require_document, require_knowledge_bases
 from app.services.embeddings import embed, embedding_text, profile, unpack
 
 
@@ -63,9 +63,18 @@ def search(
 ) -> list[SearchHit]:
     settings = settings or Settings()
     vector_mode = settings.retriever in {"vector", "hybrid"}
+
+    def validate_scope(connection) -> list[str]:
+        kb_ids = require_knowledge_bases(connection, user_id, request.knowledge_base_ids)
+        for document_id in request.document_ids or []:
+            document = require_document(connection, user_id, document_id)
+            if document["knowledge_base_id"] not in kb_ids:
+                raise AppError(403, "out_of_scope", "指定文档不在本次检索选择的知识库内")
+        return kb_ids
+
     # Validate scope before transmitting the query to an external embedding service.
     with db.connect() as connection:
-        ids = require_knowledge_bases(connection, user_id, request.knowledge_base_ids)
+        ids = validate_scope(connection)
     query_settings = settings.model_copy(
         update={
             "embedding_timeout": min(settings.embedding_timeout, settings.embedding_query_timeout)
@@ -74,8 +83,12 @@ def search(
     query_vector = embed(query_settings, [request.query])[0] if vector_mode else None
     with db.connect() as connection:
         # Revalidate after the network call; no DB transaction spans provider latency.
-        ids = require_knowledge_bases(connection, user_id, ids)
+        ids = validate_scope(connection)
         placeholders = ",".join("?" for _ in ids)
+        document_ids = list(dict.fromkeys(request.document_ids or []))
+        document_filter = (
+            f" AND d.id IN ({','.join('?' for _ in document_ids)})" if document_ids else ""
+        )
         rows = connection.execute(
             f"""
             SELECT c.id AS chunk_id, c.document_id, d.knowledge_base_id, d.filename, c.content,
@@ -83,10 +96,10 @@ def search(
                    c.char_start, c.char_end, c.elements, e.profile, e.dimensions, e.vector
             FROM chunks c JOIN documents d ON d.id=c.document_id
             LEFT JOIN chunk_embeddings e ON e.chunk_id=c.id
-            WHERE d.knowledge_base_id IN ({placeholders}) AND d.status='success'
+            WHERE d.knowledge_base_id IN ({placeholders}) AND d.status='success'{document_filter}
             ORDER BY c.id
         """,
-            ids,
+            [*ids, *document_ids],
         ).fetchall()
     if not rows:
         return []
@@ -120,16 +133,51 @@ def search(
 
     if settings.retriever == "hybrid":
         limit = max(request.top_k, settings.retrieval_candidates)
-        fused = reciprocal_rank_fusion([ranked(lexical)[:limit], ranked(dense)[:limit]])
+        lexical_order, dense_order = ranked(lexical), ranked(dense)
+        if len(document_ids) > 1:
+            # The candidate cutoff must be per document too; balancing only the final hits
+            # cannot recover a source already excluded from both global candidate lists.
+            fused = {}
+            for document_id in document_ids:
+                fused.update(
+                    reciprocal_rank_fusion(
+                        [
+                            [i for i in order if rows[i]["document_id"] == document_id][:limit]
+                            for order in (lexical_order, dense_order)
+                        ]
+                    )
+                )
+        else:
+            fused = reciprocal_rank_fusion([lexical_order[:limit], dense_order[:limit]])
         scores = [fused.get(i, 0.0) for i in range(len(rows))]
     else:
         scores = dense if vector_mode else lexical
     hits = []
     seen = set()
-    for i in ranked(scores):
+    order = ranked(scores)
+    if len(document_ids) > 1:
+        # Reserve one relevant result for each requested source before adding depth. The
+        # total top_k limit still applies, and a document with no match contributes nothing.
+        by_document = {document_id: [] for document_id in document_ids}
+        for index in order:
+            row = rows[index]
+            key = (row["document_id"], row["content"])
+            if key not in seen:
+                seen.add(key)
+                by_document[row["document_id"]].append(index)
+        order = [
+            indexes[depth]
+            for depth in range(max((len(items) for items in by_document.values()), default=0))
+            for indexes in by_document.values()
+            if depth < len(indexes)
+        ]
+        seen.clear()
+    for i in order:
         row = rows[i]
-        if row["content"] not in seen:
-            seen.add(row["content"])
+        # Identical statements in separate reports remain independent, traceable sources.
+        key = (row["document_id"], row["content"])
+        if key not in seen:
+            seen.add(key)
             hits.append(
                 SearchHit(
                     chunk_id=row["chunk_id"],

@@ -102,6 +102,7 @@ class SearchChunksTool:
     description = (
         "在知识库中检索与问题相关的文档片段，返回片段内容、来源位置和引用标记（如 c1）。"
         "适用：回答任何需要依据资料的问题时首先使用；换关键词可再次检索。"
+        "多文档对比时先确认文档ID，再用document_ids定向检索；指定多份文档时轮流返回各文档的相关片段。"
         "不适用：需要按目录浏览文件（用 list_files）或连续阅读某个文档的上下文（用 read_document）。"
     )
     parameters: ClassVar[dict[str, Any]] = {
@@ -127,6 +128,16 @@ class SearchChunksTool:
                 "default": 5,
                 "description": "返回的片段数量，1–10，默认 5",
             },
+            "document_ids": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1},
+                "minItems": 1,
+                "maxItems": 10,
+                "description": (
+                    "限定检索这些文档；通过list_files或检索结果确认ID，不能猜测。"
+                    "多份文档按每份相关度轮流取片段，总数仍受top_k限制；建议top_k不小于文档数。"
+                ),
+            },
         },
         "required": ["query"],
         "additionalProperties": False,
@@ -143,8 +154,15 @@ class SearchChunksTool:
         else:
             kb_ids = list(dict.fromkeys(ctx.allowed_kb_ids))
         if not kb_ids:
+            if arguments.get("document_ids"):
+                raise _out_of_scope()
             return {"hits": []}
-        request = SearchRequest(query=query, knowledge_base_ids=kb_ids, top_k=arguments["top_k"])
+        request = SearchRequest(
+            query=query,
+            knowledge_base_ids=kb_ids,
+            top_k=arguments["top_k"],
+            document_ids=arguments.get("document_ids"),
+        )
         results, degraded = _search_with_fallback(ctx, request)
         hits = []
         for hit in results:
@@ -171,7 +189,22 @@ class SearchChunksTool:
                     "content": hit.content,
                 }
             )
-        return {"hits": hits} if degraded is None else {"hits": hits, "degraded": degraded}
+        data: dict[str, Any] = {"hits": hits}
+        if request.document_ids:
+            data["document_coverage"] = [
+                {
+                    "document_id": document_id,
+                    "hit_count": sum(hit["document_id"] == document_id for hit in hits),
+                }
+                for document_id in dict.fromkeys(request.document_ids)
+            ]
+            data["coverage_note"] = (
+                "hit_count只表示本次返回覆盖；0不代表文档未提及。"
+                "未覆盖时可单独检索该文档、调整关键词或读取原文。"
+            )
+        if degraded is not None:
+            data["degraded"] = degraded
+        return data
 
     def summarize(self, data: dict) -> str:
         hits = data["hits"]
@@ -180,6 +213,9 @@ class SearchChunksTool:
         else:
             files = len({hit["document_id"] for hit in hits})
             summary = f"命中 {len(hits)} 个片段（{files} 个文件）"
+        missing = sum(item["hit_count"] == 0 for item in data.get("document_coverage", []))
+        if missing:
+            summary += f"；本次未覆盖 {missing} 份指定文档"
         return BM25_FALLBACK_NOTE + summary if data.get("degraded") else summary
 
 

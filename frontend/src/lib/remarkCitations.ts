@@ -25,14 +25,25 @@ function transform(node: MdNode, valid: Set<string>): void {
       next.push(child)
       continue
     }
-    for (const segment of splitCitations(child.value, valid)) {
+    const segments = splitCitations(child.value, valid)
+    for (let index = 0; index < segments.length; index += 1) {
+      const segment = segments[index]
       if (segment.type === 'text') {
         next.push({ type: 'text', value: segment.text })
       } else {
+        const markers = [segment.marker]
+        // Only a contiguous citation run is one source group. Text, unknown markers,
+        // Markdown structure and table cell boundaries keep unrelated conclusions apart.
+        while (segments[index + 1]?.type === 'citation') {
+          const following = segments[++index]
+          if (following.type === 'citation' && !markers.includes(following.marker)) {
+            markers.push(following.marker)
+          }
+        }
         next.push({
           type: 'citationMarker',
-          data: { hName: CITATION_TAG, hProperties: { [CITATION_PROPERTY]: segment.marker } },
-          children: [{ type: 'text', value: segment.marker }],
+          data: { hName: CITATION_TAG, hProperties: { [CITATION_PROPERTY]: markers.join(',') } },
+          children: [{ type: 'text', value: markers.join(',') }],
         })
       }
     }

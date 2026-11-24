@@ -1,0 +1,408 @@
+{
+  "dataset_sha256": "5dc0d2ec06f0bb1d8c1776a577e6da7568dd6ea702bfb8412a9b39fdd2575549",
+  "dataset_id": "efunds-complex-v1",
+  "strategies": {
+    "cosine": {
+      "source_result": "20261124T064558Z-retrieval-cosine.json",
+      "top_k": 10,
+      "macro_evidence_coverage": 0.7586805555555555,
+      "micro_evidence_coverage": 0.6875,
+      "full_evidence_cases": 13,
+      "cases": [
+        {
+          "id": "QD01",
+          "category": "查询分解",
+          "evidence_groups": 12,
+          "covered_groups": 12,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "QD02",
+          "category": "查询分解",
+          "evidence_groups": 4,
+          "covered_groups": 2,
+          "coverage": 0.5,
+          "all_evidence_retrieved": false
+        },
+        {
+          "id": "QD03",
+          "category": "查询分解",
+          "evidence_groups": 4,
+          "covered_groups": 2,
+          "coverage": 0.5,
+          "all_evidence_retrieved": false
+        },
+        {
+          "id": "QD04",
+          "category": "查询分解",
+          "evidence_groups": 8,
+          "covered_groups": 6,
+          "coverage": 0.75,
+          "all_evidence_retrieved": false
+        },
+        {
+          "id": "QD05",
+          "category": "查询分解",
+          "evidence_groups": 8,
+          "covered_groups": 5,
+          "coverage": 0.625,
+          "all_evidence_retrieved": false
+        },
+        {
+          "id": "QD06",
+          "category": "查询分解",
+          "evidence_groups": 8,
+          "covered_groups": 8,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "CMP01",
+          "category": "多文档对比",
+          "evidence_groups": 4,
+          "covered_groups": 4,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "CMP02",
+          "category": "多文档对比",
+          "evidence_groups": 4,
+          "covered_groups": 4,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "CMP03",
+          "category": "多文档对比",
+          "evidence_groups": 2,
+          "covered_groups": 0,
+          "coverage": 0.0,
+          "all_evidence_retrieved": false
+        },
+        {
+          "id": "CMP04",
+          "category": "多文档对比",
+          "evidence_groups": 2,
+          "covered_groups": 1,
+          "coverage": 0.5,
+          "all_evidence_retrieved": false
+        },
+        {
+          "id": "CMP05",
+          "category": "多文档对比",
+          "evidence_groups": 2,
+          "covered_groups": 1,
+          "coverage": 0.5,
+          "all_evidence_retrieved": false
+        },
+        {
+          "id": "CMP06",
+          "category": "多文档对比",
+          "evidence_groups": 20,
+          "covered_groups": 0,
+          "coverage": 0.0,
+          "all_evidence_retrieved": false
+        },
+        {
+          "id": "AG01",
+          "category": "引用聚合",
+          "evidence_groups": 4,
+          "covered_groups": 4,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "AG02",
+          "category": "引用聚合",
+          "evidence_groups": 4,
+          "covered_groups": 4,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "AG03",
+          "category": "引用聚合",
+          "evidence_groups": 8,
+          "covered_groups": 4,
+          "coverage": 0.5,
+          "all_evidence_retrieved": false
+        },
+        {
+          "id": "AG04",
+          "category": "引用聚合",
+          "evidence_groups": 2,
+          "covered_groups": 2,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "AG05",
+          "category": "引用聚合",
+          "evidence_groups": 3,
+          "covered_groups": 3,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "AG06",
+          "category": "引用聚合",
+          "evidence_groups": 4,
+          "covered_groups": 4,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "BD01",
+          "category": "口径与边界",
+          "evidence_groups": 4,
+          "covered_groups": 4,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "BD02",
+          "category": "口径与边界",
+          "evidence_groups": 6,
+          "covered_groups": 6,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "BD03",
+          "category": "口径与边界",
+          "evidence_groups": 4,
+          "covered_groups": 2,
+          "coverage": 0.5,
+          "all_evidence_retrieved": false
+        },
+        {
+          "id": "BD04",
+          "category": "口径与边界",
+          "evidence_groups": 4,
+          "covered_groups": 4,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "BD05",
+          "category": "口径与边界",
+          "evidence_groups": 1,
+          "covered_groups": 1,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "BD06",
+          "category": "口径与边界",
+          "evidence_groups": 6,
+          "covered_groups": 5,
+          "coverage": 0.8333333333333334,
+          "all_evidence_retrieved": false
+        }
+      ]
+    },
+    "bm25": {
+      "source_result": "20261124T064558Z-retrieval-bm25.json",
+      "top_k": 10,
+      "macro_evidence_coverage": 0.8993055555555555,
+      "micro_evidence_coverage": 0.8515625,
+      "full_evidence_cases": 19,
+      "cases": [
+        {
+          "id": "QD01",
+          "category": "查询分解",
+          "evidence_groups": 12,
+          "covered_groups": 12,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "QD02",
+          "category": "查询分解",
+          "evidence_groups": 4,
+          "covered_groups": 4,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "QD03",
+          "category": "查询分解",
+          "evidence_groups": 4,
+          "covered_groups": 4,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "QD04",
+          "category": "查询分解",
+          "evidence_groups": 8,
+          "covered_groups": 8,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "QD05",
+          "category": "查询分解",
+          "evidence_groups": 8,
+          "covered_groups": 8,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "QD06",
+          "category": "查询分解",
+          "evidence_groups": 8,
+          "covered_groups": 8,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "CMP01",
+          "category": "多文档对比",
+          "evidence_groups": 4,
+          "covered_groups": 4,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "CMP02",
+          "category": "多文档对比",
+          "evidence_groups": 4,
+          "covered_groups": 4,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "CMP03",
+          "category": "多文档对比",
+          "evidence_groups": 2,
+          "covered_groups": 2,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "CMP04",
+          "category": "多文档对比",
+          "evidence_groups": 2,
+          "covered_groups": 2,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "CMP05",
+          "category": "多文档对比",
+          "evidence_groups": 2,
+          "covered_groups": 2,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "CMP06",
+          "category": "多文档对比",
+          "evidence_groups": 20,
+          "covered_groups": 10,
+          "coverage": 0.5,
+          "all_evidence_retrieved": false
+        },
+        {
+          "id": "AG01",
+          "category": "引用聚合",
+          "evidence_groups": 4,
+          "covered_groups": 4,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "AG02",
+          "category": "引用聚合",
+          "evidence_groups": 4,
+          "covered_groups": 4,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "AG03",
+          "category": "引用聚合",
+          "evidence_groups": 8,
+          "covered_groups": 8,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "AG04",
+          "category": "引用聚合",
+          "evidence_groups": 2,
+          "covered_groups": 2,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "AG05",
+          "category": "引用聚合",
+          "evidence_groups": 3,
+          "covered_groups": 3,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "AG06",
+          "category": "引用聚合",
+          "evidence_groups": 4,
+          "covered_groups": 1,
+          "coverage": 0.25,
+          "all_evidence_retrieved": false
+        },
+        {
+          "id": "BD01",
+          "category": "口径与边界",
+          "evidence_groups": 4,
+          "covered_groups": 4,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "BD02",
+          "category": "口径与边界",
+          "evidence_groups": 6,
+          "covered_groups": 5,
+          "coverage": 0.8333333333333334,
+          "all_evidence_retrieved": false
+        },
+        {
+          "id": "BD03",
+          "category": "口径与边界",
+          "evidence_groups": 4,
+          "covered_groups": 2,
+          "coverage": 0.5,
+          "all_evidence_retrieved": false
+        },
+        {
+          "id": "BD04",
+          "category": "口径与边界",
+          "evidence_groups": 4,
+          "covered_groups": 4,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "BD05",
+          "category": "口径与边界",
+          "evidence_groups": 1,
+          "covered_groups": 1,
+          "coverage": 1.0,
+          "all_evidence_retrieved": true
+        },
+        {
+          "id": "BD06",
+          "category": "口径与边界",
+          "evidence_groups": 6,
+          "covered_groups": 3,
+          "coverage": 0.5,
+          "all_evidence_retrieved": false
+        }
+      ]
+    }
+  }
+}

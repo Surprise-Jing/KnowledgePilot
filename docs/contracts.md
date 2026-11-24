@@ -1,4 +1,4 @@
-# KnowledgePilot 共享契约 v1.7
+# KnowledgePilot 共享契约 v1.8
 
 > **只有主 Agent（Tech Lead）可以修改本文件。** Subagent 发现契约不合理或缺失时，停止相关部分，在返回报告的“是否修改公共接口”中写明建议，由主 Agent 决定并更新本文件与变更记录。
 >
@@ -41,7 +41,7 @@
 | `conversation_busy` | 409 | 同一会话已有进行中的提问 | 是 |
 | `file_too_large` | 413 | 超过 `PK_MAX_UPLOAD_BYTES` | 否 |
 | `unsupported_format` | 415 | 非 TXT / PDF / DOCX | 否 |
-| `out_of_scope` | —（工具） | 工具访问了本次提问未选择的知识库 | 否 |
+| `out_of_scope` | 403 / 工具 | 访问了本次提问未选择的知识库；检索指定文档不在所选库内 | 否 |
 | `tool_timeout` | —（工具） | 工具执行超过 `PK_TOOL_TIMEOUT` | 是 |
 | `max_steps_reached` | —（SSE） | Agent 达到 `PK_AGENT_MAX_STEPS` | 否 |
 | `model_not_configured` | 503 | 未配置 `PK_LLM_MODEL` / `PK_LLM_API_KEY` | 否 |
@@ -194,7 +194,7 @@ class Tool(Protocol):
 | 工具 | 参数（JSON Schema 要点） | `data` |
 | --- | --- | --- |
 | `list_knowledge_bases` | `{}` | `{knowledge_bases: [{id, name, document_count}]}`，仅 `allowed_kb_ids` 内 |
-| `search_chunks` | `query: string(1–500)` 必填；`knowledge_base_ids: string[]`（默认全部允许的库）；`top_k: integer 1–10`（默认 5） | `{hits: [{marker, chunk_id, document_id, knowledge_base_id, filename, location, score, content}]}`；无结果时 `hits: []` 且 `ok: true`。`location` 不含 `elements`（见 §11） |
+| `search_chunks` | `query: string(1–500)` 必填；`knowledge_base_ids: string[]`（默认全部允许的库）；`top_k: integer 1–10`（默认 5）；`document_ids?: string[1–10]` | `{hits: [{marker, chunk_id, document_id, knowledge_base_id, filename, location, score, content}]}`；指定文档时另带 `document_coverage: [{document_id, hit_count}]` 与 `coverage_note`。无结果仍 `ok: true`。`location` 不含 `elements`（见 §11） |
 | `list_files` | `knowledge_base_id: string` 必填；`folder_id: string`；`recursive: boolean`（默认 true）；`offset: integer ≥0`；`limit: integer 1–50`（默认 20） | `FileListing` |
 | `read_document` | `document_id: string` 必填；`start_ordinal: integer ≥0`（默认 0）；`max_chars: integer 500–4000`（默认 3000） | `{document_id, filename, content, chunks: [{marker, ordinal, location}], truncated, next_ordinal, total_chunks}`；`content` 中每段前缀 `[cN]`；`location` 不含 `elements` |
 
@@ -237,7 +237,7 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 - 预算 `PK_CONTEXT_BUDGET_CHARS`（字符估算）。固定部分：系统提示、会话焦点、当前问题、本 run 的工具往返。
 - **会话焦点**：最近 3 次 run 引用过的文档 `(document_id, filename)` 和最近一次的检索范围，以一段系统消息提供，用于解析“这份文档”“刚才提到的方法”。
 - 历史消息：只取 `completed` 的 user / assistant 文本，从新到旧加入直到预算用完；历史中的 `[cN]` 标记删除（标记只在所属 run 内有效）。被丢弃的最早消息不做摘要（本期范围外）。
-- 本 run 内工具结果累计超过预算的一半时，较早的工具结果替换为其 `summary`。
+- 本 run 内工具结果累计超过预算的一半时，较早的工具结果替换为 `summary` 与有界来源短摘录（§12）；最新一轮结果保持完整。
 
 ## 6. MCP（Round 2，E 负责）
 
@@ -268,13 +268,14 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 | v1.5 | 2026-11-23 | 明确内部异常、未完成工具调用、max_steps 的 run 记录方式（采纳 B1 报告） |
 | v1.6 | 2026-11-23 | 工具失败降级（§10）；schema v4 轨迹字段；SSE `tool_call.attempt/retry_of`、`tool_result.fallback`、`done.degraded`；MCP 细化（§6） |
 | v1.7 | 2026-11-23 | 结构化解析（§11）：PDF/DOCX 改用 Docling，`Location.elements`、`DocumentOut.parse_mode/parser/page_count`；上传 `parse_mode`；新接口 reparse / markdown / file；错误码 `document_busy`、`markdown_not_available`；schema v5 |
+| v1.8 | 2026-11-23 | 多文档对比（§12）：检索支持 document_ids、按文档轮流取结果、保留跨文档相同内容来源；连续引用展开全部来源、相邻位置分组。无新增迁移 |
 
 ## 9. 检索策略与向量持久化
 
 - `PK_RETRIEVER=cosine|bm25|vector|hybrid`，默认 `cosine` 保持无密钥调试兼容；`.env.example` 推荐 `hybrid`，必须填写 Embedding 地址。
 - `vector` 为 BGE-M3 稠密向量余弦检索；`hybrid` 为 BM25 与稠密向量两路召回，按 RRF `sum(1/(60+rank))` 融合（rank 从 1 起）。不是 BGE-M3 原生稀疏或 ColBERT 接口。
-- 每路取最多 `PK_RETRIEVAL_CANDIDATES`（默认 50，至少 top_k）个正分候选，稳定排序后按内容去重并截取 top_k。向量余弦、BM25、RRF 分数不可跨策略比较，也不是置信度。
-- API 请求和 SearchHit 结构不变；服务层 `search(db, user_id, request, settings=None)` 增加可选配置，HTTP 显式传入应用配置；工具层（含 MCP）必须把 `ToolContext.settings` 传给 `search`，不依赖其内部读取环境变量的回退。`embedding_*` 错误在工具中按原错误码返回，`retryable` 保持一致。
+- 每路取最多 `PK_RETRIEVAL_CANDIDATES`（默认 50，至少 top_k）个正分候选；同文档按内容去重，不跨文档丢弃来源。普通检索稳定排序后截取 top_k；多文档限定检索见 §12。向量余弦、BM25、RRF 分数不可跨策略比较，也不是置信度。
+- SearchHit 结构不变；SearchRequest 的可选文档过滤见 §12。服务层 `search(db, user_id, request, settings=None)` 增加可选配置，HTTP 显式传入应用配置；工具层（含 MCP）必须把 `ToolContext.settings` 传给 `search`，不依赖其内部读取环境变量的回退。`embedding_*` 错误在工具中按原错误码返回，`retryable` 保持一致。
 - Embedding 使用 `{PK_EMBEDDING_BASE_URL}/embeddings`，请求 `{model, input: string[], encoding_format: "float"}`，模型默认 `bge-m3`，默认维度 1024。按响应 index 还原顺序并归一化；拒绝缺项、重复 index、错误维度、非有限值和零向量。密钥为空时不发 Authorization，供免认证本地服务使用。
 - 网络请求不持有 DB 连接；用户与知识库校验在发送查询前完成，并在请求返回后再次校验。仅检索所选库的 success 文档。
 - schema v3 新增 `chunk_embeddings`；真实向量存于同一个 `knowledge.db`，使用小端 float32 BLOB 和精确扫描，不是 ANN 索引或独立向量数据库服务。片段外键级联清理向量。
@@ -328,3 +329,17 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 - **产物**：`{PK_DATA_DIR}/artifacts/{document_id}/document.md`（Markdown）与 `document.json`（DoclingDocument，TXT 无），成功提交后原子替换，随文档删除。
 - **向量输入**：`"\n".join([*heading_path, content])`；签名包含输入格式版本 `text:v2`。BM25/词频同样对标题 + 正文打分；`SearchHit.content` 仍为原文。
 - **失败**：Docling 失败不回退其他解析器；普通模式无文本时提示改用增强模式；模型不可用时提示运行 `python -m app.parsers.prefetch`。
+
+## 12. 多文档对比与引用聚合（v1.8）
+
+- HTTP `SearchRequest` 新增 `document_ids?: string[1–10] | null`，省略/null 表示所选库内全部文档，空数组非法。工具中该参数只能省略或为非空数组。ID 去重保留输入顺序。
+- 文档限定在召回、排序、索引完整性检查和 top_k 截取之前生效。发送 Embedding 请求前及返回后均验证归属与知识库范围；他人/不存在的文档返回 `document_not_found`，用户自己的范围外文档返回 `out_of_scope`（HTTP 403）；范围错误不降级。
+- 指定多份文档时，每份文档内部保持相关度排序，再按输入文档顺序轮流取一个片段，直到 top_k 或候选耗尽。没有匹配的文档不填充假结果。top_k 是总上限，不保证小于文档数时覆盖全部文档。
+- hybrid 两路召回的候选上限也分别作用于每份指定文档，然后逐文档 RRF 融合，避免文档在结果平衡前被全局候选截断排除。普通检索的原全局候选逻辑不变。
+- 工具额外返回每份目标文档的 `hit_count`，0 仅表示本次返回未覆盖，不能解释为原文没有相关内容；模型可单独检索、改写或读取原文，仍不足则明确缺失。
+- 相同文本在不同文档中保留不同来源、位置与标记；同一 run 内同一片段复用原标记。模型自主选择工具顺序，对比回答采用统一维度、分别引用、说明口径及缺失，不新增固定 Planner。
+- 回答中连续有效 `[c1][c3]` 渲染为可展开的来源组，组内按首次出现顺序去重；未知标记、正文及 Markdown 结构边界隔开不同来源组。展开后可逐项定位原文。该分组仅表达引用关联，不宣称语义已验证。
+- 引用面板在同文档内将可证明相邻的页/段/行范围或重叠字符窗口分组，要求位置类型、表号和标题路径相同。保持引用顺序、每条快照、标记及定位，不拼接为一段伪造连续原文。
+- 来源组从回答正文与已持久化引用派生，因此历史会话同样可用；原 SSE、CitationOut 和数据库结构保持不变。
+- 证据复用：每轮模型调用附带从本 run 实际工具消息提取的来源索引，只含文档 ID、文件名及已有标记；索引 JSON 最多 2400 字符，内存最多保留 100 份文档、每份最近 10 个标记，不包含文档正文，也不表示所有问题维度已覆盖。仍组合成一条 system 消息以兼容模型服务。
+- 旧工具结果压缩时，在 tool 消息内保留每条最多 240 字符的原文短摘录和来源，优先不同文档；每条压缩结果的来源 JSON 最多 `min(1200, 工具结果预算/4)` 字符。完整依据不足时仍需定向检索/读取，引用有效性规则不变。此机制不增加模型调用、不把未返回资料加入证据池。

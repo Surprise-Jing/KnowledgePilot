@@ -212,6 +212,7 @@ class SearchRequest(BaseModel):
     query: str = Field(min_length=1, max_length=2000)
     knowledge_base_ids: list[str] = Field(min_length=1, max_length=20)
     top_k: int = Field(default=5, ge=1, le=20)
+    document_ids: list[str] | None = Field(default=None, min_length=1, max_length=10)
 
     @field_validator("query")
     @classmethod

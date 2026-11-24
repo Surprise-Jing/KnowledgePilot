@@ -251,3 +251,17 @@ D1 依据 `contracts.md` 编写 `tests/contract/`：目录树与防环、重命�
 5. 前端 Markdown 渲染按需加载，缩小主包（C2）。
 6. 在真实 Claude Code / Claude Desktop 中验证 MCP 配置（E）。
 7. 查询分解、多文档对比、引用聚合（P1 选做）。
+
+## 9. 当前增量：多文档对比与引用聚合
+
+用户要求先增强多文档对比和引用聚合，暂不增加独立查询规划器。由主 Agent 串行实现，
+本轮接管 `services/retrieval.py`、`tools/builtin.py`、`agent/{prompts,context,loop,evidence}.py`，以及前端
+`lib/{citations,remarkCitations}*`、`features/chat/AnswerText*`、
+`features/citations/CitationsPanel*`；新增对应专项测试。共享契约和 SearchRequest 由主 Agent 修改。
+保留并发进行的结构化解析改动，只对上述文件中的相关接口与行为增量修改。
+
+目标：文档限定检索与多源覆盖、相同内容保留跨文档来源、按统一维度对比并就近引用；
+回答中连续引用聚合为可展开来源组，同文档相邻位置分组但保留各片段与定位。
+沿用原有引用快照与 SSE 协议，不新增数据库迁移或依赖。真实模型首轮暴露证据压缩后反复查找问题，
+因此增加本轮有界来源索引和工具消息短摘录；只复用实际返回过的资料，不增加规划模型调用。
+查询分解的必要性由后续真实模型评测决定。

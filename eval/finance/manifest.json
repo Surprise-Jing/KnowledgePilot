@@ -1,0 +1,81 @@
+{
+  "dataset_id": "efunds-complex-v1",
+  "retrieved_on": "2026-11-23",
+  "publisher": "易方达基金管理有限公司",
+  "source_type": "official_original_pdf",
+  "rights": "公开披露不等于开放许可；原报告权利归原权利人。仓库仅保存来源元数据、事实标注和最小证据锚点，原始PDF按需下载至忽略目录。",
+  "documents": [
+    {
+      "id": "s50_2024q4",
+      "filename": "510100_2024Q4.pdf",
+      "title": "易方达上证50交易型开放式指数证券投资基金2024年第4季度报告",
+      "fund_code": "510100",
+      "knowledge_base": "易方达上证50ETF",
+      "folder": [
+        "2024",
+        "Q4"
+      ],
+      "report_period_start": "2024-10-01",
+      "report_period_end": "2024-12-31",
+      "publication_date": "2025-01-21",
+      "url": "https://cdn.efunds.com.cn/owch/data/bulletin/20250121/%E6%98%93%E6%96%B9%E8%BE%BE%E4%B8%8A%E8%AF%8150%E4%BA%A4%E6%98%93%E5%9E%8B%E5%BC%80%E6%94%BE%E5%BC%8F%E6%8C%87%E6%95%B0%E8%AF%81%E5%88%B8%E6%8A%95%E8%B5%84%E5%9F%BA%E9%87%912024%E5%B9%B4%E7%AC%AC4%E5%AD%A3%E5%BA%A6%E6%8A%A5%E5%91%8A.pdf",
+      "sha256": "569ed9e58712d3745d084fe2d701bb8c6d36970c088c405e39a1100433c3a953",
+      "bytes": 461539,
+      "pages": 14
+    },
+    {
+      "id": "s50_2025q1",
+      "filename": "510100_2025Q1.pdf",
+      "title": "易方达上证50交易型开放式指数证券投资基金2025年第1季度报告",
+      "fund_code": "510100",
+      "knowledge_base": "易方达上证50ETF",
+      "folder": [
+        "2025",
+        "Q1"
+      ],
+      "report_period_start": "2025-01-01",
+      "report_period_end": "2025-03-31",
+      "publication_date": "2025-04-22",
+      "url": "https://cdn.efunds.com.cn/owch/data/bulletin/20250422/%E6%98%93%E6%96%B9%E8%BE%BE%E4%B8%8A%E8%AF%8150%E4%BA%A4%E6%98%93%E5%9E%8B%E5%BC%80%E6%94%BE%E5%BC%8F%E6%8C%87%E6%95%B0%E8%AF%81%E5%88%B8%E6%8A%95%E8%B5%84%E5%9F%BA%E9%87%912025%E5%B9%B4%E7%AC%AC1%E5%AD%A3%E5%BA%A6%E6%8A%A5%E5%91%8A.pdf",
+      "sha256": "f227baf2b7f5683b29070b5e74cef2ece8dc1e0a514da518ac2c5da60f7b6c97",
+      "bytes": 462392,
+      "pages": 14
+    },
+    {
+      "id": "c300_2024q4",
+      "filename": "510310_2024Q4.pdf",
+      "title": "易方达沪深300交易型开放式指数发起式证券投资基金2024年第4季度报告",
+      "fund_code": "510310",
+      "knowledge_base": "易方达沪深300ETF",
+      "folder": [
+        "2024",
+        "Q4"
+      ],
+      "report_period_start": "2024-10-01",
+      "report_period_end": "2024-12-31",
+      "publication_date": "2025-01-21",
+      "url": "https://cdn.efunds.com.cn/owch/data/bulletin/20250121/%E6%98%93%E6%96%B9%E8%BE%BE%E6%B2%AA%E6%B7%B1300%E4%BA%A4%E6%98%93%E5%9E%8B%E5%BC%80%E6%94%BE%E5%BC%8F%E6%8C%87%E6%95%B0%E5%8F%91%E8%B5%B7%E5%BC%8F%E8%AF%81%E5%88%B8%E6%8A%95%E8%B5%84%E5%9F%BA%E9%87%912024%E5%B9%B4%E7%AC%AC4%E5%AD%A3%E5%BA%A6%E6%8A%A5%E5%91%8A.pdf",
+      "sha256": "80e36363846f7159d10db23972c4064bf75aef58f422a71b7ef7895f5407128e",
+      "bytes": 478694,
+      "pages": 15
+    },
+    {
+      "id": "c300_2025q1",
+      "filename": "510310_2025Q1.pdf",
+      "title": "易方达沪深300交易型开放式指数发起式证券投资基金2025年第1季度报告",
+      "fund_code": "510310",
+      "knowledge_base": "易方达沪深300ETF",
+      "folder": [
+        "2025",
+        "Q1"
+      ],
+      "report_period_start": "2025-01-01",
+      "report_period_end": "2025-03-31",
+      "publication_date": "2025-04-22",
+      "url": "https://cdn.efunds.com.cn/owch/data/bulletin/20250422/%E6%98%93%E6%96%B9%E8%BE%BE%E6%B2%AA%E6%B7%B1300%E4%BA%A4%E6%98%93%E5%9E%8B%E5%BC%80%E6%94%BE%E5%BC%8F%E6%8C%87%E6%95%B0%E5%8F%91%E8%B5%B7%E5%BC%8F%E8%AF%81%E5%88%B8%E6%8A%95%E8%B5%84%E5%9F%BA%E9%87%912025%E5%B9%B4%E7%AC%AC1%E5%AD%A3%E5%BA%A6%E6%8A%A5%E5%91%8A.pdf",
+      "sha256": "c7536dc352573ea20f37b771b5a3573fd096110dcb9b385d6b6b1192795fb7db",
+      "bytes": 487712,
+      "pages": 15
+    }
+  ]
+}

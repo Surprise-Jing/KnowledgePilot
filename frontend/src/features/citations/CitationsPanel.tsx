@@ -5,7 +5,7 @@ import type { CitationOut } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
-import { type CitationGroup, groupCitations } from '@/lib/citations'
+import { type CitationGroup, groupAdjacentCitations, groupCitations } from '@/lib/citations'
 import { cn } from '@/lib/utils'
 
 import { useInspector } from './inspector-context'
@@ -99,14 +99,25 @@ function CitationGroupCard({
       </div>
       {deleted && <Badge variant="outline">来源文档已删除，仅显示引用快照</Badge>}
       <ol className="flex flex-col gap-2" aria-label={`${group.filename} 的引用位置`}>
-        {group.citations.map((citation) => (
-          <CitationItem
-            key={citation.marker}
-            citation={citation}
-            highlighted={citation.marker === highlight}
-            refCallback={refFor(citation.marker)}
-            onOpen={deleted ? null : () => onOpen(citation.chunk_id)}
-          />
+        {groupAdjacentCitations(group.citations).map((range) => (
+          <li key={range[0].marker} className="flex flex-col gap-1">
+            {range.length > 1 && (
+              <p className="text-xs text-muted-foreground">
+                相邻原文位置 · {range.length} 处依据
+              </p>
+            )}
+            <ol className="flex flex-col gap-2">
+              {range.map((citation) => (
+                <CitationItem
+                  key={citation.marker}
+                  citation={citation}
+                  highlighted={citation.marker === highlight}
+                  refCallback={refFor(citation.marker)}
+                  onOpen={deleted ? null : () => onOpen(citation.chunk_id)}
+                />
+              ))}
+            </ol>
+          </li>
         ))}
       </ol>
     </li>

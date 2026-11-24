@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from pydantic import BaseModel
 
 from app.agent.context import MARKER_PATTERN, TurnItem, build_messages
+from app.agent.evidence import source_inventory
 from app.agent.prompts import SYSTEM_PROMPT, focus_message, scope_message
 from app.config import Settings
 from app.db import Database
@@ -99,6 +100,7 @@ class AgentRun:
         self.prompt_tokens: int | None = None
         self.completion_tokens: int | None = None
         self.turns: list[TurnItem] = []
+        self.source_documents: dict[str, dict] = {}
         self.tool_retries = 0
         self.model_retries = 0
         self.fallbacks = 0
@@ -238,8 +240,12 @@ class AgentRun:
                     retryable=False,
                 )
             self.step_count = step
+            inventory = source_inventory(
+                [item.message for item in self.turns], previous=self.source_documents
+            )
+            current_system = ["\n\n".join([*system, inventory])] if inventory else system
             messages = build_messages(
-                system=system,
+                system=current_system,
                 history=history,
                 question=self.setup.question,
                 turns=self.turns,

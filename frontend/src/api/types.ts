@@ -110,6 +110,7 @@ export interface SearchRequest {
   query: string
   knowledge_base_ids: string[]
   top_k?: number
+  document_ids?: string[] | null
 }
 
 export interface SearchHit {

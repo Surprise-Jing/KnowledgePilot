@@ -62,3 +62,42 @@ export function groupCitations<T extends { document_id: string | null; filename:
   }
   return [...groups.values()]
 }
+
+export interface CitationLocation {
+  kind: string
+  start: number
+  end: number
+  table: number | null
+  heading_path: string[]
+  char_start: number | null
+  char_end: number | null
+}
+
+/** Group proven adjacent ranges for display; never concatenate or alter source snapshots. */
+export function groupAdjacentCitations<T extends { location: CitationLocation | null }>(
+  citations: T[],
+): T[][] {
+  const groups: T[][] = []
+  for (const citation of citations) {
+    const last = groups.at(-1)
+    const previous = last?.at(-1)?.location
+    const current = citation.location
+    const sameStructure = previous && current &&
+      previous.kind === current.kind && previous.table === current.table &&
+      JSON.stringify(previous.heading_path) === JSON.stringify(current.heading_path)
+    const adjacentUnits = previous && current &&
+      current.start === previous.end + 1 &&
+      previous.char_end === null && current.char_start === null
+    const adjacentCharacters = previous && current &&
+      previous.start === current.start && previous.end === current.end &&
+      previous.char_end !== null && current.char_start !== null &&
+      current.char_start <= previous.char_end &&
+      current.char_start >= (previous.char_start ?? 0)
+    if (last && sameStructure && (adjacentUnits || adjacentCharacters)) {
+      last.push(citation)
+    } else {
+      groups.push([citation])
+    }
+  }
+  return groups
+}

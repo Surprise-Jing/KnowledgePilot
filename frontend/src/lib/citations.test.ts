@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { groupCitations, splitCitations } from './citations'
+import { groupAdjacentCitations, groupCitations, splitCitations } from './citations'
 
 describe('splitCitations', () => {
   it('turns valid markers into citation segments', () => {
@@ -38,6 +38,35 @@ describe('splitCitations', () => {
   it('returns text without markers unchanged', () => {
     expect(splitCitations('没有引用\n第二行', ['c1'])).toEqual([{ type: 'text', text: '没有引用\n第二行' }])
     expect(splitCitations('', [])).toEqual([])
+  })
+})
+
+describe('groupAdjacentCitations', () => {
+  const range = (start: number, end = start, extra = {}) => ({
+    location: { kind: 'txt_lines', start, end, table: null, heading_path: [],
+      char_start: null, char_end: null, ...extra },
+  })
+
+  it('groups adjacent locations but preserves the individual snapshots', () => {
+    const citations = [range(1, 3), range(4, 6), range(10)]
+    const groups = groupAdjacentCitations(citations)
+    expect(groups.map((group) => group.length)).toEqual([2, 1])
+    expect(groups.flat()).toEqual(citations)
+  })
+
+  it('does not join unknown locations, different tables, sections or reversed ranges', () => {
+    expect(groupAdjacentCitations([range(1), { location: null }, range(2)])).toHaveLength(3)
+    expect(groupAdjacentCitations([range(1), range(2, 2, { table: 1 })])).toHaveLength(2)
+    expect(groupAdjacentCitations([range(1), range(2, 2, { heading_path: ['另一个章节'] })])).toHaveLength(2)
+    expect(groupAdjacentCitations([range(3), range(1)])).toHaveLength(2)
+    expect(groupAdjacentCitations([range(1), range(1)])).toHaveLength(2)
+  })
+
+  it('groups overlapping character windows and keeps gaps separate', () => {
+    const citations = [range(1, 1, { char_start: 0, char_end: 800 }),
+      range(1, 1, { char_start: 600, char_end: 1400 }),
+      range(1, 1, { char_start: 1600, char_end: 2000 })]
+    expect(groupAdjacentCitations(citations).map((group) => group.length)).toEqual([2, 1])
   })
 })
 
