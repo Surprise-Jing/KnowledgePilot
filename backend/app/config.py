@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="PK_", env_file=".env", extra="ignore")
 
     data_dir: Path = Path("data")
+    # Built frontend (npm run build). Served at "/" when index.html exists.
+    frontend_dir: Path = Path(__file__).resolve().parents[2] / "frontend" / "dist"
     # Used when a request carries no X-User-Id header (local single-user demo).
     default_user_id: str = "demo"
     answer_mode: Literal["extractive", "openai"] = "extractive"

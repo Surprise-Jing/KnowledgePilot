@@ -15,7 +15,9 @@ from app.schemas import FolderUpdate
 
 @pytest.fixture
 def settings(tmp_path):
-    return Settings(_env_file=None, data_dir=tmp_path)
+    # No frontend build: test_unhandled_errors adds a route after startup, which a "/" static
+    # mount would otherwise shadow.
+    return Settings(_env_file=None, data_dir=tmp_path, frontend_dir=tmp_path / "no-frontend")
 
 
 @pytest.fixture
@@ -93,3 +95,21 @@ def test_patch_models_distinguish_null_from_omitted():
         FolderUpdate.model_validate({})
     with pytest.raises(ValueError):
         FolderUpdate.model_validate({"name": None})
+
+
+def test_frontend_build_is_served_without_shadowing_api(tmp_path):
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    (dist / "index.html").write_text("<!doctype html><title>KP</title>", encoding="utf-8")
+    settings = Settings(_env_file=None, data_dir=tmp_path / "data", frontend_dir=dist)
+    with TestClient(create_app(settings)) as client:
+        assert "<title>KP</title>" in client.get("/").text
+        assert client.get("/health").json()["status"] == "ok"
+        assert client.get("/api/knowledge-bases").status_code == 200
+
+
+def test_missing_frontend_build_means_api_only(tmp_path):
+    settings = Settings(_env_file=None, data_dir=tmp_path, frontend_dir=tmp_path / "none")
+    with TestClient(create_app(settings)) as client:
+        assert client.get("/").status_code == 404
+        assert client.get("/health").status_code == 200

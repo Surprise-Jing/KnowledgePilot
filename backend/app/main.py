@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api import conversations, documents, folders, knowledge_bases, search
 from app.config import Settings
@@ -67,6 +68,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     for module in (knowledge_bases, folders, documents, search, conversations):
         app.include_router(module.router)
+
+    # Mounted last so API routes take precedence. Missing build: API-only mode (dev uses Vite).
+    if (settings.frontend_dir / "index.html").is_file():
+        app.mount("/", StaticFiles(directory=settings.frontend_dir, html=True), name="frontend")
+    else:
+        logger.info("frontend build not found at %s; serving API only", settings.frontend_dir)
 
     return app
 

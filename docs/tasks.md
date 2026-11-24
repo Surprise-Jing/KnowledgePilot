@@ -135,7 +135,7 @@ HTTP 错误与工具错误共用一套 `code`：`invalid_argument`、`invalid_us
 
 ### Phase 0 — 主 Agent 串行（D1 上午，约 2 小时）
 
-> 状态（2026-11-23）：Phase 0 已完成并提交；A1（44d3f46）、C1（9558f72）、B1（0d76b2c）已合入 `dev`；后端 189 项、前端 41 项测试通过。下一步 Integration 1。
+> 状态（2026-11-23）：Phase 0 已完成并提交；A1（44d3f46）、C1（9558f72）、B1（0d76b2c）已合入 `dev`；Integration 1 已完成（见下文“集成 1 结果”）。下一步 Round 2。
 > 原状态（2026-11-22）：第 2–5 步已完成，26 项测试与 Ruff 通过，实测服务启动、统一错误与 `X-Request-Id` 正常；待第 1、6 步（提交）。
 
 1. 经用户确认后提交当前基线（`backend/`、`docs/`、`examples/`、`README.md`），修正 `.gitignore`。
@@ -166,6 +166,18 @@ D1 依据 `contracts.md` 编写 `tests/contract/`：目录树与防环、重命�
 3. 主 Agent 在 `main.py` 挂载 `frontend/dist`，写 `start.sh`（构建前端 → 启动 uvicorn），实现一条命令启动。
 4. D 运行 `scripts/smoke.py`：真实模型下走完“建库 → 建目录 → 上传三种格式 → 提问 → 追问‘这份文档’ → 校验引用与轨迹 → 删除文档 → 检索不到 → 重启 → 数据仍在”。
 5. D 对合并后的差异做代码审查，结果写入 `docs/reviews/round1.md`，主 Agent 分派修复。
+
+### 集成 1 结果（2026-11-23）
+
+- `start.sh` 一条命令启动；FastAPI 在 `/` 托管 `frontend/dist`，API 路由优先。
+- 真实模型（OpenAI 兼容，流式工具调用）＋ BGE-M3 `hybrid` 冒烟 18/18 通过：两库、两层目录、TXT/DOCX/PDF 解析成功；bob 越权检索 404；首字约 5 秒；模型自主调用 `search_chunks`，追问“这份文档”时调用 `read_document` 并引用同一文档；轨迹与 token 用量持久化；删除后检索不到；重启后知识库、目录、文档、会话和引用快照都在。
+- 服务商接受 `stream_options.include_usage`，无需关闭流式。
+- 浏览器验收：用户切换、文件表、历史会话、实时流式回答、多文档引用（DOCX 标题路径、PDF 页码）、工具轨迹（含并行调用、步数、token、模型）正常。
+
+**交给 C2 的问题：**
+1. 时间显示错误：后端时间是 UTC（无时区后缀），前端按本地时间解析，显示早/晚 8 小时。解析时按 UTC 处理。
+2. 回答中的 Markdown（`**加粗**`、列表）原样显示星号。主 Agent 批准引入 `react-markdown`（不启用原始 HTML），或自行实现加粗/列表/段落的轻量渲染；`[cN]` 引用徽标需保留。
+3. 回答结束重新拉取会话后，消息列表滚回顶部，应保持在底部。
 
 ### Round 2 — D2 上午到下午（并行）
 
