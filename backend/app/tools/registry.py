@@ -1,7 +1,12 @@
 """Tool registry shared by the Agent, HTTP and the MCP server (docs/contracts.md §5.1). Owner: B.
 
 `execute` never raises: every failure becomes a structured ToolResult so the model can read
-it and decide what to do next."""
+it and decide what to do next.
+
+Degradation (docs/contracts.md §10.2): `execute` / `execute_async` treat the call as final and
+apply the tool's fallback when it fails, which is what MCP needs (it has no automatic retry).
+The Agent retries retryable failures itself, so it runs single attempts with
+`execute_attempt_async` and calls `apply_fallback` only on the final attempt."""
 
 import asyncio
 import copy
@@ -10,7 +15,7 @@ import logging
 from typing import Any, Protocol
 
 from app.errors import AppError
-from app.schemas import ToolError, ToolResult
+from app.schemas import FallbackKind, ToolError, ToolResult
 from app.tools.builtin import (
     ListFilesTool,
     ListKnowledgeBasesTool,
@@ -34,6 +39,9 @@ class Tool(Protocol):
     def run(self, ctx: ToolContext, arguments: dict) -> dict: ...
 
     def summarize(self, data: dict) -> str: ...
+
+    # Optional: `fallback(ctx, arguments, error) -> dict | None` returns degraded data for a
+    # call that failed for good (see ReadDocumentTool.fallback).
 
 
 _TOOLS: dict[str, Tool] = {
@@ -80,7 +88,8 @@ def parse_arguments(raw_arguments: str | dict | None) -> dict:
     return arguments
 
 
-def execute(ctx: ToolContext, name: str, raw_arguments: str | dict) -> ToolResult:
+def execute_attempt(ctx: ToolContext, name: str, raw_arguments: str | dict) -> ToolResult:
+    """Run one attempt of a tool call, without the after-failure fallback."""
     tool = _TOOLS.get(name)
     if tool is None:
         return _error("invalid_argument", f"未知工具：{name}")
@@ -94,19 +103,75 @@ def execute(ctx: ToolContext, name: str, raw_arguments: str | dict) -> ToolResul
         return _error("internal_error", "工具执行出现内部错误，请稍后重试", retryable=True)
 
 
-async def execute_async(
+def execute(ctx: ToolContext, name: str, raw_arguments: str | dict) -> ToolResult:
+    """Run a tool call as a final attempt: failures get the tool's fallback when it has one."""
+    return apply_fallback(ctx, name, raw_arguments, execute_attempt(ctx, name, raw_arguments))
+
+
+async def execute_attempt_async(
     ctx: ToolContext, name: str, raw_arguments: str | dict, timeout: float
 ) -> ToolResult:
-    """Run `execute` in a worker thread with a timeout. On timeout the result is
+    """Run `execute_attempt` in a worker thread with a timeout. On timeout the result is
     `tool_timeout`; the worker thread cannot be killed and finishes in the background (its
     database work uses its own short transactions, so it does not block the run)."""
     try:
         return await asyncio.wait_for(
-            asyncio.to_thread(execute, ctx, name, raw_arguments), timeout=timeout
+            asyncio.to_thread(execute_attempt, ctx, name, raw_arguments), timeout=timeout
         )
     except TimeoutError:
         logger.warning("tool %s timed out after %ss", name, timeout)
         return _error("tool_timeout", f"工具执行超过 {timeout:g} 秒未完成", retryable=True)
+
+
+async def execute_async(
+    ctx: ToolContext, name: str, raw_arguments: str | dict, timeout: float
+) -> ToolResult:
+    """`execute` with a timeout: one attempt in a worker thread, then the fallback (which only
+    reads in-memory state, so it also works after a timeout)."""
+    result = await execute_attempt_async(ctx, name, raw_arguments, timeout)
+    return apply_fallback(ctx, name, raw_arguments, result)
+
+
+def is_degradable(error: ToolError) -> bool:
+    """Permission, scope and argument errors are never degraded (contracts §10.2): the answer
+    to "you may not / this does not exist / wrong arguments" must not be replaced."""
+    code = error.code
+    return not (
+        code.endswith("_not_found")
+        or code in {"out_of_scope", "invalid_argument", "invalid_user_id"}
+    )
+
+
+def apply_fallback(
+    ctx: ToolContext, name: str, raw_arguments: str | dict, result: ToolResult
+) -> ToolResult:
+    """Replace the final failure of a call with the tool's degraded result, if it has one."""
+    if result.ok or result.error is None or not is_degradable(result.error):
+        return result
+    tool = _TOOLS.get(name)
+    fallback = getattr(tool, "fallback", None)
+    if fallback is None:
+        return result
+    try:
+        arguments = validate_object(parse_arguments(raw_arguments), tool.parameters)
+        data = fallback(ctx, arguments, result.error)
+    except Exception:
+        # Invalid arguments never get here (invalid_argument is not degradable). Anything else
+        # is a bug in the fallback: log it and report the original failure.
+        logger.exception("fallback of tool %s failed", name)
+        return result
+    if data is None:
+        return result
+    logger.warning("tool %s degraded", name, extra={"reason": result.error.code})
+    return ToolResult(ok=True, data=data)
+
+
+def fallback_kind(result: ToolResult) -> FallbackKind | None:
+    """The degradation recorded in a successful result's `data.degraded`, if any."""
+    if not result.ok or not isinstance(result.data, dict):
+        return None
+    degraded = result.data.get("degraded")
+    return degraded.get("kind") if isinstance(degraded, dict) else None
 
 
 def summarize(name: str, result: ToolResult) -> str:

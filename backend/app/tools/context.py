@@ -17,6 +17,8 @@ class CitationSource:
     filename: str
     location: dict
     content: str
+    # Position in the document; known for chunks read with read_document, not for search hits.
+    ordinal: int | None = None
 
 
 class MarkerAllocator:
@@ -47,6 +49,16 @@ class MarkerAllocator:
     def issued(self) -> list[str]:
         with self._lock:
             return list(self._by_chunk.values())
+
+    def sources_for_document(self, document_id: str) -> list[tuple[str, CitationSource]]:
+        """(marker, source) of every snippet of `document_id` a tool returned so far, in the
+        order the markers were issued. Used by the read_document fallback (contracts §10.2)."""
+        with self._lock:
+            return [
+                (marker, source)
+                for marker, source in self._sources.items()
+                if source.document_id == document_id
+            ]
 
 
 @dataclass

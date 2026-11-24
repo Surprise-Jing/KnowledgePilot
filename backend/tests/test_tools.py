@@ -6,23 +6,35 @@ import logging
 import re
 import time
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
+from app.errors import AppError
 from app.main import create_app
-from app.schemas import ToolResult
+from app.schemas import ToolError, ToolResult
 from app.tools import builtin
 from app.tools.context import MarkerAllocator, ToolContext
 from app.tools.registry import (
     MAX_RESULT_CHARS,
     execute,
     execute_async,
+    execute_attempt,
+    execute_attempt_async,
+    fallback_kind,
+    is_degradable,
     list_tools,
     openai_tool_specs,
     serialize_result,
     summarize,
 )
-from tests.fakes.helpers import make_kb, make_settings, upload
+from tests.fakes.helpers import (
+    hybrid_settings,
+    install_embeddings,
+    make_kb,
+    make_settings,
+    upload,
+)
 
 CJK = re.compile(r"[一-鿿]")
 # ~20 lines of ~60 chars: TXT chunks merge lines up to about 800 chars, so several chunks.
@@ -251,12 +263,17 @@ def test_search_hit_shape(client, settings, data):
 
 
 def test_search_uses_context_settings(client, settings, data):
-    """vector retrieval without an embedding service fails with its own code, which proves
-    the tool passes ToolContext.settings instead of reading the environment."""
+    """vector retrieval without an embedding service fails with its own code (here visible as
+    the reason of the BM25 fallback, contracts §10.2), which proves the tool passes
+    ToolContext.settings instead of reading the environment."""
     vector = settings.model_copy(update={"retriever": "vector", "embedding_base_url": ""})
     ctx = make_ctx(client, vector, [data["a"]])
     result = execute(ctx, "search_chunks", {"query": "删除"})
-    assert error_code(result) == "embedding_not_configured"
+    assert result.ok is True
+    assert result.data["degraded"] == {"kind": "bm25", "reason": "embedding_not_configured"}
+    # The default cosine retriever needs no embedding service and does not degrade.
+    plain = execute(make_ctx(client, settings, [data["a"]]), "search_chunks", {"query": "删除"})
+    assert plain.ok is True and "degraded" not in plain.data
 
 
 def test_markers_are_stable_across_search_and_read(client, settings, data):
@@ -361,3 +378,186 @@ def test_serialized_results_stay_valid_json_within_limit():
         "ok": False,
         "error": {"code": "out_of_scope", "message": "超出范围", "retryable": False},
     }
+
+
+# ---- tool-level degradation (docs/contracts.md §10.2) ----
+
+
+@pytest.fixture
+def hybrid(tmp_path, monkeypatch):
+    """A hybrid-retrieval app whose documents were indexed while the provider worked."""
+    provider = install_embeddings(monkeypatch)
+    settings = hybrid_settings(tmp_path / "hybrid")
+    with TestClient(create_app(settings)) as client:
+        kb = make_kb(client, "向量库")
+        upload(client, kb, "guide.txt", "删除文档时同步清理索引。")
+        yield {"client": client, "settings": settings, "provider": provider, "kb": kb}
+
+
+@pytest.mark.parametrize(
+    ("failure", "reason"),
+    [
+        (httpx.ConnectError("refused"), "embedding_error"),
+        (httpx.ReadTimeout("slow"), "embedding_timeout"),
+    ],
+)
+def test_search_falls_back_to_bm25_when_embeddings_fail(hybrid, failure, reason):
+    client, settings = hybrid["client"], hybrid["settings"]
+    ctx = make_ctx(client, settings, [hybrid["kb"]])
+    healthy = execute(ctx, "search_chunks", {"query": "删除文档"})
+    assert healthy.ok is True and "degraded" not in healthy.data
+    hybrid["provider"].failure = failure
+    result = execute(ctx, "search_chunks", {"query": "删除文档"})
+    assert result.ok is True
+    assert result.data["degraded"] == {"kind": "bm25", "reason": reason}
+    assert fallback_kind(result) == "bm25"
+    hits = result.data["hits"]
+    assert [hit["filename"] for hit in hits] == ["guide.txt"]
+    # Markers stay stable within the context, whichever retriever found the chunk.
+    assert hits[0]["marker"] == healthy.data["hits"][0]["marker"] == "c1"
+    assert summarize("search_chunks", result) == (
+        "检索服务异常，已改用关键词检索：命中 1 个片段（1 个文件）"
+    )
+
+
+def test_bm25_fallback_without_hits_and_its_summary(hybrid):
+    hybrid["provider"].failure = httpx.ConnectError("refused")
+    ctx = make_ctx(hybrid["client"], hybrid["settings"], [hybrid["kb"]])
+    result = execute(ctx, "search_chunks", {"query": "zzzz"})
+    assert result.ok is True and result.data["hits"] == []
+    assert summarize("search_chunks", result) == "检索服务异常，已改用关键词检索：未找到相关片段"
+
+
+def test_search_scope_errors_are_not_degraded(hybrid):
+    hybrid["provider"].failure = httpx.ConnectError("refused")
+    client, settings = hybrid["client"], hybrid["settings"]
+    ctx = make_ctx(client, settings, [hybrid["kb"]])
+    other = make_kb(client, "未选择的库")
+    result = execute(ctx, "search_chunks", {"query": "删除", "knowledge_base_ids": [other]})
+    assert error_code(result) == "out_of_scope"
+    # Selected but deleted since: the service reports it before contacting the provider.
+    assert client.delete(f"/api/knowledge-bases/{hybrid['kb']}").status_code == 204
+    result = execute(ctx, "search_chunks", {"query": "删除"})
+    assert error_code(result) == "knowledge_base_not_found"
+
+
+def test_non_vector_retrievers_never_degrade(client, settings, data, monkeypatch):
+    def unavailable(*args, **kwargs):
+        raise AppError(502, "embedding_error", "向量模型调用失败", retryable=True)
+
+    monkeypatch.setattr(builtin, "search", unavailable)
+    for retriever in ("cosine", "bm25"):
+        ctx = make_ctx(client, settings.model_copy(update={"retriever": retriever}), [data["a"]])
+        assert error_code(execute(ctx, "search_chunks", {"query": "删除"})) == "embedding_error"
+
+
+def mark_status(client, document_id, status):
+    with client.app.state.db.connect() as connection:
+        connection.execute("UPDATE documents SET status=? WHERE id=?", (status, document_id))
+
+
+@pytest.mark.parametrize(("status", "retryable"), [("parsing", True), ("failed", False)])
+def test_read_document_falls_back_to_retrieved_snippets(client, settings, data, status, retryable):
+    ctx = make_ctx(client, settings, [data["a"]])
+    hits = execute(ctx, "search_chunks", {"query": "北极星项目", "top_k": 3}).data["hits"]
+    long_hits = [hit for hit in hits if hit["document_id"] == data["long"]]
+    assert long_hits
+    mark_status(client, data["long"], status)
+    # A single attempt still reports the real error; only the final call degrades.
+    attempt = execute_attempt(ctx, "read_document", {"document_id": data["long"]})
+    assert error_code(attempt) == "document_not_ready"
+    assert attempt.error.retryable is retryable
+    result = execute(ctx, "read_document", {"document_id": data["long"]})
+    assert result.ok is True and fallback_kind(result) == "retrieved_snippets"
+    degraded = result.data
+    assert degraded["degraded"] == {"kind": "retrieved_snippets", "reason": "document_not_ready"}
+    assert degraded["truncated"] is True and degraded["next_ordinal"] is None
+    assert degraded["document_id"] == data["long"] and degraded["filename"] == "long.txt"
+    markers = [chunk["marker"] for chunk in degraded["chunks"]]
+    assert sorted(markers) == sorted(hit["marker"] for hit in long_hits)
+    for hit in long_hits:
+        assert f"[{hit['marker']}] {hit['content']}" in degraded["content"]
+    # Snippets of other documents are never mixed in.
+    assert all(ctx.markers.source(marker).document_id == data["long"] for marker in markers)
+    assert summarize("read_document", result).startswith(
+        "读取原文失败，已改用本次已检索到的片段：《long.txt》"
+    )
+
+
+def test_read_document_fallback_keeps_document_order_and_ordinals(client, settings, data):
+    ctx = make_ctx(client, settings, [data["a"]])
+    read = execute(ctx, "read_document", {"document_id": data["long"], "max_chars": 4000}).data
+    mark_status(client, data["long"], "parsing")
+    result = execute(ctx, "read_document", {"document_id": data["long"], "start_ordinal": 1})
+    assert result.data["chunks"] == read["chunks"]
+
+
+def test_read_document_without_snippets_keeps_the_error(client, settings, data):
+    ctx = make_ctx(client, settings, [data["a"]])
+    execute(ctx, "search_chunks", {"query": "删除文档", "top_k": 1})  # a snippet of doc_a only
+    mark_status(client, data["long"], "failed")
+    result = execute(ctx, "read_document", {"document_id": data["long"]})
+    assert error_code(result) == "document_not_ready"
+
+
+def test_permission_scope_and_argument_errors_are_never_degraded(client, settings, data):
+    ctx = make_ctx(client, settings, [data["a"], data["b"]])
+    execute(ctx, "read_document", {"document_id": data["doc_a"]})
+    execute(ctx, "read_document", {"document_id": data["doc_b"]})
+    # invalid_argument: start_ordinal beyond the end.
+    result = execute(ctx, "read_document", {"document_id": data["doc_a"], "start_ordinal": 99})
+    assert error_code(result) == "invalid_argument"
+    # out_of_scope: the same snippets, but a question that did not select 库B.
+    narrow = make_ctx(client, settings, [data["a"]])
+    narrow.markers = ctx.markers
+    result = execute(narrow, "read_document", {"document_id": data["doc_b"]})
+    assert error_code(result) == "out_of_scope"
+    # document_not_found: deleted after its snippets were retrieved.
+    assert client.delete(f"/api/documents/{data['doc_a']}").status_code == 204
+    result = execute(ctx, "read_document", {"document_id": data["doc_a"]})
+    assert error_code(result) == "document_not_found"
+
+
+def test_read_document_fallback_after_timeout(client, settings, data, monkeypatch):
+    ctx = make_ctx(client, settings, [data["a"]])
+    execute(ctx, "read_document", {"document_id": data["doc_a"]})
+
+    def slow(*args, **kwargs):
+        time.sleep(0.5)
+        raise AssertionError("not reached within the timeout")
+
+    monkeypatch.setattr(builtin, "read_document_range", slow)
+    arguments = {"document_id": data["doc_a"]}
+    attempt = asyncio.run(execute_attempt_async(ctx, "read_document", arguments, timeout=0.05))
+    assert error_code(attempt) == "tool_timeout"
+    result = asyncio.run(execute_async(ctx, "read_document", arguments, timeout=0.05))
+    assert result.ok is True
+    assert result.data["degraded"] == {"kind": "retrieved_snippets", "reason": "tool_timeout"}
+
+
+def test_a_failing_fallback_is_logged_and_keeps_the_error(
+    client, settings, data, monkeypatch, caplog
+):
+    ctx = make_ctx(client, settings, [data["a"]])
+    execute(ctx, "read_document", {"document_id": data["doc_a"]})
+    mark_status(client, data["doc_a"], "parsing")
+
+    def broken(*args, **kwargs):
+        raise RuntimeError("bug")
+
+    monkeypatch.setattr(builtin.ReadDocumentTool, "fallback", broken)
+    with caplog.at_level(logging.ERROR):
+        result = execute(ctx, "read_document", {"document_id": data["doc_a"]})
+    assert error_code(result) == "document_not_ready"
+    assert any("fallback of tool read_document failed" in r.message for r in caplog.records)
+
+
+def test_degradable_errors():
+    def error(code):
+        return ToolError(code=code, message="x")
+
+    for code in ("document_not_found", "knowledge_base_not_found", "out_of_scope"):
+        assert is_degradable(error(code)) is False
+    assert is_degradable(error("invalid_argument")) is False
+    for code in ("document_not_ready", "tool_timeout", "internal_error", "embedding_error"):
+        assert is_degradable(error(code)) is True

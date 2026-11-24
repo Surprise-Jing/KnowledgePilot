@@ -3,6 +3,8 @@
 import json
 from pathlib import Path
 
+import httpx
+
 from app.config import Settings
 from tests.fakes.llm import ScriptedLLM, scripted_factory
 
@@ -11,6 +13,54 @@ def make_settings(tmp_path: Path, **overrides) -> Settings:
     """Never reads a real .env; the model values are placeholders for the default factory."""
     values = {"llm_model": "test", "llm_api_key": "test", **overrides}
     return Settings(_env_file=None, data_dir=tmp_path, **values)
+
+
+EMBEDDING_URL = "https://embedding.example/v1"
+
+
+def hybrid_settings(tmp_path: Path, **overrides) -> Settings:
+    """BM25 + vector retrieval against the offline provider double below."""
+    values = {
+        "retriever": "hybrid",
+        "embedding_base_url": EMBEDDING_URL,
+        "embedding_dimensions": 3,
+        **overrides,
+    }
+    return make_settings(tmp_path, **values)
+
+
+class FakeEmbeddings:
+    """Offline stand-in for the embedding HTTP service, patched in at `httpx.post` as used by
+    app.services.embeddings. Set `failure` to an exception to make the provider fail."""
+
+    def __init__(self) -> None:
+        self.failure: Exception | None = None
+        self.calls = 0
+
+    def post(self, url: str, **kwargs) -> httpx.Response:
+        assert url == EMBEDDING_URL + "/embeddings"
+        self.calls += 1
+        if self.failure is not None:
+            raise self.failure
+        texts = kwargs["json"]["input"]
+        return httpx.Response(
+            200,
+            request=httpx.Request("POST", url),
+            json={
+                "data": [
+                    {"index": index, "embedding": [1.0, float(len(text) % 7), 0.5]}
+                    for index, text in enumerate(texts)
+                ]
+            },
+        )
+
+
+def install_embeddings(monkeypatch) -> FakeEmbeddings:
+    from app.services import embeddings
+
+    fake = FakeEmbeddings()
+    monkeypatch.setattr(embeddings.httpx, "post", fake.post)
+    return fake
 
 
 def headers(user: str = "demo") -> dict:

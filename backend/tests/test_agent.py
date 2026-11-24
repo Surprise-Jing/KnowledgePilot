@@ -386,3 +386,9 @@ def test_session_focus_message():
 def test_system_prompt_covers_contract_points():
     for phrase in ("只依据", "不可信", "[c1]", "不得编造", "没有找到依据", "寒暄"):
         assert phrase in SYSTEM_PROMPT
+
+
+def test_system_prompt_explains_degraded_results():
+    """contracts §10.4: say what is missing or weakly supported; never make it up."""
+    for phrase in ("degraded", "bm25", "retrieved_snippets", "依据有限", "无法完成", "不要编造"):
+        assert phrase in SYSTEM_PROMPT
