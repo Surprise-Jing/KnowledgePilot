@@ -1,0 +1,39 @@
+Rooftop Solar Pilot Report - Riverside Campus (2024)
+1. Executive Summary
+The pilot installed a 120 kW rooftop photovoltaic array on three campus buildings.
+Installation was completed in March 2024 and the array was connected to the grid on 28 March 2024.
+In its first twelve months the array generated 151 MWh of electricity.
+This covered about 23 percent of the electricity used by the three buildings.
+The pilot is considered successful and a second phase is recommended (see page 4).
+=== page ===
+2. System Design and Method
+The array uses 300 monocrystalline panels rated at 400 W each.
+Panels are mounted at a fixed tilt of 15 degrees and face south.
+Four string inverters of 30 kW each convert the output to AC power.
+A monitoring system records power, voltage and panel temperature every 15 minutes.
+Generation data were compared with the utility meter readings every month.
+=== page ===
+3. Results
+The annual capacity factor of the array was 14.4 percent.
+The highest instantaneous output, 104 kW, was recorded at noon on 12 June 2024.
+Total downtime was 2.1 percent of daylight hours.
+Most downtime was caused by one inverter fault in August 2024, repaired within five days.
+Panel cleaning twice a year kept soiling losses below 3 percent.
+=== page ===
+4. Costs and Recommendations
+The total installed cost of the pilot was USD 168,000, including panels, inverters and labour.
+Electricity bill savings in the first year were USD 21,500.
+The simple payback period is therefore about 7.8 years.
+Recommendation: in phase two, add 200 kWh of battery storage to shift midday generation to the evening peak.
+Recommendation: extend the array to the library roof after its planned repair in 2026.
+=== page ===
+5. Lessons Learned
+Structural surveys of the roofs took longer than planned and delayed installation by six weeks.
+Early agreement with the facilities team on maintenance access avoided later disputes.
+Students used the public monitoring dashboard in two energy courses during the autumn term.
+Bird nesting under the panels on building C required protective mesh to be fitted in May.
+=== page ===
+Appendix A. Monthly Generation (MWh)
+April 13.2, May 15.8, June 17.1, July 16.6, August 13.9, September 12.7.
+October 10.4, November 7.9, December 6.1, January 6.8, February 9.2, March 12.3.
+The lowest month was December and the highest month was June.
