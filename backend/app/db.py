@@ -2,7 +2,7 @@ import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 # Schema v1. Statements run one by one inside the migration transaction
 # (executescript would commit implicitly). The table design is documented in docs/data-model.md.
@@ -229,7 +229,22 @@ def _migrate_v4(connection):
     connection.execute("ALTER TABLE runs ADD COLUMN model_retries INTEGER NOT NULL DEFAULT 0")
 
 
-MIGRATIONS = {1: _migrate_v1, 2: _migrate_v2, 3: _migrate_v3, 4: _migrate_v4}
+def _migrate_v5(connection):
+    """Structured parsing (docs/contracts.md v1.7). ADD COLUMN only:
+    - documents.parse_mode: standard | enhanced (OCR), chosen by the user
+    - documents.parser / page_count: which parser produced the chunks, PDF page count
+    - chunks.elements: JSON SourceElement[] tracing a chunk to elements and page regions
+    """
+    connection.execute(
+        "ALTER TABLE documents ADD COLUMN parse_mode TEXT NOT NULL DEFAULT 'standard' "
+        "CHECK (parse_mode IN ('standard','enhanced'))"
+    )
+    connection.execute("ALTER TABLE documents ADD COLUMN parser TEXT")
+    connection.execute("ALTER TABLE documents ADD COLUMN page_count INTEGER")
+    connection.execute("ALTER TABLE chunks ADD COLUMN elements TEXT NOT NULL DEFAULT '[]'")
+
+
+MIGRATIONS = {1: _migrate_v1, 2: _migrate_v2, 3: _migrate_v3, 4: _migrate_v4, 5: _migrate_v5}
 
 
 class Database:

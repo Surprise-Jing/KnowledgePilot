@@ -1,3 +1,4 @@
+import json
 import math
 import re
 from collections import Counter
@@ -7,7 +8,7 @@ from app.db import Database
 from app.errors import AppError
 from app.schemas import Location, SearchHit, SearchRequest
 from app.services.access import require_knowledge_bases
-from app.services.embeddings import embed, profile, unpack
+from app.services.embeddings import embed, embedding_text, profile, unpack
 
 
 def tokens(text: str) -> Counter:
@@ -79,7 +80,7 @@ def search(
             f"""
             SELECT c.id AS chunk_id, c.document_id, d.knowledge_base_id, d.filename, c.content,
                    c.loc_kind, c.loc_start, c.loc_end, c.loc_table, c.heading_path,
-                   c.char_start, c.char_end, e.profile, e.dimensions, e.vector
+                   c.char_start, c.char_end, c.elements, e.profile, e.dimensions, e.vector
             FROM chunks c JOIN documents d ON d.id=c.document_id
             LEFT JOIN chunk_embeddings e ON e.chunk_id=c.id
             WHERE d.knowledge_base_id IN ({placeholders}) AND d.status='success'
@@ -102,7 +103,10 @@ def search(
             dense.append(sum(a * b for a, b in zip(query_vector, vector, strict=True)))
     lexical = (
         lexical_scores(
-            [row["content"] for row in rows], request.query, bm25=settings.retriever != "cosine"
+            # Same text the vectors were built from: headings count as matches too.
+            [embedding_text(json.loads(row["heading_path"]), row["content"]) for row in rows],
+            request.query,
+            bm25=settings.retriever != "cosine",
         )
         if settings.retriever != "vector"
         else []

@@ -9,6 +9,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator, model_validator
 
 LocationKind = Literal["txt_lines", "pdf_page", "docx_paragraphs", "docx_table_rows"]
+ParseMode = Literal["standard", "enhanced"]
 LOCATION_UNITS = {
     "txt_lines": "行",
     "pdf_page": "页",
@@ -17,11 +18,24 @@ LOCATION_UNITS = {
 }
 
 
+class SourceElement(BaseModel):
+    """One parsed document element a chunk was built from. `ref` is the parser's element
+    reference (Docling `self_ref`, or `line:N` for TXT). `page` is 1-based; `bbox` is
+    [x0, y0, x1, y1] normalized to 0–1 with a top-left origin. Both are None when the format
+    has no page geometry (DOCX, TXT)."""
+
+    ref: str
+    label: str
+    page: int | None = None
+    bbox: list[float] | None = None
+
+
 class Location(BaseModel):
     """Where a chunk comes from. `start`/`end` are 1-based and inclusive; their unit depends on
-    `kind`: TXT lines, a PDF page, DOCX paragraphs, or rows of DOCX table `table`.
-    `char_start`/`char_end` (0-based, end exclusive) are set only when one long line, page,
-    paragraph or row was split into several chunks."""
+    `kind`: TXT lines, PDF pages, DOCX paragraphs, or rows of DOCX table `table` (a PDF chunk
+    from a table also carries `table`). `char_start`/`char_end` (0-based, end exclusive) are
+    set only when one long line was split into several chunks. `elements` traces the chunk
+    back to document elements and, for PDF, their page regions."""
 
     kind: LocationKind
     start: int = Field(ge=1)
@@ -30,6 +44,7 @@ class Location(BaseModel):
     heading_path: list[str] = Field(default_factory=list)
     char_start: int | None = None
     char_end: int | None = None
+    elements: list[SourceElement] = Field(default_factory=list)
 
     @computed_field
     @property
@@ -40,7 +55,7 @@ class Location(BaseModel):
             if self.start == self.end
             else (f"第 {self.start}–{self.end} {unit}")
         )
-        if self.kind == "docx_table_rows":
+        if self.table is not None and self.kind in ("docx_table_rows", "pdf_page"):
             span = f"表 {self.table} {span}"
         label = " › ".join([*self.heading_path, span])
         if self.char_start is not None:
@@ -57,6 +72,7 @@ class Location(BaseModel):
             heading_path=json.loads(row["heading_path"]),
             char_start=row["char_start"],
             char_end=row["char_end"],
+            elements=json.loads(row["elements"]),
         )
 
 
@@ -169,9 +185,20 @@ class DocumentOut(BaseModel):
     error: str | None
     created_at: str
     updated_at: str
+    parse_mode: ParseMode = "standard"
+    # Parser that produced the current chunks, e.g. "docling 2.152.0 / standard"; None until
+    # the first successful parse.
+    parser: str | None = None
+    page_count: int | None = None
     # True when an upload matched existing content in this knowledge base and the existing
     # record was returned instead of creating a new one.
     duplicate: bool = False
+
+
+class ReparseRequest(BaseModel):
+    """Omitted `parse_mode` keeps the document's current mode."""
+
+    parse_mode: ParseMode | None = None
 
 
 class ChunkOut(BaseModel):

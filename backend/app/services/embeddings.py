@@ -4,12 +4,21 @@ import hashlib
 import json
 import math
 import struct
+from collections.abc import Sequence
 
 import httpx
 
 from app.config import Settings
 from app.db import Database
 from app.errors import AppError
+
+EMBEDDING_TEXT_VERSION = "text:v2"
+
+
+def embedding_text(heading_path: Sequence[str], content: str) -> str:
+    """Headings give a chunk its context (a table under "合并资产负债表"); same layout as
+    Docling's HybridChunker.contextualize()."""
+    return "\n".join([*heading_path, content])
 
 
 def profile(settings: Settings) -> str:
@@ -18,6 +27,8 @@ def profile(settings: Settings) -> str:
         settings.embedding_model,
         settings.embedding_dimensions,
         settings.embedding_revision,
+        # Version of the text sent to the model (see embedding_text).
+        EMBEDDING_TEXT_VERSION,
     ]
     return hashlib.sha256(json.dumps(identity).encode()).hexdigest()
 
@@ -91,16 +102,20 @@ def reindex(db: Database, settings: Settings, *, user_id: str) -> int:
     for document in documents:
         with db.connect() as connection:
             chunks = connection.execute(
-                "SELECT id, content FROM chunks WHERE document_id=? ORDER BY ordinal",
+                "SELECT id, content, heading_path FROM chunks WHERE document_id=? ORDER BY ordinal",
                 (document["id"],),
             ).fetchall()
         if not chunks:
             continue
-        vectors = embed(settings, [chunk["content"] for chunk in chunks])
+        vectors = embed(
+            settings,
+            [embedding_text(json.loads(c["heading_path"]), c["content"]) for c in chunks],
+        )
         with db.connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
             current = connection.execute(
-                "SELECT c.id, c.content FROM chunks c JOIN documents d ON d.id=c.document_id "
+                "SELECT c.id, c.content, c.heading_path FROM chunks c "
+                "JOIN documents d ON d.id=c.document_id "
                 "JOIN knowledge_bases k ON k.id=d.knowledge_base_id "
                 "WHERE d.id=? AND d.status='success' AND k.user_id=? ORDER BY c.ordinal",
                 (document["id"], user_id),

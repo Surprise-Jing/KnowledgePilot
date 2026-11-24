@@ -139,3 +139,12 @@ def test_migrate_does_not_recover_in_flight_work(settings):
     database.initialize()
     with database.connect() as connection:
         assert connection.execute("SELECT status FROM documents").fetchone()[0] == "failed"
+
+
+def test_settings_parse_defaults():
+    settings = Settings(_env_file=None)
+    assert settings.parse_timeout == 1800
+    assert settings.chunk_max_tokens == 512
+    assert settings.chunk_tokenizer == "BAAI/bge-m3"
+    assert settings.docling_ocr_engine == "rapidocr"
+    assert settings.docling_force_full_page_ocr is True

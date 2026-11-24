@@ -115,6 +115,19 @@ failed 文档走 retry API 重新解析；重建命令保留 chunk ID 与历史�
 或签名不匹配时返回 `embedding_index_not_ready` / 409，需要重建。hybrid 不静默降级。
 重建过程中并发修改文档返回 `embedding_index_changed` / 409。错误不包含提供商响应正文。
 
+### 结构化解析（Docling）
+
+设计见 [docs/superpowers/specs/2026-11-23-docling-parsing-design.md](superpowers/specs/2026-11-23-docling-parsing-design.md)，契约见 contracts §11。
+
+- `app/parsers/`：`base.py`（`Parser` 接口与可序列化数据）、`registry.py`（按文件类型选择解析器，`app.state.parsers`）、`text.py`（TXT）、`worker.py`（解析子进程管理）、`docling_runner.py` / `docling_mapping.py`（只在子进程和测试中导入 Docling）、`prefetch.py`（模型预下载）。
+- PDF/DOCX 交给单个 spawn 子进程，一次一份；排队文档保持 `queued`。超过 `PK_PARSE_TIMEOUT` 终止子进程并标记失败，下一份文档会重新拉起子进程；子进程崩溃同样标记失败。Web 进程退出时子进程随之退出。
+- 普通模式（`standard`）：版面分析 + TableFormer ACCURATE；增强模式（`enhanced`）另开 OCR（`PK_DOCLING_OCR_ENGINE`，默认 RapidOCR 整页）。
+- HybridChunker 以 BGE-M3 分词器计数（`PK_CHUNK_TOKENIZER`、`PK_CHUNK_MAX_TOKENS`），表格序列化为 Markdown 表格。片段 `elements` 保存 Docling 元素引用、页码和归一化坐标框（左上原点，0–1），每片段最多 64 项。
+- 解析产物写入 `{PK_DATA_DIR}/artifacts/{document_id}.tmp-*`，入库提交后原子替换为 `artifacts/{document_id}/`（`document.md`、`document.json`）；启动时清理残留临时目录，删除文档/目录/知识库时一并删除。
+- 向量和 BM25 的输入为“标题路径 + 片段正文”；向量签名包含输入格式版本 `text:v2`。
+- 接口：上传表单 `parse_mode`；`POST /api/documents/{id}/reparse`；`GET /api/documents/{id}/markdown`；`GET /api/documents/{id}/file`。
+- 测试：门禁通过 `tests/conftest.py` 把 PDF/DOCX 换成离线替身解析器（pypdf/python-docx，dev 依赖）；真实 Docling 测试 `PK_RUN_DOCLING_TESTS=1 uv run --directory backend pytest tests/e2e/test_docling_real.py`（需已下载模型）。
+
 ## 最小闭环演示
 
 推荐先使用 Swagger 页面按顺序操作，也可以使用以下命令。将响应中的实际 ID 替换到后续命令中。

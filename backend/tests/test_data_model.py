@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from app.config import Settings
 from app.db import SCHEMA_VERSION, UPGRADE_ERROR
 from app.main import create_app
-from app.services.ingestion import MAX_CHUNK_CHARS, SPLIT_OVERLAP
+from app.parsers.text import MAX_CHUNK_CHARS, SPLIT_OVERLAP
 
 
 @pytest.fixture
@@ -285,3 +285,71 @@ def test_sibling_folder_names_are_unique(client):
             connection.execute(
                 "INSERT INTO folders(id, knowledge_base_id, name) VALUES ('c', ?, 'x')", (kb_id,)
             )
+
+
+def _v4_database(path):
+    """Build a schema v4 database by running migrations 1–4 only."""
+    from app.db import MIGRATIONS
+
+    connection = sqlite3.connect(path, isolation_level=None)
+    connection.row_factory = sqlite3.Row
+    for version in range(1, 5):
+        connection.execute("BEGIN")
+        MIGRATIONS[version](connection)
+        connection.execute(f"PRAGMA user_version = {version}")
+        connection.execute("COMMIT")
+    connection.execute("INSERT INTO users(id, name) VALUES ('u', 'u')")
+    connection.execute("INSERT INTO knowledge_bases(id, user_id, name) VALUES ('k', 'u', 'k')")
+    connection.execute(
+        """INSERT INTO documents(id, knowledge_base_id, filename, file_type, size_bytes, sha256,
+        path, status) VALUES ('d', 'k', 'a.pdf', 'pdf', 1, 'h', '/x', 'success')"""
+    )
+    connection.execute(
+        """INSERT INTO chunks(id, document_id, ordinal, content, loc_kind, loc_start, loc_end)
+        VALUES ('c', 'd', 0, 'x', 'pdf_page', 1, 1)"""
+    )
+    connection.close()
+
+
+def test_migrate_v4_to_v5_adds_columns(settings):
+    from app.db import Database
+
+    settings.data_dir.mkdir(parents=True, exist_ok=True)
+    path = settings.data_dir / "knowledge.db"
+    _v4_database(path)
+    Database(path).migrate()
+    connection = sqlite3.connect(path)
+    connection.row_factory = sqlite3.Row
+    assert connection.execute("PRAGMA user_version").fetchone()[0] == 5
+    document = connection.execute("SELECT * FROM documents WHERE id='d'").fetchone()
+    assert document["parse_mode"] == "standard"
+    assert document["parser"] is None
+    assert document["page_count"] is None
+    assert connection.execute("SELECT elements FROM chunks WHERE id='c'").fetchone()[0] == "[]"
+    with pytest.raises(sqlite3.IntegrityError):
+        connection.execute("UPDATE documents SET parse_mode='x' WHERE id='d'")
+
+
+def test_location_label_pdf_table():
+    from app.schemas import Location
+
+    location = Location(kind="pdf_page", start=5, end=6, table=2, heading_path=["合并资产负债表"])
+    assert location.label == "合并资产负债表 › 表 2 第 5–6 页"
+
+
+def test_location_elements_roundtrip():
+    from app.schemas import Location
+
+    row = {
+        "loc_kind": "pdf_page",
+        "loc_start": 1,
+        "loc_end": 1,
+        "loc_table": None,
+        "heading_path": "[]",
+        "char_start": None,
+        "char_end": None,
+        "elements": '[{"ref":"#/texts/1","label":"text","page":1,"bbox":[0.1,0.2,0.3,0.4]}]',
+    }
+    location = Location.from_row(row)
+    assert location.elements[0].bbox == [0.1, 0.2, 0.3, 0.4]
+    assert location.elements[0].ref == "#/texts/1"

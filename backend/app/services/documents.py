@@ -14,7 +14,16 @@ from uuid import uuid4
 
 from app.db import Database
 from app.errors import AppError
-from app.schemas import ChunkOut, DocumentRange, DocumentUpdate, FileEntry, FileListing, Location
+from app.schemas import (
+    ChunkOut,
+    DocumentRange,
+    DocumentUpdate,
+    FileEntry,
+    FileListing,
+    Location,
+    ParseMode,
+)
+from app.services import artifacts
 from app.services.access import require_document, require_folder_in, require_knowledge_base
 
 logger = logging.getLogger(__name__)
@@ -87,10 +96,12 @@ def _folder_scope(
     return lambda doc_folder: doc_folder in scope
 
 
-def remove_stored_files(files: Iterable[tuple[str, str]]) -> None:
-    """Unlink the original files of `(document_id, path)` pairs after their rows were deleted
-    and committed. A failure leaves only an orphaned file, so it is logged instead of turning a
-    committed delete into an error."""
+def remove_stored_files(files: Iterable[tuple[str, str]], artifacts_root: Path) -> None:
+    """Unlink the original files and parse artifacts of `(document_id, path)` pairs after their
+    rows were deleted and committed. A failure leaves only orphaned files, so it is logged
+    instead of turning a committed delete into an error."""
+    files = list(files)
+    artifacts.remove_documents(artifacts_root, [document_id for document_id, _ in files])
     for document_id, path in files:
         try:
             Path(path).unlink(missing_ok=True)
@@ -252,6 +263,7 @@ def create_document(
     content: bytes,
     folder_id: str | None,
     max_bytes: int,
+    parse_mode: ParseMode = "standard",
 ) -> dict:
     """Store an upload as a queued document and return its row with a `duplicate` flag.
     `content` may be one byte longer than `max_bytes` so oversize uploads are detected
@@ -267,6 +279,9 @@ def create_document(
     if not content:
         raise AppError(400, "empty_file", "不能上传空文件")
     digest = hashlib.sha256(content).hexdigest()
+    # Only PDF/DOCX go through Docling; TXT has no enhanced (OCR) mode.
+    if suffix == ".txt":
+        parse_mode = "standard"
 
     with db.connect() as connection:
         check_upload_target(connection, user_id, kb_id, folder_id)
@@ -286,9 +301,19 @@ def create_document(
             connection.execute(
                 """INSERT INTO documents
                 (id, knowledge_base_id, folder_id, filename, file_type, size_bytes, sha256, path,
-                 status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'queued')""",
-                (document_id, kb_id, folder_id, name, suffix[1:], len(content), digest, str(path)),
+                 status, parse_mode)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'queued', ?)""",
+                (
+                    document_id,
+                    kb_id,
+                    folder_id,
+                    name,
+                    suffix[1:],
+                    len(content),
+                    digest,
+                    str(path),
+                    parse_mode,
+                ),
             )
             row = dict(
                 connection.execute("SELECT * FROM documents WHERE id=?", (document_id,)).fetchone()
@@ -321,6 +346,60 @@ def requeue_failed_document(db: Database, user_id: str, document_id: str) -> dic
         return require_document(connection, user_id, document_id)
 
 
+def requeue_document(
+    db: Database, user_id: str, document_id: str, parse_mode: ParseMode | None
+) -> dict:
+    """Queue a parsed or failed document for parsing again, optionally switching the parse
+    mode (None keeps the current one). The caller schedules ingestion."""
+    with db.connect() as connection:
+        document = require_document(connection, user_id, document_id)
+        if document["status"] in ("queued", "parsing"):
+            raise AppError(409, "document_busy", "文档正在解析，请稍后再试", retryable=True)
+        mode = parse_mode or document["parse_mode"]
+        if document["file_type"] == "txt":
+            mode = "standard"
+        changed = connection.execute(
+            """UPDATE documents SET status='queued', error=NULL, parse_mode=?,
+            updated_at=CURRENT_TIMESTAMP WHERE id=? AND status IN ('success','failed')""",
+            (mode, document_id),
+        ).rowcount
+        if not changed:
+            raise AppError(409, "document_busy", "文档正在解析，请稍后再试", retryable=True)
+        return require_document(connection, user_id, document_id)
+
+
+MEDIA_TYPES = {
+    "pdf": "application/pdf",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "txt": "text/plain; charset=utf-8",
+}
+
+
+def markdown_export(
+    connection, user_id: str, document_id: str, artifacts_root: Path
+) -> tuple[Path, str]:
+    """Path of the document's Markdown artifact and its download name (`<stem>.md`)."""
+    document = require_document(connection, user_id, document_id)
+    if document["status"] != "success":
+        pending = document["status"] in ("queued", "parsing")
+        message = "文档正在解析，请稍后再导出" if pending else "文档解析失败，无法导出"
+        raise AppError(409, "document_not_ready", message, retryable=pending)
+    path = artifacts.final_dir(artifacts_root, document_id) / artifacts.MARKDOWN
+    if not path.is_file():
+        raise AppError(409, "markdown_not_available", "请重新解析后再导出")
+    stem = Path(document["filename"]).stem.strip()
+    return path, f"{stem or 'document'}.md"
+
+
+def original_file(connection, user_id: str, document_id: str) -> tuple[Path, str, str]:
+    """(path, filename, media type) of the stored upload."""
+    document = require_document(connection, user_id, document_id)
+    path = Path(document["path"])
+    if not path.is_file():
+        raise AppError(404, "document_not_found", "原文件不存在")
+    return path, document["filename"], MEDIA_TYPES[document["file_type"]]
+
+
 def update_document(db: Database, user_id: str, document_id: str, changes: DocumentUpdate) -> dict:
     """Rename and/or move a document within its knowledge base. Renaming only changes the
     display name: `file_type`, the stored file and the parsed chunks stay as they are."""
@@ -342,7 +421,7 @@ def update_document(db: Database, user_id: str, document_id: str, changes: Docum
         return require_document(connection, user_id, document_id)
 
 
-def delete_document(db: Database, user_id: str, document_id: str) -> None:
+def delete_document(db: Database, user_id: str, document_id: str, *, artifacts_root: Path) -> None:
     """Idempotent: a missing or foreign document is a no-op, so the caller cannot tell them
     apart. Chunks and vectors are removed by cascade; the file is removed after commit."""
     with db.connect() as connection:
@@ -355,4 +434,4 @@ def delete_document(db: Database, user_id: str, document_id: str) -> None:
         if row is None:
             return
         connection.execute("DELETE FROM documents WHERE id=?", (document_id,))
-    remove_stored_files([(row["id"], row["path"])])
+    remove_stored_files([(row["id"], row["path"])], artifacts_root)

@@ -16,10 +16,12 @@ const docs = [
   documentOut({ id: 'f', filename: 'broken.pdf', file_type: 'pdf', status: 'failed', error: '文档解析失败，请检查文件是否损坏' }),
 ]
 
-function renderTable(onRetry = vi.fn()) {
+function renderTable(onRetry = vi.fn(), documents = docs, extra = {}) {
+  const onReparse = vi.fn()
+  const onExport = vi.fn()
   render(
     <FileTable
-      documents={docs}
+      documents={documents}
       folders={[]}
       foldersKnown
       retryingIds={new Set()}
@@ -28,9 +30,12 @@ function renderTable(onRetry = vi.fn()) {
       onRename={vi.fn()}
       onMove={vi.fn()}
       onDelete={vi.fn()}
+      onReparse={onReparse}
+      onExport={onExport}
+      {...extra}
     />,
   )
-  return { onRetry }
+  return { onRetry, onReparse, onExport }
 }
 
 function row(filename: string) {
@@ -101,5 +106,38 @@ describe('FilesView polling', () => {
 
     await act(() => vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS * 3))
     expect(calls).toBe(3)
+  })
+
+  it('shows page count and the enhanced badge, and offers reparse modes by type', async () => {
+    const user = userEvent.setup()
+    const report = documentOut({
+      id: 'r',
+      filename: 'report.pdf',
+      file_type: 'pdf',
+      status: 'success',
+      page_count: 12,
+      parse_mode: 'enhanced',
+    })
+    const note = documentOut({ id: 't', filename: 'note.txt', status: 'success' })
+    const { onReparse, onExport } = renderTable(vi.fn(), [report, note, docs[0]])
+    expect(within(row('report.pdf')).getByText('PDF · 12 页')).toBeInTheDocument()
+    expect(within(row('report.pdf')).getByText('增强')).toBeInTheDocument()
+
+    await user.click(within(row('report.pdf')).getByRole('button', { name: /更多操作/ }))
+    await user.click(screen.getByRole('menuitem', { name: '增强模式（OCR）重新解析' }))
+    expect(onReparse).toHaveBeenCalledWith(report, 'enhanced')
+
+    await user.click(within(row('report.pdf')).getByRole('button', { name: /更多操作/ }))
+    await user.click(screen.getByRole('menuitem', { name: '导出 Markdown' }))
+    expect(onExport).toHaveBeenCalledWith(report)
+
+    await user.click(within(row('note.txt')).getByRole('button', { name: /更多操作/ }))
+    expect(screen.getByRole('menuitem', { name: '重新解析' })).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: '增强模式（OCR）重新解析' })).toBeNull()
+    await user.keyboard('{Escape}')
+
+    await user.click(within(row('queued.txt')).getByRole('button', { name: /更多操作/ }))
+    expect(screen.queryByRole('menuitem', { name: /重新解析/ })).toBeNull()
+    expect(screen.queryByRole('menuitem', { name: '导出 Markdown' })).toBeNull()
   })
 })

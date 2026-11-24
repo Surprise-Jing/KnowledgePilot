@@ -8,6 +8,7 @@ from fastapi import Depends, Header, Request
 
 from app.config import Settings
 from app.db import Database
+from app.parsers.registry import ParserRegistry
 from app.services.access import ensure_user
 
 
@@ -21,6 +22,14 @@ def get_db(request: Request) -> Database:
 
 def get_upload_dir(request: Request) -> Path:
     return request.app.state.upload_dir
+
+
+def get_artifacts_root(request: Request) -> Path:
+    return request.app.state.artifacts_root
+
+
+def get_parsers(request: Request) -> ParserRegistry:
+    return request.app.state.parsers
 
 
 def current_user(
@@ -37,4 +46,6 @@ def current_user(
 AppSettings = Annotated[Settings, Depends(get_settings)]
 DB = Annotated[Database, Depends(get_db)]
 UploadDir = Annotated[Path, Depends(get_upload_dir)]
+Parsers = Annotated[ParserRegistry, Depends(get_parsers)]
+ArtifactsRoot = Annotated[Path, Depends(get_artifacts_root)]
 User = Annotated[str, Depends(current_user)]

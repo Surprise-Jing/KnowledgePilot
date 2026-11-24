@@ -42,7 +42,7 @@ erDiagram
 
 | 表 | 关键字段 | 约束与说明 |
 | --- | --- | --- |
-| `documents` | `knowledge_base_id`、`folder_id`、`filename`、`file_type`、`size_bytes`、`sha256`、`path`、`status`、`error` | 同一知识库内 `sha256` 唯一，用于按内容去重；`status` 取值为 `queued`、`parsing`、`success`、`failed`；`file_type` 记录上传时识别的格式，重命名不影响解析器选择 |
+| `documents` | `knowledge_base_id`、`folder_id`、`filename`、`file_type`、`size_bytes`、`sha256`、`path`、`status`、`error`、`parse_mode`、`parser`、`page_count` | 同一知识库内 `sha256` 唯一，用于按内容去重；`status` 取值为 `queued`、`parsing`、`success`、`failed`；`file_type` 记录上传时识别的格式，重命名不影响解析器选择；`parse_mode` 为 `standard`（版面 + 表格）或 `enhanced`（另开 OCR），由用户选择；`parser` 记录产生当前片段的解析器与版本；`page_count` 仅 PDF（schema v5） |
 | `chunks` | `document_id`、`ordinal`、`content`，以及下文的位置字段 | 同一文档内 `ordinal` 唯一；删除文档时级联删除 |
 
 片段的来源位置使用带类型的字段存储，而不是一段展示文本，这样工具可以按范围读取原文，评测也可以判断引用位置是否正确：
@@ -51,11 +51,14 @@ erDiagram
 | --- | --- |
 | `loc_kind` | `txt_lines`、`pdf_page`、`docx_paragraphs`、`docx_table_rows` |
 | `loc_start`、`loc_end` | 起止序号，从 1 开始，闭区间；单位由 `loc_kind` 决定，分别为行、页、段落、表格行 |
-| `loc_table` | DOCX 表格序号，仅 `docx_table_rows` 使用 |
-| `heading_path` | DOCX 所属标题路径，JSON 数组，例如 `["第一章","1.1 小节"]` |
-| `char_start`、`char_end` | 仅当一个超长的行、页、段落或表格行被拆成多个片段时填写，表示在该单元内的字符范围（从 0 开始，左闭右开） |
+| `loc_table` | 表格序号（从 1 开始）：`docx_table_rows` 必填；来自表格的 `pdf_page` 片段也填写 |
+| `heading_path` | 所属标题路径，JSON 数组，例如 `["第一章","1.1 小节"]` |
+| `char_start`、`char_end` | 仅 TXT 的超长行被拆成多个片段时填写，表示在该行内的字符范围（从 0 开始，左闭右开）；Docling 分块不提供可靠的字符范围，为空 |
+| `elements` | 片段来源元素，JSON 数组 `[{ref, label, page, bbox}]`：`ref` 为 Docling `self_ref`（TXT 为 `line:N`），`page` 从 1 开始，`bbox` 为 `[x0,y0,x1,y1]`，左上原点，按页宽高归一化到 0–1；DOCX/TXT 没有页面几何，`page`、`bbox` 为空。按 `(ref, page)` 去重，最多 64 项（schema v5） |
 
-接口返回的 `location` 对象包含以上字段，以及由它们生成的展示文本 `label`，例如 `第一章 › 1.1 小节 › 第 4–6 段`、`表 1 第 2 行`、`第 3 页，字符 601–1200`。
+接口返回的 `location` 对象包含以上字段，以及由它们生成的展示文本 `label`，例如 `第一章 › 1.1 小节 › 第 4–6 段`、`表 1 第 2 行`、`合并资产负债表 › 表 2 第 5–6 页`、`第 3 行，字符 601–1200`。
+
+解析产物（Markdown `document.md` 与 Docling 结构 JSON `document.json`）不入库，保存在 `{PK_DATA_DIR}/artifacts/{document_id}/`，随文档删除。
 
 ### 2.3 对话与调用轨迹（为 Agent 预留）
 

@@ -12,13 +12,19 @@ import re
 from typing import Any, ClassVar
 
 from app.errors import AppError
-from app.schemas import SearchHit, SearchRequest, ToolError
+from app.schemas import Location, SearchHit, SearchRequest, ToolError
 from app.services.access import require_document, require_knowledge_base
 from app.services.documents import list_files, read_document_range
 from app.services.retrieval import search
 from app.tools.context import CitationSource, ToolContext
 
 logger = logging.getLogger(__name__)
+
+
+def model_location(location: Location) -> dict:
+    """Location as the model sees it: page-region elements (bounding boxes) would only cost
+    context, so they stay in the citation snapshot for the UI (contracts §11)."""
+    return location.model_dump(exclude={"elements"})
 
 
 def _out_of_scope() -> AppError:
@@ -160,7 +166,7 @@ class SearchChunksTool:
                     "document_id": hit.document_id,
                     "knowledge_base_id": hit.knowledge_base_id,
                     "filename": hit.filename,
-                    "location": location,
+                    "location": model_location(hit.location),
                     "score": hit.score,
                     "content": hit.content,
                 }
@@ -299,7 +305,13 @@ class ReadDocumentTool:
                     ordinal=chunk.ordinal,
                 ),
             )
-            chunks.append({"marker": marker, "ordinal": chunk.ordinal, "location": location})
+            chunks.append(
+                {
+                    "marker": marker,
+                    "ordinal": chunk.ordinal,
+                    "location": model_location(chunk.location),
+                }
+            )
             parts.append(f"[{marker}] {chunk.content}")
         return {
             "document_id": document_range.document_id,
@@ -337,7 +349,11 @@ class ReadDocumentTool:
             "filename": snippets[0][1].filename,
             "content": "\n\n".join(f"[{marker}] {source.content}" for marker, source in snippets),
             "chunks": [
-                {"marker": marker, "ordinal": source.ordinal, "location": source.location}
+                {
+                    "marker": marker,
+                    "ordinal": source.ordinal,
+                    "location": {k: v for k, v in source.location.items() if k != "elements"},
+                }
                 for marker, source in snippets
             ],
             # Only previously retrieved snippets: the document was not read in full.

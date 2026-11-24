@@ -4,6 +4,7 @@ Folders form a tree per knowledge base through `parent_id` (NULL = root). Siblin
 unique via a database index, so conflicts are detected atomically by the insert/update."""
 
 import sqlite3
+from pathlib import Path
 from uuid import uuid4
 
 from app.db import Database
@@ -98,7 +99,9 @@ def update_folder(db: Database, user_id: str, folder_id: str, changes: FolderUpd
         return _get(connection, folder_id)
 
 
-def delete_folder(db: Database, user_id: str, folder_id: str, *, recursive: bool = False) -> None:
+def delete_folder(
+    db: Database, user_id: str, folder_id: str, *, artifacts_root: Path, recursive: bool = False
+) -> None:
     """Idempotent: a missing or foreign folder is a no-op. A non-empty folder is only deleted
     with `recursive`; then the whole subtree goes by cascade and the original files of its
     documents are removed after commit."""
@@ -129,4 +132,4 @@ def delete_folder(db: Database, user_id: str, folder_id: str, *, recursive: bool
                 409, "folder_not_empty", "目录不为空，请先清空或使用递归删除（recursive=true）"
             )
         connection.execute("DELETE FROM folders WHERE id=?", (folder_id,))
-    remove_stored_files(files)
+    remove_stored_files(files, artifacts_root)

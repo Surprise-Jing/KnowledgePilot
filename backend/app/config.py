@@ -42,3 +42,16 @@ class Settings(BaseSettings):
     retrieval_candidates: int = Field(default=50, ge=10, le=1000)
     # User identity for the stdio MCP server, which has no HTTP headers.
     mcp_user_id: str = "demo"
+    # Structured parsing (PDF/DOCX via Docling in a child process). A document is killed and
+    # marked failed when parsing exceeds parse_timeout seconds.
+    parse_timeout: float = Field(default=1800, gt=0)
+    # HybridChunker token budget, counted with the embedding model's tokenizer.
+    chunk_tokenizer: str = "BAAI/bge-m3"
+    chunk_max_tokens: int = Field(default=512, ge=64, le=8192)
+    # Local Docling model directory for offline use; empty uses the Hugging Face cache.
+    docling_artifacts_path: str = ""
+    docling_device: Literal["auto", "cpu", "mps", "cuda"] = "auto"
+    docling_threads: int = Field(default=4, ge=1, le=64)
+    # OCR is only enabled in the "enhanced" parse mode.
+    docling_ocr_engine: Literal["rapidocr", "easyocr", "tesseract", "ocrmac"] = "rapidocr"
+    docling_force_full_page_ocr: bool = True

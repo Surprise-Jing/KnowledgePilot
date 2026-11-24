@@ -2,15 +2,18 @@ import {
   BookOpenIcon,
   CheckIcon,
   ClockIcon,
+  FileDownIcon,
   FolderInputIcon,
   MoreHorizontalIcon,
   PencilIcon,
+  RotateCcwIcon,
   RotateCwIcon,
+  ScanTextIcon,
   Trash2Icon,
   XIcon,
 } from 'lucide-react'
 
-import type { DocumentOut, DocumentStatus, FolderOut } from '@/api/types'
+import type { DocumentOut, DocumentStatus, FolderOut, ParseMode } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -77,6 +80,10 @@ export interface FileTableProps {
   onRename: (doc: DocumentOut) => void
   onMove: (doc: DocumentOut) => void
   onDelete: (doc: DocumentOut) => void
+  /** Parse again; PDFs can switch to the enhanced (OCR) mode. */
+  onReparse: (doc: DocumentOut, mode: ParseMode) => void
+  /** Download the parsed Markdown. */
+  onExport: (doc: DocumentOut) => void
 }
 
 export function FileTable({
@@ -89,6 +96,8 @@ export function FileTable({
   onRename,
   onMove,
   onDelete,
+  onReparse,
+  onExport,
 }: FileTableProps) {
   const folderLabel = (folderId: string | null) => {
     if (!folderId) return '根目录'
@@ -127,7 +136,15 @@ export function FileTable({
                   )}
                 </div>
               </TableCell>
-              <TableCell className="uppercase">{doc.file_type}</TableCell>
+              <TableCell>
+                <div className="flex items-center gap-1.5 whitespace-nowrap">
+                  <span>
+                    {doc.file_type.toUpperCase()}
+                    {doc.page_count != null && ` · ${doc.page_count} 页`}
+                  </span>
+                  {doc.parse_mode === 'enhanced' && <Badge variant="secondary">增强</Badge>}
+                </div>
+              </TableCell>
               <TableCell className="max-w-40 truncate" title={folderLabel(doc.folder_id)}>
                 {folderLabel(doc.folder_id)}
               </TableCell>
@@ -164,7 +181,7 @@ export function FileTable({
                         <MoreHorizontalIcon />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="min-w-52">
                       <DropdownMenuGroup>
                         <DropdownMenuItem onSelect={() => onRename(doc)}>
                           <PencilIcon />
@@ -175,6 +192,36 @@ export function FileTable({
                           移动到…
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
+                      {(doc.status === 'success' || doc.status === 'failed') && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuGroup>
+                            {doc.status === 'success' && (
+                              <DropdownMenuItem onSelect={() => onExport(doc)}>
+                                <FileDownIcon />
+                                导出 Markdown
+                              </DropdownMenuItem>
+                            )}
+                            {doc.file_type === 'pdf' ? (
+                              <>
+                                <DropdownMenuItem onSelect={() => onReparse(doc, 'standard')}>
+                                  <RotateCcwIcon />
+                                  普通模式重新解析
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => onReparse(doc, 'enhanced')}>
+                                  <ScanTextIcon />
+                                  增强模式（OCR）重新解析
+                                </DropdownMenuItem>
+                              </>
+                            ) : (
+                              <DropdownMenuItem onSelect={() => onReparse(doc, 'standard')}>
+                                <RotateCcwIcon />
+                                重新解析
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuGroup>
+                        </>
+                      )}
                       <DropdownMenuSeparator />
                       <DropdownMenuGroup>
                         <DropdownMenuItem variant="destructive" onSelect={() => onDelete(doc)}>

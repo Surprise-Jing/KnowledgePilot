@@ -2,6 +2,17 @@
 
 export type LocationKind = 'txt_lines' | 'pdf_page' | 'docx_paragraphs' | 'docx_table_rows'
 
+export type ParseMode = 'standard' | 'enhanced'
+
+/** A parsed document element a chunk came from. `bbox` is [x0, y0, x1, y1], normalized 0–1,
+ * top-left origin; `page` and `bbox` are null for DOCX and TXT. */
+export interface SourceElement {
+  ref: string
+  label: string
+  page: number | null
+  bbox: [number, number, number, number] | null
+}
+
 export interface Location {
   kind: LocationKind
   start: number
@@ -10,6 +21,7 @@ export interface Location {
   heading_path: string[]
   char_start: number | null
   char_end: number | null
+  elements: SourceElement[]
   /** Computed by the backend, e.g. "第 3–5 行". */
   label: string
 }
@@ -76,7 +88,15 @@ export interface DocumentOut {
   error: string | null
   created_at: string
   updated_at: string
+  parse_mode: ParseMode
+  /** Parser that produced the current chunks; null until the first successful parse. */
+  parser: string | null
+  page_count: number | null
   duplicate: boolean
+}
+
+export interface ReparseRequest {
+  parse_mode?: ParseMode | null
 }
 
 export interface ChunkOut {

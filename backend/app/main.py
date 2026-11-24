@@ -14,6 +14,8 @@ from app.config import Settings
 from app.db import Database
 from app.errors import AppError
 from app.logging_setup import RequestContextMiddleware, configure_logging
+from app.parsers import registry
+from app.services import artifacts
 
 logger = logging.getLogger(__name__)
 
@@ -32,12 +34,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app):
         db.initialize()
         upload_dir.mkdir(parents=True, exist_ok=True)
+        # Staging directories of parses interrupted by a restart (their documents were just
+        # marked failed by initialize()).
+        artifacts.cleanup_staging(app.state.artifacts_root)
         yield
+        # Stop the parse worker process so it does not outlive the app.
+        app.state.parsers.close()
 
     app = FastAPI(title="KnowledgePilot API", version="0.3.0", lifespan=lifespan)
     app.state.settings = settings
     app.state.db = db
     app.state.upload_dir = upload_dir
+    # PDF/DOCX go to a lazily started worker process (docs/contracts.md §11); tests replace
+    # build_registry with offline parsers.
+    app.state.parsers = registry.build_registry(settings)
+    app.state.artifacts_root = artifacts.artifacts_root(settings)
     # None selects the default OpenAI-compatible client; tests inject a scripted one
     # (docs/contracts.md §5.3).
     app.state.llm_factory = None

@@ -22,6 +22,9 @@ export function documentOut(overrides: Partial<DocumentOut>): DocumentOut {
     created_at: '2026-11-23 00:00:00',
     updated_at: '2026-11-23 00:00:00',
     duplicate: false,
+    parse_mode: 'standard',
+    parser: null,
+    page_count: null,
     ...overrides,
   }
 }

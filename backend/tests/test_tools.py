@@ -561,3 +561,36 @@ def test_degradable_errors():
     assert is_degradable(error("invalid_argument")) is False
     for code in ("document_not_ready", "tool_timeout", "internal_error", "embedding_error"):
         assert is_degradable(error(code)) is True
+
+
+# ---- source elements stay out of the model's context (contracts §11) ----
+
+ELEMENTS = '[{"ref":"#/texts/1","label":"text","page":2,"bbox":[0.1,0.2,0.3,0.4]}]'
+
+
+def with_elements(client, document_id):
+    with client.app.state.db.connect() as connection:
+        connection.execute(
+            "UPDATE chunks SET elements=? WHERE document_id=?", (ELEMENTS, document_id)
+        )
+
+
+def test_search_hits_hide_elements_but_citation_source_keeps_them(client, settings, data):
+    with_elements(client, data["doc_a"])
+    ctx = make_ctx(client, settings, [data["a"]])
+    result = execute(ctx, "search_chunks", {"query": "删除文档"})
+    hit = result.data["hits"][0]
+    assert "elements" not in hit["location"]
+    assert hit["location"]["label"] == "第 1 行"
+    assert "bbox" not in json.dumps(result.data)
+    source = ctx.markers.source(hit["marker"])
+    assert source.location["elements"][0]["bbox"] == [0.1, 0.2, 0.3, 0.4]
+
+
+def test_read_document_hides_elements(client, settings, data):
+    with_elements(client, data["doc_a"])
+    ctx = make_ctx(client, settings, [data["a"]])
+    result = execute(ctx, "read_document", {"document_id": data["doc_a"]})
+    chunk = result.data["chunks"][0]
+    assert "elements" not in chunk["location"]
+    assert ctx.markers.source(chunk["marker"]).location["elements"][0]["page"] == 2

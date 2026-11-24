@@ -1,5 +1,6 @@
 """Knowledge base services. Owner: A. Contract: docs/contracts.md §3.1–§3.2."""
 
+from pathlib import Path
 from uuid import uuid4
 
 from app.db import Database
@@ -34,7 +35,7 @@ def rename_knowledge_base(db: Database, user_id: str, kb_id: str, name: str) -> 
         return require_knowledge_base(connection, user_id, kb_id)
 
 
-def delete_knowledge_base(db: Database, user_id: str, kb_id: str) -> None:
+def delete_knowledge_base(db: Database, user_id: str, kb_id: str, *, artifacts_root: Path) -> None:
     """Idempotent: a missing or foreign knowledge base is a no-op, so the caller cannot tell
     them apart. Folders, documents, chunks and vectors go by cascade; the original files are
     removed only after the delete has committed, so a failed commit never loses files."""
@@ -54,4 +55,4 @@ def delete_knowledge_base(db: Database, user_id: str, kb_id: str) -> None:
             )
         ]
         connection.execute("DELETE FROM knowledge_bases WHERE id=?", (kb_id,))
-    remove_stored_files(files)
+    remove_stored_files(files, artifacts_root)

@@ -1,8 +1,8 @@
-# KnowledgePilot 共享契约 v1.6
+# KnowledgePilot 共享契约 v1.7
 
 > **只有主 Agent（Tech Lead）可以修改本文件。** Subagent 发现契约不合理或缺失时，停止相关部分，在返回报告的“是否修改公共接口”中写明建议，由主 Agent 决定并更新本文件与变更记录。
 >
-> 对应代码：请求/响应模型 `backend/app/schemas.py`，错误类型 `backend/app/errors.py`，配置 `backend/app/config.py`，数据库 `backend/app/db.py`（schema v4）。代码与本文冲突时以本文为准，并报告主 Agent。
+> 对应代码：请求/响应模型 `backend/app/schemas.py`，错误类型 `backend/app/errors.py`，配置 `backend/app/config.py`，数据库 `backend/app/db.py`（schema v5）。代码与本文冲突时以本文为准，并报告主 Agent。
 
 ## 1. 通用约定
 
@@ -53,6 +53,8 @@
 | `embedding_timeout` | 504 | Embedding 请求超时 | 是 |
 | `embedding_index_not_ready` | 409 | 所选范围成功文档的向量缺失或配置签名不匹配 | 否（先重建） |
 | `embedding_index_changed` | 409 | 重建期间文档被删除或重新解析 | 否（重新执行重建） |
+| `document_busy` | 409 | 文档排队或解析中，不能重新解析 | 是 |
+| `markdown_not_available` | 409 | 文档没有 Markdown 解析产物（需重新解析） | 否 |
 
 ## 3. HTTP API
 
@@ -62,11 +64,14 @@
 | --- | --- | --- |
 | GET | `/health` | `{status, answer_mode}` |
 | POST / GET | `/api/knowledge-bases` | 创建（201）/ 列表 |
-| POST | `/api/knowledge-bases/{kb_id}/documents` | multipart：`file`，**新增**可选表单字段 `folder_id`。202，返回 `DocumentOut`。同库相同内容返回已有记录且 `duplicate: true`（已有记录可能位于其他目录） |
+| POST | `/api/knowledge-bases/{kb_id}/documents` | multipart：`file`，可选表单字段 `folder_id`、**`parse_mode`**（`standard` \| `enhanced`，空字符串等于省略，默认 `standard`；非法值 422；TXT 一律记为 `standard`）。202，返回 `DocumentOut`。同库相同内容返回已有记录且 `duplicate: true`（已有记录可能位于其他目录），不触发重新解析 |
 | GET | `/api/knowledge-bases/{kb_id}/documents` | **新增**查询参数 `folder_id`、`recursive`，见 3.2 |
 | GET | `/api/documents/{id}` | 文档与解析状态 |
 | GET | `/api/documents/{id}/chunks` | 全部片段（调试 / 前端原文查看） |
-| POST | `/api/documents/{id}/retry` | 仅 `failed` 可重试，否则 409 `document_not_failed` |
+| POST | `/api/documents/{id}/retry` | 仅 `failed` 可重试，否则 409 `document_not_failed`；沿用文档当前 `parse_mode` |
+| POST | `/api/documents/{id}/reparse` | **v1.7** 请求体 `ReparseRequest {parse_mode?}`（可为空，省略沿用当前模式）。仅 `success`/`failed`；`queued`/`parsing` → 409 `document_busy`。202 返回 `DocumentOut`（`status='queued'`）。期间文档不可检索、读取、导出；失败为 `failed` |
+| GET | `/api/documents/{id}/markdown` | **v1.7** `200 text/markdown; charset=utf-8`，`Content-Disposition: attachment; filename*=UTF-8''<原名去扩展名>.md`。非 success → `document_not_ready`；无产物 → `markdown_not_available` |
+| GET | `/api/documents/{id}/file` | **v1.7** 原文件，`Content-Disposition: inline`，供前端 PDF 渲染。原文件丢失 → 404 `document_not_found` |
 | DELETE | `/api/documents/{id}` | **变更**：幂等 204；删除片段与原文件 |
 | POST | `/api/search` | `SearchRequest` → `SearchHit[]` |
 | POST | `/api/chat` | **legacy**，单轮检索回答，仅调试用；Agent 不使用 |
@@ -189,9 +194,9 @@ class Tool(Protocol):
 | 工具 | 参数（JSON Schema 要点） | `data` |
 | --- | --- | --- |
 | `list_knowledge_bases` | `{}` | `{knowledge_bases: [{id, name, document_count}]}`，仅 `allowed_kb_ids` 内 |
-| `search_chunks` | `query: string(1–500)` 必填；`knowledge_base_ids: string[]`（默认全部允许的库）；`top_k: integer 1–10`（默认 5） | `{hits: [{marker, chunk_id, document_id, knowledge_base_id, filename, location, score, content}]}`；无结果时 `hits: []` 且 `ok: true` |
+| `search_chunks` | `query: string(1–500)` 必填；`knowledge_base_ids: string[]`（默认全部允许的库）；`top_k: integer 1–10`（默认 5） | `{hits: [{marker, chunk_id, document_id, knowledge_base_id, filename, location, score, content}]}`；无结果时 `hits: []` 且 `ok: true`。`location` 不含 `elements`（见 §11） |
 | `list_files` | `knowledge_base_id: string` 必填；`folder_id: string`；`recursive: boolean`（默认 true）；`offset: integer ≥0`；`limit: integer 1–50`（默认 20） | `FileListing` |
-| `read_document` | `document_id: string` 必填；`start_ordinal: integer ≥0`（默认 0）；`max_chars: integer 500–4000`（默认 3000） | `{document_id, filename, content, chunks: [{marker, ordinal, location}], truncated, next_ordinal, total_chunks}`；`content` 中每段前缀 `[cN]` |
+| `read_document` | `document_id: string` 必填；`start_ordinal: integer ≥0`（默认 0）；`max_chars: integer 500–4000`（默认 3000） | `{document_id, filename, content, chunks: [{marker, ordinal, location}], truncated, next_ordinal, total_chunks}`；`content` 中每段前缀 `[cN]`；`location` 不含 `elements` |
 
 `additionalProperties: false`；所有参数带中文 `description`。工具结果回传给模型时序列化为 JSON，单次最多 8000 字符。
 
@@ -262,6 +267,7 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 | v1.4 | 2026-11-23 | 上传与列表的 `folder_id` 空字符串表示根目录 |
 | v1.5 | 2026-11-23 | 明确内部异常、未完成工具调用、max_steps 的 run 记录方式（采纳 B1 报告） |
 | v1.6 | 2026-11-23 | 工具失败降级（§10）；schema v4 轨迹字段；SSE `tool_call.attempt/retry_of`、`tool_result.fallback`、`done.degraded`；MCP 细化（§6） |
+| v1.7 | 2026-11-23 | 结构化解析（§11）：PDF/DOCX 改用 Docling，`Location.elements`、`DocumentOut.parse_mode/parser/page_count`；上传 `parse_mode`；新接口 reparse / markdown / file；错误码 `document_busy`、`markdown_not_available`；schema v5 |
 
 ## 9. 检索策略与向量持久化
 
@@ -309,3 +315,16 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 - run 中发生任何重试、替代执行或模型重试时，`runs.degraded = 1`，`done.degraded = true`。
 - 系统提示要求：使用了降级结果或部分工具失败时，回答中必须说明哪些内容没有查到或依据有限；没有足够依据时明确告知无法完成，不编造。
 - 前端在回答下方显示“部分工具失败，回答可能不完整”之类的提示，并在轨迹中标出重试和降级。
+
+## 11. 结构化解析与来源溯源（v1.7）
+
+设计见 `docs/superpowers/specs/2026-11-23-docling-parsing-design.md`。
+
+- **Parser Adapter**：`app/parsers/` 提供统一的 `Parser.parse(ParseRequest) -> ParseResult`。TXT 由 `TextParser` 在 Web 进程内解析；PDF/DOCX 由 Docling 在单个 spawn 子进程中解析，一次一份，超过 `PK_PARSE_TIMEOUT` 杀进程并标 failed。Web 进程不得 import `docling` / `docling_core`。
+- **模式**：`standard` = 版面分析 + TableFormer（ACCURATE）表格结构，关闭 OCR、公式增强、图片描述；`enhanced` = 另开 OCR（`PK_DOCLING_OCR_ENGINE`，默认 RapidOCR，默认整页）。DOCX 两种模式结果相同。
+- **分块**：HybridChunker，token 上限 `PK_CHUNK_MAX_TOKENS`（默认 512，按 `PK_CHUNK_TOKENIZER`=BGE-M3 分词器计数），表格按 Markdown 表格序列化并在拆块时重复表头。
+- **位置**：PDF 为 `pdf_page`（起止页，来自表格时带 `table`）；DOCX 文本为 `docx_paragraphs`（文本元素阅读顺序序号），表格为 `docx_table_rows`（整表行范围）。
+- **`Location.elements: SourceElement[]`**：`{ref, label, page, bbox}`，`bbox=[x0,y0,x1,y1]` 归一化 0–1、左上原点；DOCX/TXT 的 `page`/`bbox` 为 null。HTTP 的 `ChunkOut`、`SearchHit`、`CitationOut` 与引用快照返回完整 `elements`；**模型可见的工具结果（HTTP 与 MCP）中 `location` 去掉 `elements`**。
+- **产物**：`{PK_DATA_DIR}/artifacts/{document_id}/document.md`（Markdown）与 `document.json`（DoclingDocument，TXT 无），成功提交后原子替换，随文档删除。
+- **向量输入**：`"\n".join([*heading_path, content])`；签名包含输入格式版本 `text:v2`。BM25/词频同样对标题 + 正文打分；`SearchHit.content` 仍为原文。
+- **失败**：Docling 失败不回退其他解析器；普通模式无文本时提示改用增强模式；模型不可用时提示运行 `python -m app.parsers.prefetch`。

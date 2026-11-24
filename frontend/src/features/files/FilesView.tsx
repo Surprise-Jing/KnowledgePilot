@@ -5,13 +5,15 @@ import { toast } from 'sonner'
 import {
   SUPPORTED_EXTENSIONS,
   deleteDocument,
+  exportMarkdown,
   hasSupportedExtension,
   listDocuments,
+  reparseDocument,
   retryDocument,
   updateDocument,
   uploadDocument,
 } from '@/api/documents'
-import type { DocumentOut, FolderOut, KnowledgeBaseOut } from '@/api/types'
+import type { DocumentOut, FolderOut, KnowledgeBaseOut, ParseMode } from '@/api/types'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { useReportError } from '@/components/error-context'
 import { ErrorAlert } from '@/components/error-feedback'
@@ -27,11 +29,13 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty'
 import { Field, FieldLabel } from '@/components/ui/field'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
 import { useInspector } from '@/features/citations/inspector-context'
 import { MoveDialog } from '@/features/knowledge/MoveDialog'
 import { useResource } from '@/hooks/use-resource'
+import { downloadBlob } from '@/lib/download'
 import { folderPath } from '@/lib/tree'
 import { cn } from '@/lib/utils'
 
@@ -68,6 +72,8 @@ export function FilesView({
   const [uploading, setUploading] = useState(0)
   const [dragging, setDragging] = useState(false)
   const [retrying, setRetrying] = useState<Set<string>>(() => new Set())
+  // Applies to PDF/DOCX in the next upload; TXT is always parsed in the standard mode.
+  const [parseMode, setParseMode] = useState<ParseMode>('standard')
   const [dialog, setDialog] = useState<DialogState | null>(null)
 
   const kbId = knowledgeBase.id
@@ -94,7 +100,7 @@ export function FilesView({
   async function uploadOne(file: File): Promise<void> {
     setUploading((n) => n + 1)
     try {
-      const doc = await uploadDocument(kbId, file, folderId)
+      const doc = await uploadDocument(kbId, file, folderId, parseMode)
       if (doc.duplicate) {
         const where = doc.folder_id === folderId ? '' : `（位于「${['根目录', ...folderPath(folders, doc.folder_id)].join(' / ')}」）`
         toast.info(`已存在相同内容的文件：${doc.filename}${where}`)
@@ -116,6 +122,32 @@ export function FilesView({
     }
     for (const file of accepted) await uploadOne(file)
     if (accepted.length > 0) await reload({ silent: true })
+  }
+
+  async function reparse(doc: DocumentOut, mode: ParseMode) {
+    setRetrying((s) => new Set(s).add(doc.id))
+    try {
+      await reparseDocument(doc.id, mode)
+      toast.success(`已开始${mode === 'enhanced' ? '增强模式' : ''}重新解析 ${doc.filename}`)
+      await reload({ silent: true })
+    } catch (error) {
+      report(error, () => reparse(doc, mode))
+    } finally {
+      setRetrying((s) => {
+        const next = new Set(s)
+        next.delete(doc.id)
+        return next
+      })
+    }
+  }
+
+  async function exportDoc(doc: DocumentOut) {
+    try {
+      const { blob, filename } = await exportMarkdown(doc.id)
+      downloadBlob(blob, filename)
+    } catch (error) {
+      report(error, () => exportDoc(doc))
+    }
   }
 
   async function retry(doc: DocumentOut) {
@@ -188,6 +220,15 @@ export function FilesView({
           <RefreshCwIcon data-icon="inline-start" />
           刷新
         </Button>
+        <Select value={parseMode} onValueChange={(value) => setParseMode(value as ParseMode)}>
+          <SelectTrigger size="sm" aria-label="PDF/DOCX 解析模式">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="standard">普通模式</SelectItem>
+            <SelectItem value="enhanced">增强模式（OCR）</SelectItem>
+          </SelectContent>
+        </Select>
         <Button size="sm" onClick={() => inputRef.current?.click()} disabled={uploading > 0}>
           {uploading > 0 ? <Spinner data-icon="inline-start" /> : <UploadIcon data-icon="inline-start" />}
           {uploading > 0 ? `上传中（${uploading}）` : '上传文件'}
@@ -247,6 +288,8 @@ export function FilesView({
             onRename={(doc) => setDialog({ kind: 'rename', doc })}
             onMove={(doc) => setDialog({ kind: 'move', doc })}
             onDelete={(doc) => setDialog({ kind: 'delete', doc })}
+            onReparse={(doc, mode) => void reparse(doc, mode)}
+            onExport={(doc) => void exportDoc(doc)}
           />
         )}
       </div>

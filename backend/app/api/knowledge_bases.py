@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.deps import DB, User
+from app.deps import DB, ArtifactsRoot, User
 from app.schemas import KnowledgeBaseCreate, KnowledgeBaseOut, KnowledgeBaseUpdate
 from app.services import knowledge_bases as service
 
@@ -26,5 +26,5 @@ def rename_knowledge_base(kb_id: str, payload: KnowledgeBaseUpdate, user_id: Use
 
 
 @router.delete("/{kb_id}", status_code=204)
-def delete_knowledge_base(kb_id: str, user_id: User, db: DB):
-    service.delete_knowledge_base(db, user_id, kb_id)
+def delete_knowledge_base(kb_id: str, user_id: User, db: DB, artifacts_root: ArtifactsRoot):
+    service.delete_knowledge_base(db, user_id, kb_id, artifacts_root=artifacts_root)

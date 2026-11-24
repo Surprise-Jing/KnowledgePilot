@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.deps import DB, User
+from app.deps import DB, ArtifactsRoot, User
 from app.schemas import FolderCreate, FolderOut, FolderUpdate
 from app.services import folders as service
 
@@ -26,5 +26,13 @@ def update_folder(folder_id: str, payload: FolderUpdate, user_id: User, db: DB):
 
 
 @router.delete("/api/folders/{folder_id}", status_code=204)
-def delete_folder(folder_id: str, user_id: User, db: DB, recursive: bool = False):
-    service.delete_folder(db, user_id, folder_id, recursive=recursive)
+def delete_folder(
+    folder_id: str,
+    user_id: User,
+    db: DB,
+    artifacts_root: ArtifactsRoot,
+    recursive: bool = False,
+):
+    service.delete_folder(
+        db, user_id, folder_id, artifacts_root=artifacts_root, recursive=recursive
+    )
