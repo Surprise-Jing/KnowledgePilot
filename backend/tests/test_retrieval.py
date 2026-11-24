@@ -312,3 +312,21 @@ def test_duplicate_provider_indexes_are_rejected(settings, monkeypatch):
     with pytest.raises(AppError) as error:
         embed(settings, ["car", "automobile"])
     assert error.value.code == "embedding_error"
+
+
+def test_query_embedding_uses_the_short_timeout(settings, provider, monkeypatch):
+    """Search must time out before PK_TOOL_TIMEOUT so the tool can fall back to BM25."""
+    with TestClient(create_app(settings)) as client:
+        a = kb(client)
+        upload(client, a, "automobile")
+        settings.embedding_query_timeout = 3
+        timeouts = []
+        real_post = httpx.post
+
+        def spy(*args, **kwargs):
+            timeouts.append(kwargs.get("timeout"))
+            return real_post(*args, **kwargs)
+
+        monkeypatch.setattr(httpx, "post", spy)
+        query(client, [a], "automobile")
+    assert timeouts == [3]

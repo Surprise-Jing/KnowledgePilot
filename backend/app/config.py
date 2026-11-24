@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     embedding_api_key: SecretStr = SecretStr("")
     embedding_dimensions: int = Field(default=1024, ge=1, le=65536)
     embedding_timeout: float = Field(default=45, gt=0)
+    # Query embedding during search. Must stay below tool_timeout so a hanging embedding
+    # service surfaces as embedding_timeout (BM25 fallback) instead of tool_timeout.
+    embedding_query_timeout: float = Field(default=8, gt=0)
     embedding_batch_size: int = Field(default=32, ge=1, le=256)
     # Change this when a provider replaces weights behind the same model name.
     embedding_revision: str = "1"

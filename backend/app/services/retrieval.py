@@ -65,7 +65,12 @@ def search(
     # Validate scope before transmitting the query to an external embedding service.
     with db.connect() as connection:
         ids = require_knowledge_bases(connection, user_id, request.knowledge_base_ids)
-    query_vector = embed(settings, [request.query])[0] if vector_mode else None
+    query_settings = settings.model_copy(
+        update={
+            "embedding_timeout": min(settings.embedding_timeout, settings.embedding_query_timeout)
+        }
+    )
+    query_vector = embed(query_settings, [request.query])[0] if vector_mode else None
     with db.connect() as connection:
         # Revalidate after the network call; no DB transaction spans provider latency.
         ids = require_knowledge_bases(connection, user_id, ids)

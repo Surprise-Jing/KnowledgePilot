@@ -76,6 +76,7 @@ uv run --directory backend uvicorn app.main:app --host 127.0.0.1 --port 8000
 | `PK_LLM_STREAM` | `true` | 模型服务不支持流式工具调用时设为 `false` |
 | `PK_AGENT_MAX_STEPS` | `6` | Agent 最大执行步数 |
 | `PK_TOOL_TIMEOUT` | `15` | 单次工具调用超时秒数 |
+| `PK_EMBEDDING_QUERY_TIMEOUT` | `8` | 检索时查询向量化的超时秒数，需小于 `PK_TOOL_TIMEOUT`，向量服务卡住时才能降级为 BM25 |
 | `PK_CONTEXT_BUDGET_CHARS` | `24000` | 对话上下文预算（字符） |
 | `PK_RETRIEVER` | `cosine` | 检索策略，评测对照用 |
 | `PK_EMBEDDING_BASE_URL` | 空 | OpenAI 兼容 API 根地址，追加 `/embeddings` |

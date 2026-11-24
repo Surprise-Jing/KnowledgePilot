@@ -296,6 +296,7 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 | `read_document` 失败（重试后仍失败，或不可重试的 `document_not_ready`） | 若本 run 已经通过工具拿到该文档的片段，返回这些片段 | `ok=true`，`data.degraded = {"kind": "retrieved_snippets", "reason": "<原错误码>"}`，`data.truncated=true`；`tool_result.fallback = "retrieved_snippets"` |
 
 - 权限、范围、参数类错误（`*_not_found`、`out_of_scope`、`invalid_argument`）**不降级**，原样返回。
+- 检索时查询向量化使用 `PK_EMBEDDING_QUERY_TIMEOUT`（默认 8 秒，入库仍用 `PK_EMBEDDING_TIMEOUT`），保证向量服务卡住时先得到 `embedding_timeout` 并降级，而不是先触发 `tool_timeout`。
 - 降级后的片段仍使用本 run 的引用标记，引用规则不变。
 - `tool_calls.fallback` 记录降级类型，`summary` 用中文写明，如“检索服务异常，已改用关键词检索：命中 4 个片段”。
 
