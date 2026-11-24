@@ -395,8 +395,13 @@ def test_deleted_document_is_marked_in_follow_up_focus(client, kb):
     )
     conversation = make_conversation(client)
     read_sse(ask(client, conversation, "删除文档会怎样？", [kb]))
-    document_id = client.get(f"/api/knowledge-bases/{kb}/documents", headers={"X-User-Id": "demo"}).json()[0]["id"]
-    assert client.delete(f"/api/documents/{document_id}", headers={"X-User-Id": "demo"}).status_code == 204
+    document_id = client.get(
+        f"/api/knowledge-bases/{kb}/documents", headers={"X-User-Id": "demo"}
+    ).json()[0]["id"]
+    assert (
+        client.delete(f"/api/documents/{document_id}", headers={"X-User-Id": "demo"}).status_code
+        == 204
+    )
 
     read_sse(ask(client, conversation, "这份文档现在还能读取吗？", [kb]))
     messages = llm.messages(2)
