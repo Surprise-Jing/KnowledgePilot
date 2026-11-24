@@ -9,6 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.config import Settings
+from app.db import SCHEMA_VERSION
 from app.errors import AppError
 from app.main import create_app
 from app.services.embeddings import embed, profile, reindex
@@ -207,13 +208,22 @@ def test_v2_migration_preserves_chunks(settings, provider):
         a = kb(client)
         doc = upload(client, a, "automobile")
     with sqlite3.connect(settings.data_dir / "knowledge.db") as connection:
+        # Rewind to a v2 database: drop what v3 and later migrations added.
         connection.execute("DROP TABLE chunk_embeddings")
+        for table, column in [
+            ("tool_calls", "attempt"),
+            ("tool_calls", "retry_of"),
+            ("tool_calls", "fallback"),
+            ("runs", "degraded"),
+            ("runs", "model_retries"),
+        ]:
+            connection.execute(f"ALTER TABLE {table} DROP COLUMN {column}")
         connection.execute("PRAGMA user_version=2")
     with TestClient(create_app(settings)) as client:
         assert client.get(f"/api/documents/{doc}").json()["status"] == "success"
         assert query(client, [a], "automobile").json()[0]["document_id"] == doc
         with client.app.state.db.connect() as connection:
-            assert connection.execute("PRAGMA user_version").fetchone()[0] == 3
+            assert connection.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
 
 
 def test_rebuild_failure_keeps_existing_index(settings, provider, monkeypatch):

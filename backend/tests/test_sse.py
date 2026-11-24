@@ -110,6 +110,8 @@ def test_tool_events_precede_answer_and_tokens_match_persisted_answer(client, kb
         "step": 1,
         "name": "search_chunks",
         "arguments": {"query": "删除文档"},
+        "attempt": 1,
+        "retry_of": None,
     }
     assert tool_result_event["status"] == "success"
     assert tool_result_event["summary"] == "命中 1 个片段（1 个文件）"

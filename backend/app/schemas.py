@@ -312,6 +312,8 @@ class ConversationDetail(ConversationOut):
 
 
 StopReason = Literal["answered", "max_steps", "model_error", "timeout", "interrupted"]
+# Degradation applied to a tool call (docs/contracts.md §10).
+FallbackKind = Literal["bm25", "retrieved_snippets"]
 
 
 class ToolCallOut(BaseModel):
@@ -324,6 +326,10 @@ class ToolCallOut(BaseModel):
     error: ToolError | None
     duration_ms: int | None
     created_at: str
+    # Automatic retry: attempt 2 links to the first call through retry_of.
+    attempt: int = 1
+    retry_of: str | None = None
+    fallback: FallbackKind | None = None
 
 
 class RunOut(BaseModel):
@@ -343,6 +349,8 @@ class RunOut(BaseModel):
     started_at: str
     finished_at: str | None
     tool_calls: list[ToolCallOut]
+    degraded: bool = False
+    model_retries: int = 0
 
 
 # ---- SSE event payloads (docs/contracts.md §4); `event:` names are the class docstrings ----
@@ -364,6 +372,8 @@ class ToolCallEvent(BaseModel):
     step: int
     name: str
     arguments: dict[str, Any]
+    attempt: int = 1
+    retry_of: str | None = None
 
 
 class ToolResultEvent(BaseModel):
@@ -374,6 +384,7 @@ class ToolResultEvent(BaseModel):
     summary: str
     error: ToolError | None = None
     duration_ms: int
+    fallback: FallbackKind | None = None
 
 
 class TokenEvent(BaseModel):
@@ -406,3 +417,4 @@ class DoneEvent(BaseModel):
     stop_reason: StopReason
     step_count: int
     usage: Usage
+    degraded: bool = False

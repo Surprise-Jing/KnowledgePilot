@@ -1,8 +1,8 @@
-# KnowledgePilot 共享契约 v1.5
+# KnowledgePilot 共享契约 v1.6
 
 > **只有主 Agent（Tech Lead）可以修改本文件。** Subagent 发现契约不合理或缺失时，停止相关部分，在返回报告的“是否修改公共接口”中写明建议，由主 Agent 决定并更新本文件与变更记录。
 >
-> 对应代码：请求/响应模型 `backend/app/schemas.py`，错误类型 `backend/app/errors.py`，配置 `backend/app/config.py`，数据库 `backend/app/db.py`（schema v3）。代码与本文冲突时以本文为准，并报告主 Agent。
+> 对应代码：请求/响应模型 `backend/app/schemas.py`，错误类型 `backend/app/errors.py`，配置 `backend/app/config.py`，数据库 `backend/app/db.py`（schema v4）。代码与本文冲突时以本文为准，并报告主 Agent。
 
 ## 1. 通用约定
 
@@ -240,6 +240,9 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 - 用户身份 `PK_MCP_USER_ID`；`allowed_kb_ids` 为该用户全部知识库；数据目录同 `PK_DATA_DIR`。
 - 暴露 5.2 中全部工具，名称、参数 Schema、错误码与应用内完全一致（直接复用注册表）。错误以 `isError: true` 返回 `ToolError` JSON。
 - Skill 包：`skills/knowledgepilot/SKILL.md`（适用场景、工具说明、调用示例、MCP 客户端配置示例）。
+- 每次 `call_tool` 新建 `ToolContext`：`settings` 为应用配置，`allowed_kb_ids` 为调用时该用户的全部知识库，`run_id=None`，`markers` 在一个 MCP 会话内复用（同一片段在会话内标记稳定）。
+- 工具降级（§10 中工具层的部分，例如检索降级为 BM25）在 MCP 下同样生效，结果的 `data.degraded` 说明降级方式。Agent 层的重试和模型重试不适用于 MCP。
+- 启动失败（数据库版本过高等）写 stderr 并以非零码退出；stdout 只用于 MCP 协议，**任何日志都不得写到 stdout**。
 
 ## 7. 前端集成
 
@@ -258,6 +261,7 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 | v1.3 | 2026-11-23 | `ToolContext` 增加 `settings`；`.env.example` 只保留聊天与 Embedding 的核心配置 |
 | v1.4 | 2026-11-23 | 上传与列表的 `folder_id` 空字符串表示根目录 |
 | v1.5 | 2026-11-23 | 明确内部异常、未完成工具调用、max_steps 的 run 记录方式（采纳 B1 报告） |
+| v1.6 | 2026-11-23 | 工具失败降级（§10）；schema v4 轨迹字段；SSE `tool_call.attempt/retry_of`、`tool_result.fallback`、`done.degraded`；MCP 细化（§6） |
 
 ## 9. 检索策略与向量持久化
 
@@ -270,4 +274,37 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 - schema v3 新增 `chunk_embeddings`；真实向量存于同一个 `knowledge.db`，使用小端 float32 BLOB 和精确扫描，不是 ANN 索引或独立向量数据库服务。片段外键级联清理向量。
 - vector/hybrid 模式的入库只有在全部向量生成并与片段原子提交后才标 success；失败标 failed 并可重试，不回退假向量或词频结果。
 - 向量签名包含服务地址、模型、维度和 `PK_EMBEDDING_REVISION`，不含密钥；同名模型更换权重时手动提升 revision。配置签名不匹配或旧数据没有向量时返回 409，不隐式调用模型重建历史数据。
-- 停止应用后执行 `uv run --directory backend python -m app.reindex --user-id demo`，为该用户所有 success 文档补建/重建向量；逐文档事务，失败保留该文档旧向量，已完成文档不会回滚。模型故障不自动降级。重建不改片段 ID，保留引用映射。
+- 停止应用后执行 `uv run --directory backend python -m app.reindex --user-id demo`，为该用户所有 success 文档补建/重建向量；逐文档事务，失败保留该文档旧向量，已完成文档不会回滚。模型故障不自动降级。检索服务层 `search` 本身同样不降级、只报错；唯一的降级是 §10.2 中工具层显式、可见的 BM25 替代。重建不改片段 ID，保留引用映射。
+
+
+## 10. 工具失败降级（P1，B2 负责）
+
+目标：工具或模型临时失败时，在步数上限内尽量给出有依据的回答，并让用户和轨迹清楚看到发生了什么。降级不得伪造数据，也不得悄悄改变结果来源。
+
+### 10.1 自动重试（Agent 层）
+
+- 工具结果 `ok=false` 且 `retryable=true` 时（如 `tool_timeout`、`internal_error`、`embedding_timeout`、`embedding_error`、解析中的 `document_not_ready`），Agent 用**相同参数**自动重试一次，不消耗模型步数。
+- 重试是一条新的工具调用：新 `call_id`，`attempt=2`，`retry_of` 指向第一次调用；两次都有 `tool_call` / `tool_result` 事件并写入 `tool_calls`。
+- 每个 run 最多 3 次自动重试；超过后直接把错误交给模型。
+- `document_not_ready` 的重试前等待 1 秒；其他立即重试。
+
+### 10.2 替代执行（工具层，HTTP 与 MCP 一致）
+
+| 场景 | 降级 | 结果标记 |
+| --- | --- | --- |
+| `search_chunks` 在 `vector` / `hybrid` 策略下因 `embedding_*` 错误失败 | 用同一查询、同一范围改走 `bm25` 检索 | `ok=true`，`data.degraded = {"kind": "bm25", "reason": "<原错误码>"}`；`tool_result.fallback = "bm25"` |
+| `read_document` 失败（重试后仍失败，或不可重试的 `document_not_ready`） | 若本 run 已经通过工具拿到该文档的片段，返回这些片段 | `ok=true`，`data.degraded = {"kind": "retrieved_snippets", "reason": "<原错误码>"}`，`data.truncated=true`；`tool_result.fallback = "retrieved_snippets"` |
+
+- 权限、范围、参数类错误（`*_not_found`、`out_of_scope`、`invalid_argument`）**不降级**，原样返回。
+- 降级后的片段仍使用本 run 的引用标记，引用规则不变。
+- `tool_calls.fallback` 记录降级类型，`summary` 用中文写明，如“检索服务异常，已改用关键词检索：命中 4 个片段”。
+
+### 10.3 模型调用
+
+- 模型返回 `model_error` / `model_timeout`，且本步尚未输出任何文本时，重试一次（`runs.model_retries` 加 1，不发事件，不计步数）；已输出文本或重试仍失败时，按 §5.4 结束。
+
+### 10.4 部分回答
+
+- run 中发生任何重试、替代执行或模型重试时，`runs.degraded = 1`，`done.degraded = true`。
+- 系统提示要求：使用了降级结果或部分工具失败时，回答中必须说明哪些内容没有查到或依据有限；没有足够依据时明确告知无法完成，不编造。
+- 前端在回答下方显示“部分工具失败，回答可能不完整”之类的提示，并在轨迹中标出重试和降级。

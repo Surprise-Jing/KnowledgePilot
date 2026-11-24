@@ -87,6 +87,8 @@ def test_schema_v2_columns_exist(settings):
     assert "result_json" in columns("tool_calls")
     assert "dropped_citations" in columns("runs")
     assert "location_json" in columns("citations")
+    assert {"attempt", "retry_of", "fallback"} <= columns("tool_calls")
+    assert {"degraded", "model_retries"} <= columns("runs")
 
 
 def test_patch_models_distinguish_null_from_omitted():

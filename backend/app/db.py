@@ -2,7 +2,7 @@ import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 # Schema v1. Statements run one by one inside the migration transaction
 # (executescript would commit implicitly). The table design is documented in docs/data-model.md.
@@ -216,7 +216,20 @@ def _migrate_v3(connection):
     )""")
 
 
-MIGRATIONS = {1: _migrate_v1, 2: _migrate_v2, 3: _migrate_v3}
+def _migrate_v4(connection):
+    """Tool failure degradation trace (docs/contracts.md §10). ADD COLUMN only:
+    - tool_calls.attempt / retry_of: automatic retries are separate rows linked to the first
+    - tool_calls.fallback: the degradation applied to this call (e.g. "bm25")
+    - runs.degraded / model_retries: whether any degradation happened in the run
+    """
+    connection.execute("ALTER TABLE tool_calls ADD COLUMN attempt INTEGER NOT NULL DEFAULT 1")
+    connection.execute("ALTER TABLE tool_calls ADD COLUMN retry_of TEXT")
+    connection.execute("ALTER TABLE tool_calls ADD COLUMN fallback TEXT")
+    connection.execute("ALTER TABLE runs ADD COLUMN degraded INTEGER NOT NULL DEFAULT 0")
+    connection.execute("ALTER TABLE runs ADD COLUMN model_retries INTEGER NOT NULL DEFAULT 0")
+
+
+MIGRATIONS = {1: _migrate_v1, 2: _migrate_v2, 3: _migrate_v3, 4: _migrate_v4}
 
 
 class Database:
