@@ -383,6 +383,20 @@ def test_session_focus_message():
     assert text_.index("方案.docx") < text_.index("说明.txt")
 
 
+def test_session_focus_message_marks_deleted_historical_citations():
+    text_ = focus_message(
+        SessionFocus(
+            documents=[("d1", "方案.docx")],
+            deleted_documents=[("旧通知.txt", "第 2 行")],
+            last_scope=[("k", "库")],
+        )
+    )
+    assert "《方案.docx》 document_id=d1" in text_
+    assert "《旧通知.txt》" in text_
+    assert "已删除" in text_ and "不能重新读取" in text_
+    assert "历史引用快照" in text_
+
+
 def test_system_prompt_covers_contract_points():
     for phrase in ("只依据", "不可信", "[c1]", "不得编造", "没有找到依据", "寒暄"):
         assert phrase in SYSTEM_PROMPT

@@ -382,6 +382,36 @@ def test_multi_turn_history_and_session_focus(client, kb):
     assert all(m["role"] != "tool" for m in messages)
 
 
+def test_deleted_document_is_marked_in_follow_up_focus(client, kb):
+    llm = install_llm(
+        client,
+        ScriptedLLM(
+            [
+                [tool_call("search_chunks", {"query": "删除文档"})],
+                text("删除时会清理索引 [c1]。"),
+                text("这份文档已经删除，我无法重新读取它。"),
+            ]
+        ),
+    )
+    conversation = make_conversation(client)
+    read_sse(ask(client, conversation, "删除文档会怎样？", [kb]))
+    document_id = client.get(f"/api/knowledge-bases/{kb}/documents", headers={"X-User-Id": "demo"}).json()[0]["id"]
+    assert client.delete(f"/api/documents/{document_id}", headers={"X-User-Id": "demo"}).status_code == 204
+
+    read_sse(ask(client, conversation, "这份文档现在还能读取吗？", [kb]))
+    messages = llm.messages(2)
+    second_system = messages[0]
+    assert "guide.txt" in second_system["content"]
+    assert "已删除" in second_system["content"]
+    assert "历史引用快照" in second_system["content"]
+    assert "不能重新读取" in second_system["content"]
+    assert not any(
+        message.get("tool_calls")
+        and any(call["function"]["name"] == "read_document" for call in message["tool_calls"])
+        for message in messages[2:]
+    )
+
+
 def test_failed_answers_are_not_in_history(client, kb):
     llm = install_llm(
         client,

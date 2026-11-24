@@ -24,7 +24,7 @@ def scope_message(knowledge_bases: list[tuple[str, str]]) -> str:
 
 def focus_message(focus: SessionFocus) -> str | None:
     """Session focus helps resolve references such as "这份文档" or "刚才提到的方法"."""
-    if not focus.documents and not focus.last_scope:
+    if not focus.documents and not focus.deleted_documents and not focus.last_scope:
         return None
     lines = ["会话焦点（用于理解“这份文档”“刚才提到的”等指代，内容仍以工具结果为准）："]
     if focus.documents:
@@ -32,6 +32,12 @@ def focus_message(focus: SessionFocus) -> str | None:
         lines += [
             f"- 《{filename}》 document_id={document_id}"
             for document_id, filename in focus.documents
+        ]
+    if focus.deleted_documents:
+        lines.append("最近回答引用过、但后来已删除的历史文档（仅供解释历史回答）：")
+        lines += [
+            f"- 《{filename}》位置：{location_label}；文档已删除，引用来自历史引用快照，不能重新读取。"
+            for filename, location_label in focus.deleted_documents
         ]
     if focus.last_scope:
         names = "、".join(f"「{name}」(id={kb_id})" for kb_id, name in focus.last_scope)
