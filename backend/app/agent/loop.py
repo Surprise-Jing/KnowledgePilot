@@ -3,7 +3,12 @@
 One AgentRun answers one question: it calls the model, executes requested tools, feeds the
 results (including structured errors) back, and finally validates citation markers and
 persists the outcome. Events are handed to `emit` as schema models; the SSE layer frames
-them and sends `done` from the returned DoneEvent."""
+them and sends `done` from the returned DoneEvent.
+
+Degradation (contracts §10): a retryable tool failure is retried once with the same arguments
+as a new, linked tool call (at most MAX_TOOL_RETRIES per run); the tool's fallback is applied
+to the final attempt only; a model failure before any text of the step is retried once. Any
+of these marks the run as degraded."""
 
 import asyncio
 import json
@@ -28,6 +33,7 @@ from app.schemas import (
     RunStartedEvent,
     TokenEvent,
     ToolCallEvent,
+    ToolResult,
     ToolResultEvent,
     Usage,
 )
@@ -35,7 +41,9 @@ from app.services import conversations
 from app.services.conversations import CitationRecord, RunResult, StartedRun
 from app.tools.context import MarkerAllocator, ToolContext
 from app.tools.registry import (
-    execute_async,
+    apply_fallback,
+    execute_attempt_async,
+    fallback_kind,
     openai_tool_specs,
     parse_arguments,
     serialize_result,
@@ -47,6 +55,12 @@ logger = logging.getLogger(__name__)
 Emit = Callable[[BaseModel], Awaitable[None]]
 
 MODEL_STOP_REASONS = {"model_timeout": "timeout"}
+# Automatic tool retries allowed per run (contracts §10.1).
+MAX_TOOL_RETRIES = 3
+# Seconds to wait before retrying a document that is still being parsed. Read at call time,
+# so tests can shorten it by patching this module attribute.
+NOT_READY_RETRY_DELAY = 1.0
+RETRYABLE_MODEL_ERRORS = {"model_error", "model_timeout"}
 INTERNAL_ERROR = ErrorEvent(
     code="internal_error", message="服务内部错误，回答未完成，请稍后重试", retryable=True
 )
@@ -85,6 +99,9 @@ class AgentRun:
         self.prompt_tokens: int | None = None
         self.completion_tokens: int | None = None
         self.turns: list[TurnItem] = []
+        self.tool_retries = 0
+        self.model_retries = 0
+        self.fallbacks = 0
         self.ctx = ToolContext(
             db=setup.db,
             settings=setup.settings,
@@ -103,12 +120,17 @@ class AgentRun:
     def usage(self) -> Usage:
         return Usage(prompt_tokens=self.prompt_tokens, completion_tokens=self.completion_tokens)
 
+    @property
+    def degraded(self) -> bool:
+        return bool(self.tool_retries or self.model_retries or self.fallbacks)
+
     def done_event(self, stop_reason: str) -> DoneEvent:
         return DoneEvent(
             run_id=self.run_id,
             stop_reason=stop_reason,
             step_count=self.step_count,
             usage=self.usage,
+            degraded=self.degraded,
         )
 
     # ---- entry point ----
@@ -159,6 +181,8 @@ class AgentRun:
             error=error.message if error else None,
             dropped_citations=dropped,
             citations=citations,
+            degraded=self.degraded,
+            model_retries=self.model_retries,
         )
         await asyncio.to_thread(conversations.finish_run, self.setup.db, self.run_id, result)
         for citation in citations:
@@ -167,7 +191,15 @@ class AgentRun:
             await self.emit(error)
         logger.info(
             "run finished",
-            extra={"stop_reason": stop_reason, "step_count": self.step_count, "dropped": dropped},
+            extra={
+                "stop_reason": stop_reason,
+                "step_count": self.step_count,
+                "dropped": dropped,
+                "degraded": self.degraded,
+                "tool_retries": self.tool_retries,
+                "model_retries": self.model_retries,
+                "fallbacks": self.fallbacks,
+            },
         )
         return self.done_event(stop_reason)
 
@@ -213,7 +245,7 @@ class AgentRun:
                 turns=self.turns,
                 budget=settings.context_budget_chars,
             )
-            turn_text, requested = await self._call_model(messages)
+            turn_text, requested = await self._call_model_with_retry(messages)
             if requested is None:
                 return "answered", None
             parsed = [_recorded_arguments(call) for call in requested.calls]
@@ -237,6 +269,21 @@ class AgentRun:
             for call, (arguments, _) in zip(requested.calls, parsed, strict=True):
                 await self._run_tool(step, call, arguments)
             step += 1
+
+    async def _call_model_with_retry(
+        self, messages: list[dict]
+    ) -> tuple[str, ToolCallsRequested | None]:
+        """A model failure before any text of this step is retried once (contracts §10.3):
+        no event, no extra step. After text was streamed a retry would duplicate it."""
+        emitted = len(self.text_parts)
+        try:
+            return await self._call_model(messages)
+        except AppError as exc:
+            if exc.code not in RETRYABLE_MODEL_ERRORS or len(self.text_parts) > emitted:
+                raise
+            self.model_retries += 1
+            logger.warning("retrying model call", extra={"error_code": exc.code})
+        return await self._call_model(messages)
 
     async def _call_model(self, messages: list[dict]) -> tuple[str, ToolCallsRequested | None]:
         turn_text: list[str] = []
@@ -266,48 +313,39 @@ class AgentRun:
         if event.completion_tokens is not None:
             self.completion_tokens = (self.completion_tokens or 0) + event.completion_tokens
 
+    def _should_retry(self, result: ToolResult) -> bool:
+        return (
+            not result.ok
+            and result.error is not None
+            and result.error.retryable
+            and self.tool_retries < MAX_TOOL_RETRIES
+        )
+
     async def _run_tool(self, step: int, call: ToolCallRequest, arguments: dict) -> None:
-        setup = self.setup
-        call_id = await asyncio.to_thread(
-            conversations.insert_tool_call, setup.db, self.run_id, step, call.name, arguments
-        )
-        await self.emit(
-            ToolCallEvent(call_id=call_id, step=step, name=call.name, arguments=arguments)
-        )
+        timeout = self.setup.settings.tool_timeout
+        call_id = await self._start_call(step, call, arguments, attempt=1, retry_of=None)
         started = time.perf_counter()
-        result = await execute_async(
-            self.ctx, call.name, call.arguments_json, setup.settings.tool_timeout
-        )
-        duration_ms = round((time.perf_counter() - started) * 1000)
-        summary = summarize(call.name, result)
-        payload = serialize_result(result)
-        await asyncio.to_thread(
-            conversations.finish_tool_call,
-            setup.db,
-            call_id,
-            ok=result.ok,
-            summary=summary,
-            result_json=payload,
-            error=result.error,
-            duration_ms=duration_ms,
-        )
-        logger.info(
-            "tool finished",
-            extra={
-                "tool": call.name,
-                "ok": result.ok,
-                "error_code": result.error.code if result.error else None,
-                "duration_ms": duration_ms,
-            },
-        )
-        await self.emit(
-            ToolResultEvent(
-                call_id=call_id,
-                status="success" if result.ok else "error",
-                summary=summary,
-                error=result.error,
-                duration_ms=duration_ms,
+        result = await execute_attempt_async(self.ctx, call.name, call.arguments_json, timeout)
+        attempt = 1
+        if self._should_retry(result):
+            # The failed attempt stays in the trace but is not shown to the model: the model
+            # gets one tool message per call, carrying the outcome of the retry.
+            await self._finish_call(call_id, call.name, result, started, attempt=attempt)
+            self.tool_retries += 1
+            if result.error.code == "document_not_ready":
+                # Parsing is in progress; give it a moment instead of failing again at once.
+                await asyncio.sleep(NOT_READY_RETRY_DELAY)
+            logger.info("retrying tool", extra={"tool": call.name, "error_code": result.error.code})
+            attempt = 2
+            call_id = await self._start_call(
+                step, call, arguments, attempt=attempt, retry_of=call_id
             )
+            started = time.perf_counter()
+            result = await execute_attempt_async(self.ctx, call.name, call.arguments_json, timeout)
+        # Only the final attempt degrades, so a transient failure is first retried for real.
+        result = apply_fallback(self.ctx, call.name, call.arguments_json, result)
+        summary, payload = await self._finish_call(
+            call_id, call.name, result, started, attempt=attempt
         )
         self.turns.append(
             TurnItem(
@@ -317,6 +355,81 @@ class AgentRun:
                 step=step,
             )
         )
+
+    async def _start_call(
+        self,
+        step: int,
+        call: ToolCallRequest,
+        arguments: dict,
+        *,
+        attempt: int,
+        retry_of: str | None,
+    ) -> str:
+        call_id = await asyncio.to_thread(
+            conversations.insert_tool_call,
+            self.setup.db,
+            self.run_id,
+            step,
+            call.name,
+            arguments,
+            attempt=attempt,
+            retry_of=retry_of,
+        )
+        await self.emit(
+            ToolCallEvent(
+                call_id=call_id,
+                step=step,
+                name=call.name,
+                arguments=arguments,
+                attempt=attempt,
+                retry_of=retry_of,
+            )
+        )
+        return call_id
+
+    async def _finish_call(
+        self, call_id: str, name: str, result: ToolResult, started: float, *, attempt: int
+    ) -> tuple[str, str]:
+        """Persist and emit one attempt's outcome; returns (summary, payload for the model)."""
+        duration_ms = round((time.perf_counter() - started) * 1000)
+        summary = summarize(name, result)
+        payload = serialize_result(result)
+        fallback = fallback_kind(result)
+        if fallback is not None:
+            self.fallbacks += 1
+        await asyncio.to_thread(
+            conversations.finish_tool_call,
+            self.setup.db,
+            call_id,
+            ok=result.ok,
+            summary=summary,
+            result_json=payload,
+            error=result.error,
+            duration_ms=duration_ms,
+            fallback=fallback,
+        )
+        logger.info(
+            "tool finished",
+            extra={
+                "tool": name,
+                "ok": result.ok,
+                "error_code": result.error.code if result.error else None,
+                "duration_ms": duration_ms,
+                "attempt": attempt,
+                "fallback": fallback,
+            },
+        )
+        await self.emit(
+            ToolResultEvent(
+                call_id=call_id,
+                status="success" if result.ok else "error",
+                summary=summary,
+                error=result.error,
+                duration_ms=duration_ms,
+                fallback=fallback,
+            )
+        )
+        return summary, payload
 
     # ---- citations and persistence ----
 
@@ -351,6 +464,8 @@ class AgentRun:
                 content=self.text,
                 step_count=self.step_count,
                 usage=self.usage,
+                degraded=self.degraded,
+                model_retries=self.model_retries,
             )
         except Exception:
             logger.exception("cannot mark run as interrupted")
@@ -368,6 +483,8 @@ class AgentRun:
                     step_count=self.step_count,
                     usage=self.usage,
                     error=INTERNAL_ERROR.message,
+                    degraded=self.degraded,
+                    model_retries=self.model_retries,
                 ),
             )
         except Exception:

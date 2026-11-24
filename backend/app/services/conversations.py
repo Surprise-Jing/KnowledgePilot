@@ -244,13 +244,32 @@ def session_focus(
     )
 
 
-def insert_tool_call(db: Database, run_id: str, step: int, name: str, arguments: dict) -> str:
+def insert_tool_call(
+    db: Database,
+    run_id: str,
+    step: int,
+    name: str,
+    arguments: dict,
+    *,
+    attempt: int = 1,
+    retry_of: str | None = None,
+) -> str:
+    """An automatic retry is its own row: attempt 2 points at the first call via retry_of."""
     call_id = str(uuid4())
     with db.connect() as connection:
         connection.execute(
-            """INSERT INTO tool_calls(id, run_id, step, tool_name, arguments, status)
-            VALUES (?, ?, ?, ?, ?, 'running')""",
-            (call_id, run_id, step, name, json.dumps(arguments, ensure_ascii=False)),
+            """INSERT INTO tool_calls(id, run_id, step, tool_name, arguments, status, attempt,
+                retry_of)
+            VALUES (?, ?, ?, ?, ?, 'running', ?, ?)""",
+            (
+                call_id,
+                run_id,
+                step,
+                name,
+                json.dumps(arguments, ensure_ascii=False),
+                attempt,
+                retry_of,
+            ),
         )
     return call_id
 
@@ -264,11 +283,12 @@ def finish_tool_call(
     result_json: str,
     error: ToolError | None,
     duration_ms: int,
+    fallback: str | None = None,
 ) -> None:
     with db.connect() as connection:
         connection.execute(
             """UPDATE tool_calls SET status=?, result_summary=?, result_json=?, error_code=?,
-                error_message=?, retryable=?, duration_ms=?
+                error_message=?, retryable=?, duration_ms=?, fallback=?
             WHERE id=?""",
             (
                 "success" if ok else "error",
@@ -278,6 +298,7 @@ def finish_tool_call(
                 error.message if error else None,
                 int(error.retryable) if error else None,
                 duration_ms,
+                fallback,
                 call_id,
             ),
         )
@@ -316,6 +337,9 @@ class RunResult:
     error: str | None = None
     dropped_citations: list[str] = field(default_factory=list)
     citations: list[CitationRecord] = field(default_factory=list)
+    # Any automatic tool retry, tool fallback or model retry happened (contracts §10.4).
+    degraded: bool = False
+    model_retries: int = 0
 
 
 def finish_run(db: Database, run_id: str, result: RunResult) -> bool:
@@ -325,7 +349,8 @@ def finish_run(db: Database, run_id: str, result: RunResult) -> bool:
     with db.connect() as connection:
         updated = connection.execute(
             """UPDATE runs SET status=?, stop_reason=?, step_count=?, prompt_tokens=?,
-                completion_tokens=?, error=?, dropped_citations=?, finished_at=CURRENT_TIMESTAMP
+                completion_tokens=?, error=?, dropped_citations=?, degraded=?, model_retries=?,
+                finished_at=CURRENT_TIMESTAMP
             WHERE id=? AND status='running'""",
             (
                 result.run_status,
@@ -335,6 +360,8 @@ def finish_run(db: Database, run_id: str, result: RunResult) -> bool:
                 result.usage.completion_tokens,
                 result.error,
                 json.dumps(result.dropped_citations),
+                int(result.degraded),
+                result.model_retries,
                 run_id,
             ),
         ).rowcount
@@ -387,7 +414,14 @@ def finish_run(db: Database, run_id: str, result: RunResult) -> bool:
 
 
 def interrupt_run(
-    db: Database, run_id: str, *, content: str | None, step_count: int, usage: Usage
+    db: Database,
+    run_id: str,
+    *,
+    content: str | None,
+    step_count: int,
+    usage: Usage,
+    degraded: bool = False,
+    model_retries: int = 0,
 ) -> bool:
     return finish_run(
         db,
@@ -400,6 +434,8 @@ def interrupt_run(
             step_count=step_count,
             usage=usage,
             error=INTERRUPTED_MESSAGE,
+            degraded=degraded,
+            model_retries=model_retries,
         ),
     )
 
@@ -451,7 +487,12 @@ def get_run(db: Database, user_id: str, run_id: str) -> RunOut:
                 ),
                 duration_ms=call["duration_ms"],
                 created_at=call["created_at"],
+                attempt=call["attempt"],
+                retry_of=call["retry_of"],
+                fallback=call["fallback"],
             )
             for call in calls
         ],
+        degraded=bool(run["degraded"]),
+        model_retries=run["model_retries"],
     )

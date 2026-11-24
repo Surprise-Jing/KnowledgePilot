@@ -208,6 +208,45 @@ def test_finish_run_is_applied_once(client):
     assert message["content"] == "部分" and message["status"] == "failed"
 
 
+def test_run_degradation_and_retry_links_are_persisted(client):
+    kb = make_kb(client)
+    conversation = make_conversation(client)
+    db = client.app.state.db
+    started = conversations.start_run(db, "demo", conversation, "问题", [kb], "m")
+    first = conversations.insert_tool_call(db, started.run_id, 1, "read_document", {"a": 1})
+    retry = conversations.insert_tool_call(
+        db, started.run_id, 1, "read_document", {"a": 1}, attempt=2, retry_of=first
+    )
+    conversations.finish_tool_call(
+        db,
+        retry,
+        ok=True,
+        summary="读取原文失败，已改用本次已检索到的片段",
+        result_json="{}",
+        error=None,
+        duration_ms=1,
+        fallback="retrieved_snippets",
+    )
+    assert conversations.interrupt_run(
+        db,
+        started.run_id,
+        content="部分",
+        step_count=1,
+        usage=Usage(),
+        degraded=True,
+        model_retries=1,
+    )
+    run = client.get(f"/api/runs/{started.run_id}").json()
+    assert run["degraded"] is True and run["model_retries"] == 1
+    calls = run["tool_calls"]
+    assert [(c["attempt"], c["retry_of"], c["fallback"]) for c in calls] == [
+        (1, None, None),
+        (2, first, "retrieved_snippets"),
+    ]
+    # The first attempt never finished: it is closed like any abandoned call.
+    assert calls[0]["status"] == "error"
+
+
 def test_delete_conversation_cascades_runs(client):
     kb = make_kb(client)
     install_llm(client, ScriptedLLM([[tool_call("list_knowledge_bases", {})], text("好")]))

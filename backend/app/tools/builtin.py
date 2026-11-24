@@ -1,13 +1,18 @@
 """The four knowledge tools (docs/contracts.md §5.2). Owner: B.
 
 Tools only call the service layer, which checks ownership; they additionally restrict access
-to the knowledge bases selected for the question (`allowed_kb_ids`)."""
+to the knowledge bases selected for the question (`allowed_kb_ids`).
+
+Tool-level degradation (contracts §10.2) lives here so the in-app Agent and the MCP server
+behave the same: `search_chunks` falls back to BM25 inside `run`, and `read_document` offers
+`fallback`, which the registry applies to the final failed attempt of a call."""
 
 import logging
+import re
 from typing import Any, ClassVar
 
 from app.errors import AppError
-from app.schemas import SearchRequest
+from app.schemas import SearchHit, SearchRequest, ToolError
 from app.services.access import require_document, require_knowledge_base
 from app.services.documents import list_files, read_document_range
 from app.services.retrieval import search
@@ -23,6 +28,31 @@ def _out_of_scope() -> AppError:
 def _require_in_scope(ctx: ToolContext, kb_id: str) -> None:
     if kb_id not in ctx.allowed_kb_ids:
         raise _out_of_scope()
+
+
+VECTOR_RETRIEVERS = {"vector", "hybrid"}
+BM25_FALLBACK_NOTE = "检索服务异常，已改用关键词检索："
+SNIPPETS_FALLBACK_NOTE = "读取原文失败，已改用本次已检索到的片段："
+_MARKER_NUMBER = re.compile(r"c(\d+)")
+
+
+def _search_with_fallback(
+    ctx: ToolContext, request: SearchRequest
+) -> tuple[list[SearchHit], dict | None]:
+    """Vector/hybrid retrieval; when the embedding side fails, the same query and scope run on
+    BM25 instead. The service layer itself never degrades (contracts §9); this explicit,
+    visible substitution is the only one, and the result says so in `degraded`."""
+    try:
+        return search(ctx.db, ctx.user_id, request, ctx.settings), None
+    except AppError as exc:
+        if ctx.settings.retriever not in VECTOR_RETRIEVERS or not exc.code.startswith("embedding_"):
+            raise
+        logger.warning(
+            "search degraded to bm25",
+            extra={"reason": exc.code, "retriever": ctx.settings.retriever},
+        )
+        bm25 = ctx.settings.model_copy(update={"retriever": "bm25"})
+        return search(ctx.db, ctx.user_id, request, bm25), {"kind": "bm25", "reason": exc.code}
 
 
 class ListKnowledgeBasesTool:
@@ -109,8 +139,9 @@ class SearchChunksTool:
         if not kb_ids:
             return {"hits": []}
         request = SearchRequest(query=query, knowledge_base_ids=kb_ids, top_k=arguments["top_k"])
+        results, degraded = _search_with_fallback(ctx, request)
         hits = []
-        for hit in search(ctx.db, ctx.user_id, request, ctx.settings):
+        for hit in results:
             location = hit.location.model_dump()
             marker = ctx.markers.marker_for(
                 hit.chunk_id,
@@ -134,14 +165,16 @@ class SearchChunksTool:
                     "content": hit.content,
                 }
             )
-        return {"hits": hits}
+        return {"hits": hits} if degraded is None else {"hits": hits, "degraded": degraded}
 
     def summarize(self, data: dict) -> str:
         hits = data["hits"]
         if not hits:
-            return "未找到相关片段"
-        files = len({hit["document_id"] for hit in hits})
-        return f"命中 {len(hits)} 个片段（{files} 个文件）"
+            summary = "未找到相关片段"
+        else:
+            files = len({hit["document_id"] for hit in hits})
+            summary = f"命中 {len(hits)} 个片段（{files} 个文件）"
+        return BM25_FALLBACK_NOTE + summary if data.get("degraded") else summary
 
 
 class ListFilesTool:
@@ -263,6 +296,7 @@ class ReadDocumentTool:
                     filename=document_range.filename,
                     location=location,
                     content=chunk.content,
+                    ordinal=chunk.ordinal,
                 ),
             )
             chunks.append({"marker": marker, "ordinal": chunk.ordinal, "location": location})
@@ -277,6 +311,47 @@ class ReadDocumentTool:
             "total_chunks": document_range.total_chunks,
         }
 
+    def fallback(self, ctx: ToolContext, arguments: dict, error: ToolError) -> dict | None:
+        """After reading failed for good: the snippets of this document that tools already
+        returned in this run (or MCP session), or None when there are none. They were already
+        shown to this caller under the same scope, so returning them again reveals nothing new;
+        no database access, since the database may be what failed."""
+        snippets = ctx.markers.sources_for_document(arguments["document_id"])
+        if not snippets:
+            return None
+
+        def position(item: tuple[str, Any]) -> tuple:
+            marker, source = item
+            number = _MARKER_NUMBER.fullmatch(marker)
+            return (
+                source.ordinal is None,
+                source.ordinal or 0,
+                source.location.get("start", 0),
+                source.location.get("char_start") or 0,
+                int(number.group(1)) if number else 0,
+            )
+
+        snippets.sort(key=position)
+        return {
+            "document_id": arguments["document_id"],
+            "filename": snippets[0][1].filename,
+            "content": "\n\n".join(f"[{marker}] {source.content}" for marker, source in snippets),
+            "chunks": [
+                {"marker": marker, "ordinal": source.ordinal, "location": source.location}
+                for marker, source in snippets
+            ],
+            # Only previously retrieved snippets: the document was not read in full.
+            "truncated": True,
+            "next_ordinal": None,
+            "total_chunks": None,
+            "degraded": {"kind": "retrieved_snippets", "reason": error.code},
+        }
+
     def summarize(self, data: dict) -> str:
+        if data.get("degraded"):
+            return (
+                f"{SNIPPETS_FALLBACK_NOTE}《{data['filename']}》{len(data['chunks'])} 个片段，"
+                "原文可能不完整"
+            )
         summary = f"读取《{data['filename']}》{len(data['chunks'])} 个片段（共 {data['total_chunks']} 个）"
         return summary + "，未读完" if data["truncated"] else summary
