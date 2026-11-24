@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "knowledgepilot": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--directory", "<ABS_REPO>/backend", "python", "-m", "app.mcp_server"],
+      "env": {
+        "PK_MCP_USER_ID": "demo"
+      }
+    }
+  }
+}
