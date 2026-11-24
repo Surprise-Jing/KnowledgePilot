@@ -5,6 +5,7 @@ import type { CitationOut } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
+import { type CitationGroup, groupCitations } from '@/lib/citations'
 import { cn } from '@/lib/utils'
 
 import { useInspector } from './inspector-context'
@@ -47,24 +48,21 @@ export function CitationsPanel() {
     )
   }
 
+  const groups = groupCitations(subject.citations)
   return (
     <ol className="flex flex-col gap-3" aria-label="引用列表">
-      {subject.citations.map((citation) => (
-        <CitationCard
-          key={citation.marker}
-          citation={citation}
-          highlighted={citation.marker === highlight}
-          refCallback={(node) => {
-            if (node) refs.current.set(citation.marker, node)
-            else refs.current.delete(citation.marker)
+      {groups.map((group) => (
+        <CitationGroupCard
+          key={group.key}
+          group={group}
+          highlight={highlight}
+          refFor={(marker) => (node) => {
+            if (node) refs.current.set(marker, node)
+            else refs.current.delete(marker)
           }}
-          onOpen={() =>
-            citation.document_id &&
-            openDocument({
-              documentId: citation.document_id,
-              filename: citation.filename,
-              chunkId: citation.chunk_id,
-            })
+          onOpen={(chunkId) =>
+            group.documentId &&
+            openDocument({ documentId: group.documentId, filename: group.filename, chunkId })
           }
         />
       ))}
@@ -72,7 +70,50 @@ export function CitationsPanel() {
   )
 }
 
-function CitationCard({
+/** One source document and every place this answer cites it. */
+function CitationGroupCard({
+  group,
+  highlight,
+  refFor,
+  onOpen,
+}: {
+  group: CitationGroup<CitationOut>
+  highlight: string | null
+  refFor: (marker: string) => (node: HTMLElement | null) => void
+  onOpen: (chunkId: string | null) => void
+}) {
+  const deleted = group.documentId === null
+  const count = group.citations.length
+  return (
+    <li
+      className="flex flex-col gap-2 rounded-lg border p-3 text-sm"
+      data-document={group.documentId ?? undefined}
+      aria-label={`${group.filename}，${count} 处引用`}
+    >
+      <div className="flex min-w-0 items-center gap-2">
+        <FileTextIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <span className="min-w-0 flex-1 truncate font-medium" title={group.filename}>
+          {group.filename}
+        </span>
+        {count > 1 && <Badge variant="secondary">{count} 处</Badge>}
+      </div>
+      {deleted && <Badge variant="outline">来源文档已删除，仅显示引用快照</Badge>}
+      <ol className="flex flex-col gap-2" aria-label={`${group.filename} 的引用位置`}>
+        {group.citations.map((citation) => (
+          <CitationItem
+            key={citation.marker}
+            citation={citation}
+            highlighted={citation.marker === highlight}
+            refCallback={refFor(citation.marker)}
+            onOpen={deleted ? null : () => onOpen(citation.chunk_id)}
+          />
+        ))}
+      </ol>
+    </li>
+  )
+}
+
+function CitationItem({
   citation,
   highlighted,
   refCallback,
@@ -81,9 +122,8 @@ function CitationCard({
   citation: CitationOut
   highlighted: boolean
   refCallback: (node: HTMLElement | null) => void
-  onOpen: () => void
+  onOpen: (() => void) | null
 }) {
-  const deleted = citation.document_id === null
   return (
     <li
       ref={refCallback}
@@ -91,29 +131,28 @@ function CitationCard({
       data-highlighted={highlighted || undefined}
       aria-current={highlighted ? 'true' : undefined}
       className={cn(
-        'flex flex-col gap-2 rounded-lg border p-3 text-sm',
-        highlighted && 'border-primary bg-accent ring-2 ring-ring/50',
+        'flex flex-col gap-1.5 rounded-md bg-muted/50 p-2',
+        highlighted && 'bg-accent ring-2 ring-ring/50',
       )}
     >
       <div className="flex min-w-0 items-center gap-2">
         <Badge>{citation.marker}</Badge>
-        <FileTextIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-        <span className="min-w-0 truncate font-medium" title={citation.filename}>
-          {citation.filename}
+        <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground" title={citation.location_label}>
+          {citation.location_label || '位置未知'}
         </span>
-      </div>
-      <p className="text-xs text-muted-foreground">{citation.location_label || '位置未知'}</p>
-      <p className="line-clamp-6 leading-relaxed whitespace-pre-wrap">{citation.content}</p>
-      <div className="flex items-center justify-between gap-2">
-        {deleted ? (
-          <Badge variant="outline">来源文档已删除，仅显示引用快照</Badge>
-        ) : (
-          <Button size="xs" variant="outline" onClick={onOpen}>
+        {onOpen && (
+          <Button
+            size="xs"
+            variant="outline"
+            onClick={onOpen}
+            aria-label={`查看原文：${citation.filename} ${citation.location_label}`}
+          >
             <BookOpenIcon data-icon="inline-start" />
             查看原文
           </Button>
         )}
       </div>
+      <p className="line-clamp-6 leading-relaxed whitespace-pre-wrap">{citation.content}</p>
     </li>
   )
 }

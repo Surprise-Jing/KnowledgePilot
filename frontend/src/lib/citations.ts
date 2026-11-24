@@ -33,3 +33,32 @@ export function splitCitations(
   pushText(text.slice(cursor))
   return segments
 }
+
+export interface CitationGroup<T extends { document_id: string | null; filename: string }> {
+  /** document_id, or a filename-based key for citations whose document was deleted. */
+  key: string
+  documentId: string | null
+  filename: string
+  citations: T[]
+}
+
+/**
+ * Groups citations by source document, keeping the order in which documents are first cited
+ * and every citation (location) inside its group. Deleted documents (document_id null) group
+ * by filename, since their snapshots are all that is left.
+ */
+export function groupCitations<T extends { document_id: string | null; filename: string }>(
+  citations: T[],
+): CitationGroup<T>[] {
+  const groups = new Map<string, CitationGroup<T>>()
+  for (const citation of citations) {
+    const key = citation.document_id ?? `deleted:${citation.filename}`
+    let group = groups.get(key)
+    if (!group) {
+      group = { key, documentId: citation.document_id, filename: citation.filename, citations: [] }
+      groups.set(key, group)
+    }
+    group.citations.push(citation)
+  }
+  return [...groups.values()]
+}

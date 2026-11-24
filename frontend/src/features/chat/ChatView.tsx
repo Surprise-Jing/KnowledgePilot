@@ -5,6 +5,7 @@ import {
   MessagesSquareIcon,
   SquareIcon,
   Trash2Icon,
+  TriangleAlertIcon,
 } from 'lucide-react'
 import { type KeyboardEvent, type ReactNode, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 
@@ -20,6 +21,7 @@ import type { ErrorEvent, KnowledgeBaseOut, MessageOut } from '@/api/types'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { useReportError } from '@/components/error-context'
 import { ErrorAlert } from '@/components/error-feedback'
+import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Bubble, BubbleContent } from '@/components/ui/bubble'
 import { Button } from '@/components/ui/button'
 import {
@@ -57,6 +59,7 @@ import {
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { type InspectSubject, useInspector } from '@/features/citations/inspector-context'
+import { loadRun } from '@/features/trace/runCache'
 import { traceFromLive } from '@/features/trace/traceModel'
 import { useResource } from '@/hooks/use-resource'
 import { stopReasonLabel } from '@/lib/errors'
@@ -92,6 +95,13 @@ export function ChatView({ knowledgeBases, currentKbId }: ChatViewProps) {
 
   const [live, dispatch] = useReducer(chatReducer, null)
   const [liveConvId, setLiveConvId] = useState<string | null>(null)
+  // Per-send sequence number: the live question/answer keep the same React keys when the
+  // refetched persisted messages replace them, so the scroller sees no new items and does not
+  // re-anchor (which used to jump the view to the first question).
+  const [liveSeq, setLiveSeq] = useState(0)
+  const seqRef = useRef(0)
+  // Message id → React key of the live item it replaced; kept so the keys never change later.
+  const [keyAliases, setKeyAliases] = useState<Record<string, string>>({})
   const abortRef = useRef<AbortController | null>(null)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [input, setInput] = useState('')
@@ -116,6 +126,8 @@ export function ChatView({ knowledgeBases, currentKbId }: ChatViewProps) {
     ? messages.filter((m) => m.id !== live.userMessageId && m.id !== live.assistantMessageId)
     : messages
   const liveKey = live?.assistantMessageId ?? LIVE_KEY
+  const liveItemKey = (part: 'q' | 'a') => `live-${liveSeq}:${part}`
+  const itemKey = (message: MessageOut) => keyAliases[message.id] ?? message.id
   const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant')
   const effectiveKey = selectedKey ?? lastAssistant?.id ?? null
 
@@ -178,6 +190,8 @@ export function ChatView({ knowledgeBases, currentKbId }: ChatViewProps) {
     const controller = new AbortController()
     abortRef.current = controller
     setLiveConvId(conversationId)
+    const seq = ++seqRef.current
+    setLiveSeq(seq)
     dispatch({ type: 'start', question: content, knowledgeBaseIds })
     setSelectedKey(LIVE_KEY)
     setInput('')
@@ -189,6 +203,15 @@ export function ChatView({ knowledgeBases, currentKbId }: ChatViewProps) {
         controller.signal,
       )) {
         received = true
+        if (event.type === 'run_started') {
+          // The persisted messages that later replace the live items reuse their keys.
+          const { user_message_id: userId, assistant_message_id: assistantId } = event.data
+          setKeyAliases((current) => ({
+            ...current,
+            [userId]: `live-${seq}:q`,
+            [assistantId]: `live-${seq}:a`,
+          }))
+        }
         dispatch({ type: 'event', event })
       }
       dispatch({ type: 'stream_end' })
@@ -258,7 +281,7 @@ export function ChatView({ knowledgeBases, currentKbId }: ChatViewProps) {
                   >
                     <button
                       type="button"
-                      className="flex min-w-0 flex-1 flex-col px-2 py-1.5 text-left"
+                      className="flex min-w-0 flex-1 flex-col px-2 py-1.5 text-left rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                       aria-current={selected ? 'true' : undefined}
                       onClick={() => selectConversation(conversation.id)}
                     >
@@ -343,9 +366,12 @@ export function ChatView({ knowledgeBases, currentKbId }: ChatViewProps) {
               <MessageScroller>
                 <MessageScrollerViewport>
                   <MessageScrollerContent className="p-4">
-                    {shownMessages.map((message) => (
+                    {/* One flat keyed list: the live items and the persisted messages that
+                        replace them must be siblings for their shared keys to match. */}
+                    {[
+                      ...shownMessages.map((message) => (
                       <MessageScrollerItem
-                        key={message.id}
+                        key={itemKey(message)}
                         messageId={message.id}
                         scrollAnchor={message.role === 'user'}
                       >
@@ -363,13 +389,16 @@ export function ChatView({ knowledgeBases, currentKbId }: ChatViewProps) {
                           />
                         )}
                       </MessageScrollerItem>
-                    ))}
-                    {showLive && live && (
-                      <>
-                        <MessageScrollerItem messageId={`${liveKey}:question`} scrollAnchor>
+                      )),
+                      ...(showLive && live ? [
+                        <MessageScrollerItem
+                          key={liveItemKey('q')}
+                          messageId={`${liveKey}:question`}
+                          scrollAnchor
+                        >
                           <UserMessage text={live.question} />
-                        </MessageScrollerItem>
-                        <MessageScrollerItem messageId={liveKey}>
+                        </MessageScrollerItem>,
+                        <MessageScrollerItem key={liveItemKey('a')} messageId={liveKey}>
                           <LiveAnswer
                             run={live}
                             selected={subjectKey === liveKey}
@@ -378,9 +407,9 @@ export function ChatView({ knowledgeBases, currentKbId }: ChatViewProps) {
                             onCitation={(marker) => showCitation(liveKey, marker)}
                             onRetry={() => void send(live.question, live.knowledgeBaseIds)}
                           />
-                        </MessageScrollerItem>
-                      </>
-                    )}
+                        </MessageScrollerItem>,
+                      ] : []),
+                    ]}
                   </MessageScrollerContent>
                 </MessageScrollerViewport>
                 <MessageScrollerButton />
@@ -498,10 +527,36 @@ function AnswerShell({
   )
 }
 
+/** Contracts §10.4: shown under an answer whose run retried, fell back or retried the model. */
+export function DegradedNotice({ onShowTrace }: { onShowTrace: () => void }) {
+  return (
+    <Alert data-testid="degraded-notice">
+      <TriangleAlertIcon />
+      <AlertTitle>回答可能不完整</AlertTitle>
+      <AlertDescription>部分工具失败，回答可能不完整，详见工具轨迹。</AlertDescription>
+      <AlertAction>
+        <Button size="xs" variant="outline" onClick={onShowTrace}>
+          <ListTreeIcon data-icon="inline-start" />
+          工具轨迹
+        </Button>
+      </AlertAction>
+    </Alert>
+  )
+}
+
 /** Notices for a run this page streamed: stop reason, errors, interruption (brief §6.4). */
-function RunNotices({ run, onRetry }: { run: LiveRun; onRetry: () => void }) {
+function RunNotices({
+  run,
+  onRetry,
+  onShowTrace,
+}: {
+  run: LiveRun
+  onRetry: () => void
+  onShowTrace: () => void
+}) {
   return (
     <>
+      {run.degraded && !isRunActive(run) && <DegradedNotice onShowTrace={onShowTrace} />}
       {run.error && (
         <ErrorAlert error={eventToError(run.error)} onRetry={onRetry} />
       )}
@@ -551,7 +606,7 @@ function LiveAnswer({
       selected={selected}
       onInspect={onInspect}
       citationCount={run.citations.length}
-      footer={<RunNotices run={run} onRetry={onRetry} />}
+      footer={<RunNotices run={run} onRetry={onRetry} onShowTrace={() => onInspect('trace')} />}
     >
       <div aria-live="polite" aria-busy={running} data-testid="live-answer">
         {body}
@@ -574,6 +629,13 @@ function PersistedAnswer({
   live: LiveRun | null
   onRetry: (run: LiveRun) => void
 }) {
+  // MessageOut carries no degradation flag, so finished answers read it from their run
+  // (shared with the trace panel through the run cache). Answers streamed on this page use
+  // the live `done` event instead.
+  const runKey =
+    !live && message.run_id && message.status !== 'streaming' ? `run:${message.run_id}` : null
+  const run = useResource(runKey, () => loadRun(message.run_id as string))
+  const showTrace = () => onInspect('trace')
   return (
     <AnswerShell
       selected={selected}
@@ -581,14 +643,19 @@ function PersistedAnswer({
       citationCount={message.citations.length}
       footer={
         live ? (
-          <RunNotices run={live} onRetry={() => onRetry(live)} />
-        ) : message.status === 'failed' ? (
-          <ErrorAlert error={new ApiError('answer_failed', message.error || '回答未能完成')} />
-        ) : message.status === 'streaming' ? (
-          <Marker variant="separator">
-            <MarkerContent>回答仍在生成中</MarkerContent>
-          </Marker>
-        ) : null
+          <RunNotices run={live} onRetry={() => onRetry(live)} onShowTrace={showTrace} />
+        ) : (
+          <>
+            {run.data?.degraded && <DegradedNotice onShowTrace={showTrace} />}
+            {message.status === 'failed' ? (
+              <ErrorAlert error={new ApiError('answer_failed', message.error || '回答未能完成')} />
+            ) : message.status === 'streaming' ? (
+              <Marker variant="separator">
+                <MarkerContent>回答仍在生成中</MarkerContent>
+              </Marker>
+            ) : null}
+          </>
+        )
       }
     >
       {message.content ? (

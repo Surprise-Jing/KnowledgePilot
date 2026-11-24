@@ -135,7 +135,7 @@ export function KnowledgeSidebar({
               >
                 <button
                   type="button"
-                  className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left"
+                  className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                   aria-current={selected ? 'true' : undefined}
                   onClick={() => onSelectKb(kb.id)}
                   title={kb.name}
@@ -243,7 +243,7 @@ export function KnowledgeSidebar({
         description={
           dialog?.kind === 'delete-kb' && (
             <span>
-              将删除知识库「{dialog.kb.name}」及其<strong>全部目录和文件</strong>，此操作无法撤销。
+              将删除知识库「{dialog.kb.name}」及其<strong>全部目录和文件</strong>（含解析片段），此操作无法撤销。已有对话中的引用仍保留快照。
             </span>
           )
         }
@@ -310,7 +310,10 @@ export function KnowledgeSidebar({
         title="删除目录"
         destructive
         confirmLabel="删除"
-        description={dialog?.kind === 'delete-folder' && `确定删除目录「${dialog.folder.name}」吗？`}
+        description={
+          dialog?.kind === 'delete-folder' &&
+          `确定删除目录「${dialog.folder.name}」吗？空目录会直接删除；如果其中还有子目录或文件，会再次请你确认。此操作无法撤销。`
+        }
         onConfirm={async () => {
           if (dialog?.kind !== 'delete-folder') return
           const folder = dialog.folder

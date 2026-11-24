@@ -10,6 +10,8 @@ import {
   Trash2Icon,
 } from 'lucide-react'
 
+import type { KeyboardEvent } from 'react'
+
 import type { FolderOut } from '@/api/types'
 import { Button } from '@/components/ui/button'
 import {
@@ -41,15 +43,71 @@ interface FolderTreeProps extends FolderActions {
 const rowClass =
   'group/row flex min-w-0 items-center gap-1 rounded-md pr-1 text-sm hover:bg-muted data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground'
 
+/**
+ * Arrow keys move between visible folders (Up/Down/Home/End); Right expands, Left collapses
+ * (or goes to the parent row). Enter/Space select via the native button.
+ */
+function onTreeKeyDown(
+  event: KeyboardEvent<HTMLDivElement>,
+  expanded: Set<string>,
+  onToggle: (folderId: string) => void,
+) {
+  const target = event.target as HTMLElement
+  if (!target.matches('[data-tree-select]')) return
+  const rows = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('[data-tree-select]'))
+  const index = rows.indexOf(target)
+  const folderId = target.dataset.folderId
+  const hasChildren = target.dataset.expandable === 'true'
+  let next: HTMLElement | undefined
+  switch (event.key) {
+    case 'ArrowDown':
+      next = rows[index + 1]
+      break
+    case 'ArrowUp':
+      next = rows[index - 1]
+      break
+    case 'Home':
+      next = rows[0]
+      break
+    case 'End':
+      next = rows.at(-1)
+      break
+    case 'ArrowRight':
+      if (!folderId || !hasChildren) return
+      if (!expanded.has(folderId)) onToggle(folderId)
+      else next = rows[index + 1]
+      break
+    case 'ArrowLeft':
+      if (folderId && hasChildren && expanded.has(folderId)) onToggle(folderId)
+      else if (folderId) {
+        const parentId = target.dataset.parentId
+        next = parentId
+          ? rows.find((row) => row.dataset.folderId === parentId)
+          : rows.find((row) => row.dataset.folderId === undefined)
+      } else return
+      break
+    default:
+      return
+  }
+  event.preventDefault()
+  next?.focus()
+}
+
 export function FolderTree({ nodes, selectedId, onSelect, ...rest }: FolderTreeProps) {
   return (
-    <div role="tree" aria-label="目录" className="flex flex-col gap-0.5">
+    <div
+      role="tree"
+      aria-label="目录"
+      className="flex flex-col gap-0.5"
+      onKeyDown={(event) => onTreeKeyDown(event, rest.expanded, rest.onToggle)}
+    >
       <div role="treeitem" aria-selected={selectedId === null} className={rowClass} data-selected={selectedId === null}>
         <span className="size-6 shrink-0" aria-hidden />
         <button
           type="button"
-          className="flex min-w-0 flex-1 items-center gap-2 py-1 text-left"
+          className="flex min-w-0 flex-1 items-center gap-2 py-1 text-left rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           onClick={() => onSelect(null)}
+          data-tree-select
         >
           <HomeIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
           <span className="truncate">根目录</span>
@@ -111,9 +169,13 @@ function FolderRow({
         )}
         <button
           type="button"
-          className="flex min-w-0 flex-1 items-center gap-2 py-1 text-left"
+          className="flex min-w-0 flex-1 items-center gap-2 py-1 text-left rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           onClick={() => onSelect(folder.id)}
           title={folder.name}
+          data-tree-select
+          data-folder-id={folder.id}
+          data-parent-id={folder.parent_id ?? undefined}
+          data-expandable={hasChildren}
         >
           {isOpen || selected ? (
             <FolderOpenIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
