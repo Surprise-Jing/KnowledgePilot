@@ -77,8 +77,12 @@ describe('chatReducer', () => {
         summary: '命中 1 个片段（1 个文件）',
         error: null,
         durationMs: 12,
+        attempt: 1,
+        retryOf: null,
+        fallback: null,
       },
     ])
+    expect(state?.degraded).toBe(false)
     expect(isRunActive(state)).toBe(false)
   })
 
@@ -146,5 +150,86 @@ describe('chatReducer', () => {
 
   it('resets to null', () => {
     expect(run([start, { type: 'reset' }])).toBeNull()
+  })
+})
+
+describe('chatReducer degradation (contracts §10)', () => {
+  const ev = (event: ChatEvent): ChatAction => ({ type: 'event', event })
+  const done = (degraded?: boolean): ChatAction =>
+    ev({
+      type: 'done',
+      data: {
+        run_id: 'run-1',
+        stop_reason: 'answered',
+        step_count: 2,
+        usage: { prompt_tokens: 1, completion_tokens: 1 },
+        ...(degraded === undefined ? {} : { degraded }),
+      },
+    })
+
+  it('links an automatic retry to the original call', () => {
+    const state = run([
+      start,
+      ev(events[0]),
+      ev({ type: 'tool_call', data: { call_id: 'call-1', step: 1, name: 'read_document', arguments: { document_id: 'd' } } }),
+      ev({
+        type: 'tool_result',
+        data: {
+          call_id: 'call-1',
+          status: 'error',
+          summary: '工具超时',
+          error: { code: 'tool_timeout', message: '超时', retryable: true },
+          duration_ms: 5000,
+        },
+      }),
+      ev({
+        type: 'tool_call',
+        data: {
+          call_id: 'call-2',
+          step: 1,
+          name: 'read_document',
+          arguments: { document_id: 'd' },
+          attempt: 2,
+          retry_of: 'call-1',
+        },
+      }),
+    ])
+    expect(state?.steps.map((s) => [s.id, s.attempt, s.retryOf, s.status])).toEqual([
+      ['call-1', 1, null, 'error'],
+      ['call-2', 2, 'call-1', 'running'],
+    ])
+    expect(state?.degraded).toBe(true)
+  })
+
+  it('records a fallback on the tool result', () => {
+    const state = run([
+      start,
+      ev(events[0]),
+      ev(events[1]),
+      ev({
+        type: 'tool_result',
+        data: {
+          call_id: 'call-1',
+          status: 'success',
+          summary: '检索服务异常，已改用关键词检索：命中 4 个片段',
+          duration_ms: 30,
+          fallback: 'bm25',
+        },
+      }),
+    ])
+    expect(state?.steps[0]).toMatchObject({ status: 'success', fallback: 'bm25', attempt: 1 })
+    expect(state?.degraded).toBe(true)
+  })
+
+  it('takes degraded from done (e.g. a silent model retry)', () => {
+    expect(run([start, ev(events[0]), done(true)])).toMatchObject({ phase: 'done', degraded: true })
+    expect(run([start, ev(events[0]), done(false)])?.degraded).toBe(false)
+    // Older streams without the field are not degraded.
+    expect(run([start, ev(events[0]), done()])?.degraded).toBe(false)
+  })
+
+  it('defaults missing attempt/retry_of/fallback fields', () => {
+    const state = run([start, ...events.map(ev)])
+    expect(state?.steps[0]).toMatchObject({ attempt: 1, retryOf: null, fallback: null })
   })
 })

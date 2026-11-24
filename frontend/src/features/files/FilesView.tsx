@@ -291,7 +291,7 @@ export function FilesView({
         confirmLabel="删除"
         description={
           dialog?.kind === 'delete' &&
-          `确定删除「${dialog.doc.filename}」吗？文件及其解析片段会被删除，已有回答中的引用仍保留快照。`
+          `确定删除「${dialog.doc.filename}」吗？文件及其解析片段会被删除，之后检索不到它，此操作无法撤销。已有回答中的引用仍保留快照。`
         }
         onConfirm={async () => {
           if (dialog?.kind !== 'delete') return

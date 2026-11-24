@@ -1,4 +1,5 @@
 import {
+  CornerDownRightIcon,
   FileTextIcon,
   FolderTreeIcon,
   LibraryIcon,
@@ -6,11 +7,11 @@ import {
   SearchIcon,
   WrenchIcon,
 } from 'lucide-react'
-import { useEffect } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { getRun } from '@/api/conversations'
 import { ErrorAlert } from '@/components/error-feedback'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { CodeBlock, CodeBlockContent } from '@/components/ui/code-block'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Separator } from '@/components/ui/separator'
@@ -29,9 +30,10 @@ import type { TraceStep } from '@/features/chat/chatReducer'
 import { useInspector } from '@/features/citations/inspector-context'
 import { useResource } from '@/hooks/use-resource'
 import { stopReasonLabel } from '@/lib/errors'
-import { formatDuration } from '@/lib/format'
+import { formatDuration, formatTime } from '@/lib/format'
 
-import { type TraceView, traceFromRun } from './traceModel'
+import { loadRun } from './runCache'
+import { type TraceView, fallbackLabel, retryLabel, traceFromRun } from './traceModel'
 
 const TOOL_LABELS: Record<string, string> = {
   list_knowledge_bases: '列出知识库',
@@ -57,12 +59,16 @@ function ToolIcon({ name }: { name: string }) {
 
 const STATUS_TEXT = { running: '运行中', success: '成功', error: '失败' } as const
 
+function stepLabel(step: TraceStep): string {
+  return `第 ${step.step} 步 · ${TOOL_LABELS[step.name] ?? step.name}`
+}
+
 export function TracePanel() {
   const { subject } = useInspector()
   const live = subject?.liveTrace ?? null
   const runId = subject?.runId ?? null
   const fetchKey = runId && !live?.running ? `run:${runId}` : null
-  const run = useResource(fetchKey, () => getRun(runId as string))
+  const run = useResource(fetchKey, () => loadRun(runId as string))
   const runStillRunning = run.data?.status === 'running'
   const { reload } = run
 
@@ -128,6 +134,29 @@ export function TracePanel() {
 }
 
 function TraceSteps({ trace }: { trace: TraceView }) {
+  const [open, setOpen] = useState<Set<string>>(() => new Set())
+  const rows = useRef(new Map<string, HTMLElement>())
+  const setRowOpen = useCallback((id: string, value: boolean) => {
+    setOpen((current) => {
+      if (current.has(id) === value) return current
+      const next = new Set(current)
+      if (value) next.add(id)
+      else next.delete(id)
+      return next
+    })
+  }, [])
+  // Retry rows link to the call they repeat (and back): open it, scroll to it, move focus.
+  const jumpTo = useCallback(
+    (id: string) => {
+      setRowOpen(id, true)
+      const row = rows.current.get(id)
+      if (!row) return
+      row.scrollIntoView({ block: 'nearest' })
+      row.querySelector<HTMLElement>('[data-slot=trace-collapsible-trigger]')?.focus()
+    },
+    [setRowOpen],
+  )
+
   if (trace.steps.length === 0) {
     return (
       <Trace aria-label="工具调用轨迹">
@@ -140,20 +169,61 @@ function TraceSteps({ trace }: { trace: TraceView }) {
       </Trace>
     )
   }
+  const byId = new Map(trace.steps.map((step) => [step.id, step]))
   return (
     <Trace aria-label="工具调用轨迹">
       {trace.steps.map((step) => (
-        <ToolStepRow key={step.id} step={step} />
+        <ToolStepRow
+          key={step.id}
+          step={step}
+          original={step.retryOf ? (byId.get(step.retryOf) ?? null) : null}
+          retries={trace.steps.filter((other) => other.retryOf === step.id)}
+          open={open.has(step.id)}
+          onOpenChange={(value) => setRowOpen(step.id, value)}
+          onJump={jumpTo}
+          rowRef={(node) => {
+            if (node) rows.current.set(step.id, node)
+            else rows.current.delete(step.id)
+          }}
+        />
       ))}
     </Trace>
   )
 }
 
-function ToolStepRow({ step }: { step: TraceStep }) {
+function ToolStepRow({
+  step,
+  original,
+  retries,
+  open,
+  onOpenChange,
+  onJump,
+  rowRef,
+}: {
+  step: TraceStep
+  /** The call this one retries, when it is in the same trace. */
+  original: TraceStep | null
+  /** Automatic retries of this call. */
+  retries: TraceStep[]
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onJump: (id: string) => void
+  rowRef: (node: HTMLElement | null) => void
+}) {
   const label = TOOL_LABELS[step.name] ?? step.name
   const title = step.summary ? `${label} · ${step.summary}` : label
+  const isRetry = step.attempt > 1 || step.retryOf !== null
   return (
-    <TraceCollapsible data-testid="trace-step" data-status={step.status}>
+    <TraceCollapsible
+      ref={rowRef}
+      open={open}
+      onOpenChange={onOpenChange}
+      data-testid="trace-step"
+      data-call-id={step.id}
+      data-status={step.status}
+      data-retry={isRetry || undefined}
+      data-fallback={step.fallback ?? undefined}
+    >
       <TraceCollapsibleTrigger>
         <TraceLine
           status={
@@ -166,6 +236,8 @@ function ToolStepRow({ step }: { step: TraceStep }) {
           <TraceTitle title={title}>
             第 {step.step} 步 · {title}
           </TraceTitle>
+          {isRetry && <Badge variant="outline">{retryLabel(Math.max(step.attempt, 2))}</Badge>}
+          {step.fallback && <Badge variant="outline">{fallbackLabel(step.fallback)}</Badge>}
           <TraceDescription>
             {STATUS_TEXT[step.status]}
             {step.durationMs !== null && ` · ${formatDuration(step.durationMs)}`}
@@ -177,6 +249,35 @@ function ToolStepRow({ step }: { step: TraceStep }) {
           <p className="text-xs">
             工具：<code className="font-mono">{step.name}</code>
           </p>
+          {isRetry && (
+            <p className="flex flex-wrap items-center gap-1 text-xs">
+              上一次调用失败，已用相同参数自动重试。
+              {original && (
+                <Button size="xs" variant="link" onClick={() => onJump(original.id)}>
+                  <CornerDownRightIcon data-icon="inline-start" />
+                  查看原调用（{stepLabel(original)}）
+                </Button>
+              )}
+            </p>
+          )}
+          {retries.length > 0 && (
+            <p className="flex flex-wrap items-center gap-1 text-xs">
+              本次调用失败后已自动重试。
+              {retries.map((retry) => (
+                <Button key={retry.id} size="xs" variant="link" onClick={() => onJump(retry.id)}>
+                  <CornerDownRightIcon data-icon="inline-start" />
+                  查看{retryLabel(Math.max(retry.attempt, 2))}
+                </Button>
+              ))}
+            </p>
+          )}
+          {step.fallback && (
+            <p className="text-xs">
+              {step.fallback === 'bm25'
+                ? '检索服务异常，本次改用关键词检索（BM25），结果可能不如语义检索全面。'
+                : '读取原文失败，本次只返回了之前已检索到的片段，内容可能不完整。'}
+            </p>
+          )}
           {step.summary && <p>结果：{step.summary}</p>}
           {step.error && (
             <CodeBlock size="sm" variant="destructive">
@@ -218,10 +319,39 @@ function TraceSummary({ trace }: { trace: TraceView }) {
       <dd>{trace.stepCount ?? (trace.running ? '…' : '—')}</dd>
       <dt className="text-muted-foreground">Token 用量</dt>
       <dd>{tokens}</dd>
+      {trace.modelRetries !== null && (
+        <>
+          <dt className="text-muted-foreground">模型重试</dt>
+          <dd>{trace.modelRetries > 0 ? `${trace.modelRetries} 次` : '无'}</dd>
+        </>
+      )}
+      {trace.degraded && (
+        <>
+          <dt className="text-muted-foreground">降级</dt>
+          <dd className="flex flex-col items-start gap-1">
+            <Badge variant="outline">部分回答</Badge>
+            <span className="text-xs text-muted-foreground">
+              发生了工具重试、降级或模型重试，回答可能不完整。
+            </span>
+          </dd>
+        </>
+      )}
       {trace.model && (
         <>
           <dt className="text-muted-foreground">模型</dt>
           <dd className="truncate">{trace.model}</dd>
+        </>
+      )}
+      {trace.startedAt && (
+        <>
+          <dt className="text-muted-foreground">开始时间</dt>
+          <dd className="tabular-nums">{formatTime(trace.startedAt, { seconds: true })}</dd>
+        </>
+      )}
+      {trace.finishedAt && (
+        <>
+          <dt className="text-muted-foreground">结束时间</dt>
+          <dd className="tabular-nums">{formatTime(trace.finishedAt, { seconds: true })}</dd>
         </>
       )}
       {trace.droppedCitations.length > 0 && (

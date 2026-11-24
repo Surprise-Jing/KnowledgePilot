@@ -5,6 +5,7 @@ import type {
   CitationOut,
   DoneEvent,
   ErrorEvent,
+  FallbackKind,
   ToolCallStatus,
   ToolError,
 } from '@/api/types'
@@ -18,6 +19,12 @@ export interface TraceStep {
   summary: string | null
   error: ToolError | null
   durationMs: number | null
+  /** 1 for the first call; 2 for the automatic retry (contracts §10.1). */
+  attempt: number
+  /** call_id of the call this one retries. */
+  retryOf: string | null
+  /** Set when the tool answered from a degraded path (contracts §10.2). */
+  fallback: FallbackKind | null
 }
 
 /**
@@ -40,6 +47,11 @@ export interface LiveRun {
   citations: CitationOut[]
   error: ErrorEvent | null
   done: DoneEvent | null
+  /**
+   * True once any degradation was seen: a retry, a fallback, or `done.degraded` (which also
+   * covers silent model retries).
+   */
+  degraded: boolean
 }
 
 export type ChatAction =
@@ -79,22 +91,28 @@ function applyEvent(run: LiveRun, event: ChatEvent): LiveRun {
         summary: null,
         error: null,
         durationMs: null,
+        attempt: event.data.attempt ?? 1,
+        retryOf: event.data.retry_of ?? null,
+        fallback: null,
       }
       const exists = run.steps.some((s) => s.id === step.id)
       return {
         ...run,
         phase: 'streaming',
         steps: exists ? run.steps.map((s) => (s.id === step.id ? step : s)) : [...run.steps, step],
+        degraded: run.degraded || step.attempt > 1 || step.retryOf !== null,
       }
     }
     case 'tool_result': {
       const { call_id, status, summary, error, duration_ms } = event.data
+      const fallback = event.data.fallback ?? null
       const update = (s: TraceStep): TraceStep => ({
         ...s,
         status,
         summary,
         error: error ?? null,
         durationMs: duration_ms,
+        fallback,
       })
       const exists = run.steps.some((s) => s.id === call_id)
       const steps = exists
@@ -110,9 +128,12 @@ function applyEvent(run: LiveRun, event: ChatEvent): LiveRun {
               summary: null,
               error: null,
               durationMs: null,
+              attempt: 1,
+              retryOf: null,
+              fallback: null,
             }),
           ]
-      return { ...run, phase: 'streaming', steps }
+      return { ...run, phase: 'streaming', steps, degraded: run.degraded || fallback !== null }
     }
     case 'token':
       return { ...run, phase: 'streaming', answer: run.answer + event.data.delta }
@@ -123,7 +144,13 @@ function applyEvent(run: LiveRun, event: ChatEvent): LiveRun {
     case 'error':
       return { ...run, error: event.data }
     case 'done':
-      return { ...run, phase: 'done', done: event.data, runId: run.runId ?? event.data.run_id }
+      return {
+        ...run,
+        phase: 'done',
+        done: event.data,
+        runId: run.runId ?? event.data.run_id,
+        degraded: run.degraded || event.data.degraded === true,
+      }
     default:
       return run
   }
@@ -145,6 +172,7 @@ export function chatReducer(state: LiveRun | null, action: ChatAction): LiveRun 
         citations: [],
         error: null,
         done: null,
+        degraded: false,
       }
     case 'reset':
       return null

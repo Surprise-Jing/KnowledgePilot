@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { splitCitations } from './citations'
+import { groupCitations, splitCitations } from './citations'
 
 describe('splitCitations', () => {
   it('turns valid markers into citation segments', () => {
@@ -38,5 +38,36 @@ describe('splitCitations', () => {
   it('returns text without markers unchanged', () => {
     expect(splitCitations('没有引用\n第二行', ['c1'])).toEqual([{ type: 'text', text: '没有引用\n第二行' }])
     expect(splitCitations('', [])).toEqual([])
+  })
+})
+
+describe('groupCitations', () => {
+  const cite = (marker: string, document_id: string | null, filename: string) => ({
+    marker,
+    document_id,
+    filename,
+  })
+
+  it('groups by document in first-cited order and keeps every location', () => {
+    const groups = groupCitations([
+      cite('c1', 'doc-a', 'a.txt'),
+      cite('c2', 'doc-b', 'b.pdf'),
+      cite('c3', 'doc-a', 'a.txt'),
+    ])
+    expect(groups.map((g) => [g.key, g.citations.map((c) => c.marker)])).toEqual([
+      ['doc-a', ['c1', 'c3']],
+      ['doc-b', ['c2']],
+    ])
+  })
+
+  it('groups deleted documents by filename', () => {
+    const groups = groupCitations([
+      cite('c1', null, 'gone.txt'),
+      cite('c2', null, 'gone.txt'),
+      cite('c3', null, 'other.txt'),
+    ])
+    expect(groups).toHaveLength(2)
+    expect(groups[0]).toMatchObject({ documentId: null, filename: 'gone.txt' })
+    expect(groups[0].citations).toHaveLength(2)
   })
 })

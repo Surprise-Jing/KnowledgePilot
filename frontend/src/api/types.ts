@@ -161,6 +161,9 @@ export type StopReason = 'answered' | 'max_steps' | 'model_error' | 'timeout' | 
 
 export type ToolCallStatus = 'running' | 'success' | 'error'
 
+/** Degradation applied to a tool call (docs/contracts.md §10.2). */
+export type FallbackKind = 'bm25' | 'retrieved_snippets'
+
 export interface ToolCallOut {
   id: string
   step: number
@@ -171,6 +174,10 @@ export interface ToolCallOut {
   error: ToolError | null
   duration_ms: number | null
   created_at: string
+  /** Automatic retry (contracts §10.1): attempt 2 links to the first call through retry_of. */
+  attempt: number
+  retry_of: string | null
+  fallback: FallbackKind | null
 }
 
 export interface RunOut {
@@ -190,6 +197,9 @@ export interface RunOut {
   started_at: string
   finished_at: string | null
   tool_calls: ToolCallOut[]
+  /** Any retry, fallback or model retry happened in this run (contracts §10.4). */
+  degraded: boolean
+  model_retries: number
 }
 
 // ---- SSE events (docs/contracts.md §4) ----
@@ -206,6 +216,9 @@ export interface ToolCallEvent {
   step: number
   name: string
   arguments: Record<string, unknown>
+  /** Defaults to 1 in schemas.py; optional here so older streams still parse. */
+  attempt?: number
+  retry_of?: string | null
 }
 
 export interface ToolResultEvent {
@@ -214,6 +227,7 @@ export interface ToolResultEvent {
   summary: string
   error?: ToolError | null
   duration_ms: number
+  fallback?: FallbackKind | null
 }
 
 export interface TokenEvent {
@@ -238,6 +252,7 @@ export interface DoneEvent {
   stop_reason: StopReason
   step_count: number
   usage: Usage
+  degraded?: boolean
 }
 
 export type ChatEvent =

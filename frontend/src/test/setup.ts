@@ -2,6 +2,8 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
 import { afterEach, vi } from 'vitest'
 
+import { clearRunCache } from '@/features/trace/runCache'
+
 // jsdom lacks layout APIs that Radix and the message scroller rely on.
 class ResizeObserverStub {
   observe() {}
@@ -47,4 +49,5 @@ afterEach(() => {
   vi.unstubAllGlobals()
   vi.useRealTimers()
   window.localStorage.clear()
+  clearRunCache()
 })
