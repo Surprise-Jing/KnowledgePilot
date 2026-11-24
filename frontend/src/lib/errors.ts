@@ -14,10 +14,22 @@ const USER_FIXABLE = new Set([
   'empty_file',
   'document_not_failed',
   'document_not_ready',
+  'document_busy',
+  'markdown_not_available',
   'conversation_busy',
   'out_of_scope',
   'max_steps_reached',
 ])
+
+/** Extra guidance shown under the backend message for codes whose fix is not obvious. */
+const USER_HINTS: Record<string, string> = {
+  document_busy: '文档正在解析，请稍后重试',
+  markdown_not_available: '请重新解析后再导出',
+}
+
+export function errorHint(code: string): string | undefined {
+  return USER_HINTS[code]
+}
 
 /**
  * System errors (model_not_configured, model_error, model_timeout, internal_error, tool_timeout,

@@ -34,6 +34,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { formatBytes, formatTime } from '@/lib/format'
+import { ENHANCED_SLOWER_HINT, pendingHint } from '@/lib/parsing'
 import { folderPath } from '@/lib/tree'
 
 export function StatusBadge({ status }: { status: DocumentStatus }) {
@@ -134,6 +135,11 @@ export function FileTable({
                       失败原因：{doc.error || '未知错误'}
                     </span>
                   )}
+                  {pendingHint(doc) && (
+                    <span className="text-xs whitespace-normal text-muted-foreground">
+                      {pendingHint(doc)}
+                    </span>
+                  )}
                 </div>
               </TableCell>
               <TableCell>
@@ -164,6 +170,18 @@ export function FileTable({
                     >
                       {retrying ? <Spinner data-icon="inline-start" /> : <RotateCwIcon data-icon="inline-start" />}
                       重试
+                    </Button>
+                  )}
+                  {doc.status === 'failed' && doc.file_type === 'pdf' && doc.parse_mode !== 'enhanced' && (
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      disabled={retrying}
+                      onClick={() => onReparse(doc, 'enhanced')}
+                      title={ENHANCED_SLOWER_HINT}
+                    >
+                      <ScanTextIcon data-icon="inline-start" />
+                      增强模式（OCR）重新解析
                     </Button>
                   )}
                   <Button

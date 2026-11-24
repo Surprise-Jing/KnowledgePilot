@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { groupAdjacentCitations, groupCitations, splitCitations } from './citations'
+import { findCitedChunk, groupAdjacentCitations, groupCitations, splitCitations } from './citations'
 
 describe('splitCitations', () => {
   it('turns valid markers into citation segments', () => {
@@ -98,5 +98,31 @@ describe('groupCitations', () => {
     expect(groups).toHaveLength(2)
     expect(groups[0]).toMatchObject({ documentId: null, filename: 'gone.txt' })
     expect(groups[0].citations).toHaveLength(2)
+  })
+})
+
+describe('findCitedChunk', () => {
+  const loc = (kind: string, start: number, end: number, table: number | null = null) => ({
+    kind, start, end, table, heading_path: [], char_start: null, char_end: null,
+  })
+  const chunks = [
+    { id: 'a', location: loc('pdf_page', 44, 44) },
+    { id: 'b', location: loc('pdf_page', 45, 45, 28) },
+    { id: 'c', location: loc('pdf_page', 45, 46, 29) },
+  ]
+
+  it('prefers the cited chunk id when it still exists', () => {
+    expect(findCitedChunk(chunks, 'a', loc('pdf_page', 45, 45, 28))).toEqual({ id: 'a', by: 'id' })
+  })
+
+  it('matches by position after a reparse replaced the ids', () => {
+    expect(findCitedChunk(chunks, null, loc('pdf_page', 45, 45, 28))).toEqual({ id: 'b', by: 'location' })
+    expect(findCitedChunk(chunks, 'gone', loc('pdf_page', 46, 46, 29))).toEqual({ id: 'c', by: 'location' })
+  })
+
+  it('never matches across tables or location kinds', () => {
+    expect(findCitedChunk(chunks, null, loc('pdf_page', 45, 45, 30))).toBeNull()
+    expect(findCitedChunk(chunks, null, loc('txt_lines', 45, 45))).toBeNull()
+    expect(findCitedChunk(chunks, null, null)).toBeNull()
   })
 })

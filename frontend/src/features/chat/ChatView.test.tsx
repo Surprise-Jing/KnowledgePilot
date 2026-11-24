@@ -164,7 +164,8 @@ describe('ChatView streaming', () => {
     })
     stream.send('token', { delta: '它支持' })
     await waitFor(() => expect(screen.getByTestId('live-answer')).toHaveTextContent('它支持'))
-    expect(trace().getByText(/命中 1 个片段/)).toBeInTheDocument()
+    // The trace panel may commit a tick after the answer text under load.
+    await waitFor(() => expect(trace().getByText(/命中 1 个片段/)).toBeInTheDocument())
     expect(trace().getByText(/成功/)).toBeInTheDocument()
 
     stream.send('token', { delta: '多知识库[c1]。' })

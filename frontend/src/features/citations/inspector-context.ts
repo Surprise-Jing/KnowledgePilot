@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
 
-import type { CitationOut } from '@/api/types'
+import type { CitationOut, FileType, Location } from '@/api/types'
 import type { TraceView } from '@/features/trace/traceModel'
 
 /** The answer whose citations and tool trace the right-hand panel shows. */
@@ -19,6 +19,15 @@ export interface DocumentTarget {
   documentId: string
   filename: string
   chunkId?: string | null
+  /** Where the citation points; a `pdf_page` location opens the original PDF at that page. */
+  location?: Location | null
+  /** Known file type; `pdf` offers the original-PDF tab even without a location. */
+  fileType?: FileType
+}
+
+/** Citations of PDFs, and PDFs opened with a known type, get the original-PDF tab. */
+export function isPdfTarget(target: DocumentTarget): boolean {
+  return target.fileType === 'pdf' || target.location?.kind === 'pdf_page'
 }
 
 export interface InspectorValue {

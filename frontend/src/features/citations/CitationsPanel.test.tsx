@@ -49,8 +49,10 @@ describe('CitationsPanel source ranges', () => {
     const highlighted = container.querySelector('[data-marker="c2"]') as HTMLElement
     expect(highlighted).toHaveAttribute('data-highlighted', 'true')
     await userEvent.setup().click(within(highlighted).getByRole('button', { name: /查看原文/ }))
+    // The citation's location travels along so the viewer can jump to the cited page.
     expect(openDocument).toHaveBeenCalledWith({
       documentId: 'document-a', filename: '报告.txt', chunkId: 'chunk-c2',
+      location: citation('c2', 4, 6).location,
     })
   })
 

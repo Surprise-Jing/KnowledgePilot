@@ -60,9 +60,14 @@ export function CitationsPanel() {
             if (node) refs.current.set(marker, node)
             else refs.current.delete(marker)
           }}
-          onOpen={(chunkId) =>
+          onOpen={(citation) =>
             group.documentId &&
-            openDocument({ documentId: group.documentId, filename: group.filename, chunkId })
+            openDocument({
+              documentId: group.documentId,
+              filename: group.filename,
+              chunkId: citation.chunk_id,
+              location: citation.location,
+            })
           }
         />
       ))}
@@ -80,7 +85,7 @@ function CitationGroupCard({
   group: CitationGroup<CitationOut>
   highlight: string | null
   refFor: (marker: string) => (node: HTMLElement | null) => void
-  onOpen: (chunkId: string | null) => void
+  onOpen: (citation: CitationOut) => void
 }) {
   const deleted = group.documentId === null
   const count = group.citations.length
@@ -113,7 +118,8 @@ function CitationGroupCard({
                   citation={citation}
                   highlighted={citation.marker === highlight}
                   refCallback={refFor(citation.marker)}
-                  onOpen={deleted ? null : () => onOpen(citation.chunk_id)}
+                  onOpen={deleted ? null : () => onOpen(citation)}
+                  snapshotOnly={deleted}
                 />
               ))}
             </ol>
@@ -129,11 +135,14 @@ function CitationItem({
   highlighted,
   refCallback,
   onOpen,
+  snapshotOnly = false,
 }: {
   citation: CitationOut
   highlighted: boolean
   refCallback: (node: HTMLElement | null) => void
   onOpen: (() => void) | null
+  /** The source is gone: the snapshot is all there is, so show it in full. */
+  snapshotOnly?: boolean
 }) {
   return (
     <li
@@ -163,7 +172,9 @@ function CitationItem({
           </Button>
         )}
       </div>
-      <p className="line-clamp-6 leading-relaxed whitespace-pre-wrap">{citation.content}</p>
+      <p className={cn('leading-relaxed whitespace-pre-wrap', !snapshotOnly && 'line-clamp-6')}>
+        {citation.content}
+      </p>
     </li>
   )
 }

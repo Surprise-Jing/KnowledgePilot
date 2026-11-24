@@ -36,6 +36,7 @@ import { useInspector } from '@/features/citations/inspector-context'
 import { MoveDialog } from '@/features/knowledge/MoveDialog'
 import { useResource } from '@/hooks/use-resource'
 import { downloadBlob } from '@/lib/download'
+import { ENHANCED_SLOWER_HINT } from '@/lib/parsing'
 import { folderPath } from '@/lib/tree'
 import { cn } from '@/lib/utils'
 
@@ -81,6 +82,9 @@ export function FilesView({
   const docs = useResource(key, () => listDocuments(kbId, { folderId, recursive }))
   const { reload } = docs
   const hasPending = (docs.data ?? []).some((d) => d.status === 'queued' || d.status === 'parsing')
+  const hasQueuedStructured = (docs.data ?? []).some(
+    (d) => d.status === 'queued' && d.file_type !== 'txt',
+  )
 
   // Poll while any file is queued or parsing; the cleanup stops it when everything settled, the
   // scope changed or the view unmounted.
@@ -128,7 +132,9 @@ export function FilesView({
     setRetrying((s) => new Set(s).add(doc.id))
     try {
       await reparseDocument(doc.id, mode)
-      toast.success(`已开始${mode === 'enhanced' ? '增强模式' : ''}重新解析 ${doc.filename}`)
+      toast.success(`已开始${mode === 'enhanced' ? '增强模式' : ''}重新解析 ${doc.filename}`, {
+        description: mode === 'enhanced' ? ENHANCED_SLOWER_HINT : undefined,
+      })
       await reload({ silent: true })
     } catch (error) {
       report(error, () => reparse(doc, mode))
@@ -246,6 +252,11 @@ export function FilesView({
             if (files.length > 0) void uploadFiles(files)
           }}
         />
+        {parseMode === 'enhanced' && (
+          <p className="basis-full text-right text-xs text-muted-foreground">
+            {ENHANCED_SLOWER_HINT}。TXT 始终使用普通模式。
+          </p>
+        )}
       </div>
 
       {docs.error && <ErrorAlert error={docs.error} onRetry={() => void reload()} forceRetry />}
@@ -296,6 +307,7 @@ export function FilesView({
       {hasPending && (
         <p className="text-xs text-muted-foreground" aria-live="polite">
           有文件正在解析，每 {POLL_INTERVAL_MS / 1000} 秒自动刷新状态…
+          {hasQueuedStructured && ' 后端同一时间只解析一份 PDF/DOCX，排队的文件可能要等几分钟。'}
         </p>
       )}
 

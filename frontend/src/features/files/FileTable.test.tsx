@@ -60,6 +60,40 @@ describe('FileTable', () => {
     expect(onRetry).toHaveBeenCalledWith(docs[3])
   })
 
+  it('offers an OCR reparse next to retry on failed standard-mode PDF rows only', async () => {
+    const enhancedFailed = documentOut({
+      id: 'e',
+      filename: 'scan.pdf',
+      file_type: 'pdf',
+      status: 'failed',
+      parse_mode: 'enhanced',
+    })
+    const docxFailed = documentOut({ id: 'd', filename: 'bad.docx', file_type: 'docx', status: 'failed' })
+    const { onReparse } = renderTable(vi.fn(), [...docs, enhancedFailed, docxFailed])
+    const ocr = screen.getAllByRole('button', { name: '增强模式（OCR）重新解析' })
+    expect(ocr).toHaveLength(1)
+    expect(within(row('broken.pdf')).getByRole('button', { name: '增强模式（OCR）重新解析' })).toBe(ocr[0])
+    await userEvent.click(ocr[0])
+    expect(onReparse).toHaveBeenCalledWith(docs[3], 'enhanced')
+  })
+
+  it('explains the single-file parse queue and the slower enhanced mode', () => {
+    const queuedPdf = documentOut({ id: 'qp', filename: 'wait.pdf', file_type: 'pdf', status: 'queued' })
+    const ocrParsing = documentOut({
+      id: 'op',
+      filename: 'ocr.pdf',
+      file_type: 'pdf',
+      status: 'parsing',
+      parse_mode: 'enhanced',
+    })
+    renderTable(vi.fn(), [...docs, queuedPdf, ocrParsing])
+    expect(within(row('wait.pdf')).getByText(/同一时间只解析一份 PDF\/DOCX/)).toBeInTheDocument()
+    expect(within(row('ocr.pdf')).getByText(/91 页约 6 分钟/)).toBeInTheDocument()
+    // TXT is parsed in-process, so it never waits in that queue.
+    expect(within(row('queued.txt')).queryByText(/同一时间只解析/)).toBeNull()
+    expect(within(row('parsing.pdf')).queryByText(/91 页约 6 分钟/)).toBeNull()
+  })
+
   it('only allows viewing the original text of parsed files', () => {
     renderTable()
     expect(within(row('ok.docx')).getByRole('button', { name: '查看原文' })).toBeEnabled()
