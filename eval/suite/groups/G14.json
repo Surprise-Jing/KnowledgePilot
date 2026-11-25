@@ -1,0 +1,168 @@
+{
+ "id": "G14",
+ "title": "统计公报：部分缺失与列文件",
+ "knowledge_bases": [
+  "统计公报"
+ ],
+ "split": "dev",
+ "dimensions": [
+  "D5",
+  "D7"
+ ],
+ "compare": false,
+ "demo_candidate": false,
+ "overrides": {},
+ "changelog": [
+  {
+   "date": "2026-11-24",
+   "change": "用户初审：题目与参考答案无问题，待审题标为 approved"
+  }
+ ],
+ "cases": [
+  {
+   "id": "G14-1",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "bulletin_2021",
+    "bulletin_2024"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "2021年和2024年的统计公报分别披露的全国碳排放权交易市场配额成交量是多少？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "carbon24",
+     "label": "2024年碳市场配额成交量",
+     "evidence_groups": [
+      [
+       "b24.carbon"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "1.89"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "carbon21_missing",
+     "label": "2021年公报未披露",
+     "evidence_groups": [],
+     "answer_keywords": [
+      [
+       "未披露",
+       "没有披露",
+       "未提及",
+       "没有提及",
+       "未找到",
+       "没有找到",
+       "没有相关"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "2024年公报：成交量1.89亿吨（成交额181.1亿元）；2021年公报中没有披露这一指标。",
+   "semantic_rubric": [
+    "2021年须明确说明未披露，不能编造",
+    "2024年数值带引用"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G14-2",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "bulletin_2016"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "2016年统计公报中全国碳排放权交易市场的成交额是多少？"
+    }
+   ],
+   "claims": [],
+   "calculations": [],
+   "expect": {
+    "no_answer": true,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "2016年公报没有该指标，应明确说明资料中未找到。",
+   "semantic_rubric": [
+    "明确说明未提及",
+    "不得用其他年份数值替代"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G14-3",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "统计公报这个知识库里一共收录了哪些年份的公报？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "years",
+     "label": "年份范围",
+     "evidence_groups": [],
+     "answer_keywords": [
+      [
+       "2016"
+      ],
+      [
+       "2025"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [
+     "list_files"
+    ],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "收录2016年至2025年共10年的公报。",
+   "semantic_rubric": [
+    "应通过列出文件得到完整年份",
+    "年份不遗漏"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  }
+ ]
+}

@@ -1,0 +1,114 @@
+{
+  "kb_id": "KB2",
+  "retrieved_on": "2026-11-24",
+  "documents": [
+    {
+      "sha256": "c5819b2a3b97ac2c5ea5f848db68474cb2b1ce2a543498b40ce445c4d3cea4a9",
+      "bytes": 1903612,
+      "pages": 69,
+      "lines": null,
+      "id": "s50_2024ar",
+      "filename": "510100_2024年报.pdf",
+      "title": "易方达上证50交易型开放式指数证券投资基金2024年年度报告",
+      "knowledge_base": "基金年度与中期报告",
+      "folder": [
+        "易方达上证50ETF"
+      ],
+      "url": "https://cdn.efunds.com.cn/owch/data/bulletin/20250331/%E6%98%93%E6%96%B9%E8%BE%BE%E4%B8%8A%E8%AF%8150%E4%BA%A4%E6%98%93%E5%9E%8B%E5%BC%80%E6%94%BE%E5%BC%8F%E6%8C%87%E6%95%B0%E8%AF%81%E5%88%B8%E6%8A%95%E8%B5%84%E5%9F%BA%E9%87%912024%E5%B9%B4%E5%B9%B4%E5%BA%A6%E6%8A%A5%E5%91%8A.pdf",
+      "source_type": "original_pdf",
+      "license": "公开披露不等于开放许可；原报告权利归易方达基金管理有限公司。仓库仅保存来源元数据、事实标注和最小证据锚点，原文按需下载至忽略目录。",
+      "publication_date": "2025-03-31",
+      "fund_code": "510100"
+    },
+    {
+      "sha256": "752b0c75f4ea9ea95897eb544ed0e1a3520ac02a448af47a6027a8560b0f938e",
+      "bytes": 1699450,
+      "pages": 52,
+      "lines": null,
+      "id": "s50_2025ir",
+      "filename": "510100_2025中报.pdf",
+      "title": "易方达上证50交易型开放式指数证券投资基金2025年中期报告",
+      "knowledge_base": "基金年度与中期报告",
+      "folder": [
+        "易方达上证50ETF"
+      ],
+      "url": "https://cdn.efunds.com.cn/owch/data/bulletin/20250830/%E6%98%93%E6%96%B9%E8%BE%BE%E4%B8%8A%E8%AF%8150%E4%BA%A4%E6%98%93%E5%9E%8B%E5%BC%80%E6%94%BE%E5%BC%8F%E6%8C%87%E6%95%B0%E8%AF%81%E5%88%B8%E6%8A%95%E8%B5%84%E5%9F%BA%E9%87%912025%E5%B9%B4%E4%B8%AD%E6%9C%9F%E6%8A%A5%E5%91%8A.pdf",
+      "source_type": "original_pdf",
+      "license": "公开披露不等于开放许可；原报告权利归易方达基金管理有限公司。仓库仅保存来源元数据、事实标注和最小证据锚点，原文按需下载至忽略目录。",
+      "publication_date": "2025-08-30",
+      "fund_code": "510100"
+    },
+    {
+      "sha256": "0ec18ee5e6b70d8404c130fd434a057c7187dbc46309e24709c4c5a966cb8e78",
+      "bytes": 2336729,
+      "pages": 79,
+      "lines": null,
+      "id": "c300_2024ar",
+      "filename": "510310_2024年报.pdf",
+      "title": "易方达沪深300交易型开放式指数发起式证券投资基金2024年年度报告",
+      "knowledge_base": "基金年度与中期报告",
+      "folder": [
+        "易方达沪深300ETF"
+      ],
+      "url": "https://cdn.efunds.com.cn/owch/data/bulletin/20250331/%E6%98%93%E6%96%B9%E8%BE%BE%E6%B2%AA%E6%B7%B1300%E4%BA%A4%E6%98%93%E5%9E%8B%E5%BC%80%E6%94%BE%E5%BC%8F%E6%8C%87%E6%95%B0%E5%8F%91%E8%B5%B7%E5%BC%8F%E8%AF%81%E5%88%B8%E6%8A%95%E8%B5%84%E5%9F%BA%E9%87%912024%E5%B9%B4%E5%B9%B4%E5%BA%A6%E6%8A%A5%E5%91%8A.pdf",
+      "source_type": "original_pdf",
+      "license": "公开披露不等于开放许可；原报告权利归易方达基金管理有限公司。仓库仅保存来源元数据、事实标注和最小证据锚点，原文按需下载至忽略目录。",
+      "publication_date": "2025-03-31",
+      "fund_code": "510310"
+    },
+    {
+      "sha256": "17aaaced8fac13fc50761e050dff8f582d25f6d9e36afa4100b74037afce4712",
+      "bytes": 2160145,
+      "pages": 63,
+      "lines": null,
+      "id": "c300_2025ir",
+      "filename": "510310_2025中报.pdf",
+      "title": "易方达沪深300交易型开放式指数发起式证券投资基金2025年中期报告",
+      "knowledge_base": "基金年度与中期报告",
+      "folder": [
+        "易方达沪深300ETF"
+      ],
+      "url": "https://cdn.efunds.com.cn/owch/data/bulletin/20250830/%E6%98%93%E6%96%B9%E8%BE%BE%E6%B2%AA%E6%B7%B1300%E4%BA%A4%E6%98%93%E5%9E%8B%E5%BC%80%E6%94%BE%E5%BC%8F%E6%8C%87%E6%95%B0%E5%8F%91%E8%B5%B7%E5%BC%8F%E8%AF%81%E5%88%B8%E6%8A%95%E8%B5%84%E5%9F%BA%E9%87%912025%E5%B9%B4%E4%B8%AD%E6%9C%9F%E6%8A%A5%E5%91%8A.pdf",
+      "source_type": "original_pdf",
+      "license": "公开披露不等于开放许可；原报告权利归易方达基金管理有限公司。仓库仅保存来源元数据、事实标注和最小证据锚点，原文按需下载至忽略目录。",
+      "publication_date": "2025-08-30",
+      "fund_code": "510310"
+    },
+    {
+      "sha256": "1318fcda354d1ac591aaeccff9ec78582a14981519ef7656b266180525dbd7c8",
+      "bytes": 1862459,
+      "pages": 69,
+      "lines": null,
+      "id": "sz100_2024ar",
+      "filename": "159901_2024年报.pdf",
+      "title": "易方达深证100交易型开放式指数证券投资基金2024年年度报告",
+      "knowledge_base": "基金年度与中期报告",
+      "folder": [
+        "易方达深证100ETF"
+      ],
+      "url": "https://cdn.efunds.com.cn/owch/data/bulletin/20250331/%E6%98%93%E6%96%B9%E8%BE%BE%E6%B7%B1%E8%AF%81100%E4%BA%A4%E6%98%93%E5%9E%8B%E5%BC%80%E6%94%BE%E5%BC%8F%E6%8C%87%E6%95%B0%E8%AF%81%E5%88%B8%E6%8A%95%E8%B5%84%E5%9F%BA%E9%87%912024%E5%B9%B4%E5%B9%B4%E5%BA%A6%E6%8A%A5%E5%91%8A.pdf",
+      "source_type": "original_pdf",
+      "license": "公开披露不等于开放许可；原报告权利归易方达基金管理有限公司。仓库仅保存来源元数据、事实标注和最小证据锚点，原文按需下载至忽略目录。",
+      "publication_date": "2025-03-31",
+      "fund_code": "159901"
+    },
+    {
+      "sha256": "724a272e716183313245138ec83dbb329fb03e4fb9562d3da32df94f9f9d9dad",
+      "bytes": 1697421,
+      "pages": 53,
+      "lines": null,
+      "id": "sz100_2025ir",
+      "filename": "159901_2025中报.pdf",
+      "title": "易方达深证100交易型开放式指数证券投资基金2025年中期报告",
+      "knowledge_base": "基金年度与中期报告",
+      "folder": [
+        "易方达深证100ETF"
+      ],
+      "url": "https://cdn.efunds.com.cn/owch/data/bulletin/20250830/%E6%98%93%E6%96%B9%E8%BE%BE%E6%B7%B1%E8%AF%81100%E4%BA%A4%E6%98%93%E5%9E%8B%E5%BC%80%E6%94%BE%E5%BC%8F%E6%8C%87%E6%95%B0%E8%AF%81%E5%88%B8%E6%8A%95%E8%B5%84%E5%9F%BA%E9%87%912025%E5%B9%B4%E4%B8%AD%E6%9C%9F%E6%8A%A5%E5%91%8A.pdf",
+      "source_type": "original_pdf",
+      "license": "公开披露不等于开放许可；原报告权利归易方达基金管理有限公司。仓库仅保存来源元数据、事实标注和最小证据锚点，原文按需下载至忽略目录。",
+      "publication_date": "2025-08-30",
+      "fund_code": "159901"
+    }
+  ]
+}

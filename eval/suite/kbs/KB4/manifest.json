@@ -1,0 +1,216 @@
+{
+  "kb_id": "KB4",
+  "retrieved_on": "2026-11-24",
+  "documents": [
+    {
+      "sha256": "e7e50e92bbbcb76a95b60c16959a740b848efaf094f6bda109584784b92199c2",
+      "bytes": 49597,
+      "pages": null,
+      "lines": 1082,
+      "id": "bulletin_2016",
+      "filename": "2016年国民经济和社会发展统计公报.txt",
+      "title": "中华人民共和国2016年国民经济和社会发展统计公报",
+      "knowledge_base": "统计公报",
+      "folder": [
+        "2016"
+      ],
+      "url": "https://www.stats.gov.cn/sj/zxfb/202302/t20230203_1899428.html",
+      "source_type": "html_body_as_txt",
+      "license": "国家统计局官网公开发布的政府统计公报；仅保存来源元数据与证据锚点，原文按需下载并原样保存正文为 TXT。",
+      "raw": {
+        "url": "https://www.stats.gov.cn/sj/zxfb/202302/t20230203_1899428.html",
+        "sha256": "7c5f89e5ff751e2d726312880dcdc643812e58744c3f8b03f62bcf9ebd9fee97",
+        "container_class": "detail-text-content"
+      }
+    },
+    {
+      "sha256": "a492ae85ca19fc68c0488477b2ace25e97d58e3c9e49d61b9d1df6875ff003a5",
+      "bytes": 53690,
+      "pages": null,
+      "lines": 1083,
+      "id": "bulletin_2017",
+      "filename": "2017年国民经济和社会发展统计公报.txt",
+      "title": "中华人民共和国2017年国民经济和社会发展统计公报",
+      "knowledge_base": "统计公报",
+      "folder": [
+        "2017"
+      ],
+      "url": "https://www.stats.gov.cn/sj/zxfb/202302/t20230203_1899855.html",
+      "source_type": "html_body_as_txt",
+      "license": "国家统计局官网公开发布的政府统计公报；仅保存来源元数据与证据锚点，原文按需下载并原样保存正文为 TXT。",
+      "raw": {
+        "url": "https://www.stats.gov.cn/sj/zxfb/202302/t20230203_1899855.html",
+        "sha256": "da992f80192e5582ae5d1303e7bb055c8253fffe22303437092c22504d181e9b",
+        "container_class": "detail-text-content"
+      }
+    },
+    {
+      "sha256": "51e7c9fd686f50e9626885e110ad35c7eb534ff1d130f384a0374806a1e4db1e",
+      "bytes": 53486,
+      "pages": null,
+      "lines": 1101,
+      "id": "bulletin_2018",
+      "filename": "2018年国民经济和社会发展统计公报.txt",
+      "title": "中华人民共和国2018年国民经济和社会发展统计公报",
+      "knowledge_base": "统计公报",
+      "folder": [
+        "2018"
+      ],
+      "url": "https://www.stats.gov.cn/sj/zxfb/202302/t20230203_1900241.html",
+      "source_type": "html_body_as_txt",
+      "license": "国家统计局官网公开发布的政府统计公报；仅保存来源元数据与证据锚点，原文按需下载并原样保存正文为 TXT。",
+      "raw": {
+        "url": "https://www.stats.gov.cn/sj/zxfb/202302/t20230203_1900241.html",
+        "sha256": "a54b732eca8006f2bdd03c00bd5be10e353490095c74a0f414444644b66b643b",
+        "container_class": "detail-text-content"
+      }
+    },
+    {
+      "sha256": "9312d8d9d2e2b57c023b8f375815b4c0c89a73343b61c761612b62b293a6efe1",
+      "bytes": 55801,
+      "pages": null,
+      "lines": 1118,
+      "id": "bulletin_2019",
+      "filename": "2019年国民经济和社会发展统计公报.txt",
+      "title": "中华人民共和国2019年国民经济和社会发展统计公报",
+      "knowledge_base": "统计公报",
+      "folder": [
+        "2019"
+      ],
+      "url": "https://www.stats.gov.cn/sj/zxfb/202302/t20230203_1900640.html",
+      "source_type": "html_body_as_txt",
+      "license": "国家统计局官网公开发布的政府统计公报；仅保存来源元数据与证据锚点，原文按需下载并原样保存正文为 TXT。",
+      "raw": {
+        "url": "https://www.stats.gov.cn/sj/zxfb/202302/t20230203_1900640.html",
+        "sha256": "04f4eafd6c0be9d101d482631d62ed7bdc9d2f9f927205bd4c86ea1666d88ed1",
+        "container_class": "detail-text-content"
+      }
+    },
+    {
+      "sha256": "ec76248c6018b8e95eed454c19e6e7c6cc9ecf11cc9844f6b05897bc242bc75a",
+      "bytes": 53823,
+      "pages": null,
+      "lines": 1039,
+      "id": "bulletin_2020",
+      "filename": "2020年国民经济和社会发展统计公报.txt",
+      "title": "中华人民共和国2020年国民经济和社会发展统计公报",
+      "knowledge_base": "统计公报",
+      "folder": [
+        "2020"
+      ],
+      "url": "https://www.stats.gov.cn/sj/zxfb/202302/t20230203_1901004.html",
+      "source_type": "html_body_as_txt",
+      "license": "国家统计局官网公开发布的政府统计公报；仅保存来源元数据与证据锚点，原文按需下载并原样保存正文为 TXT。",
+      "raw": {
+        "url": "https://www.stats.gov.cn/sj/zxfb/202302/t20230203_1901004.html",
+        "sha256": "5276894d6a8f86464ecffbb101e2f2a671f6dbe429814725ca1e8cfb1ad704c8",
+        "container_class": "detail-text-content"
+      }
+    },
+    {
+      "sha256": "70a4b2f836461545b9aa054a439c7b13c38a76bdb92e7eb3b16744597811faef",
+      "bytes": 56472,
+      "pages": null,
+      "lines": 1086,
+      "id": "bulletin_2021",
+      "filename": "2021年国民经济和社会发展统计公报.txt",
+      "title": "中华人民共和国2021年国民经济和社会发展统计公报",
+      "knowledge_base": "统计公报",
+      "folder": [
+        "2021"
+      ],
+      "url": "https://www.stats.gov.cn/sj/zxfb/202302/t20230203_1901393.html",
+      "source_type": "html_body_as_txt",
+      "license": "国家统计局官网公开发布的政府统计公报；仅保存来源元数据与证据锚点，原文按需下载并原样保存正文为 TXT。",
+      "raw": {
+        "url": "https://www.stats.gov.cn/sj/zxfb/202302/t20230203_1901393.html",
+        "sha256": "817da8c6b12759ab1e1fe7305a7dd52ba4038654e2dba097784020dc735e2c0b",
+        "container_class": "detail-text-content"
+      }
+    },
+    {
+      "sha256": "475a6a274f2600ff835bd9cc7052a1e993af5ecfaa16885035fa7903c4b78cfe",
+      "bytes": 56874,
+      "pages": null,
+      "lines": 1095,
+      "id": "bulletin_2022",
+      "filename": "2022年国民经济和社会发展统计公报.txt",
+      "title": "中华人民共和国2022年国民经济和社会发展统计公报",
+      "knowledge_base": "统计公报",
+      "folder": [
+        "2022"
+      ],
+      "url": "https://www.stats.gov.cn/sj/zxfb/202302/t20230228_1919011.html",
+      "source_type": "html_body_as_txt",
+      "license": "国家统计局官网公开发布的政府统计公报；仅保存来源元数据与证据锚点，原文按需下载并原样保存正文为 TXT。",
+      "raw": {
+        "url": "https://www.stats.gov.cn/sj/zxfb/202302/t20230228_1919011.html",
+        "sha256": "b67b49c18acceda271c2ebb04d2fd46d151288a75225e566220f8597457ad61f",
+        "container_class": "detail-text-content"
+      }
+    },
+    {
+      "sha256": "fe78c6553b9a9345848ffd3acf41f91c7d488a05659c64fcc363da14f7e5e5aa",
+      "bytes": 59918,
+      "pages": null,
+      "lines": 1106,
+      "id": "bulletin_2023",
+      "filename": "2023年国民经济和社会发展统计公报.txt",
+      "title": "中华人民共和国2023年国民经济和社会发展统计公报",
+      "knowledge_base": "统计公报",
+      "folder": [
+        "2023"
+      ],
+      "url": "https://www.stats.gov.cn/sj/zxfb/202402/t20240228_1947915.html",
+      "source_type": "html_body_as_txt",
+      "license": "国家统计局官网公开发布的政府统计公报；仅保存来源元数据与证据锚点，原文按需下载并原样保存正文为 TXT。",
+      "raw": {
+        "url": "https://www.stats.gov.cn/sj/zxfb/202402/t20240228_1947915.html",
+        "sha256": "ef613339e709bc089254c051cfe167ca8f12713aa1f719dbdc34dc09a7c26d12",
+        "container_class": "detail-text-content"
+      }
+    },
+    {
+      "sha256": "8acaa01ab819109086d419e11a44abec7499a95ba6206a3666a9868c768fa083",
+      "bytes": 60899,
+      "pages": null,
+      "lines": 1109,
+      "id": "bulletin_2024",
+      "filename": "2024年国民经济和社会发展统计公报.txt",
+      "title": "中华人民共和国2024年国民经济和社会发展统计公报",
+      "knowledge_base": "统计公报",
+      "folder": [
+        "2024"
+      ],
+      "url": "https://www.stats.gov.cn/sj/zxfb/202502/t20250228_1958817.html",
+      "source_type": "html_body_as_txt",
+      "license": "国家统计局官网公开发布的政府统计公报；仅保存来源元数据与证据锚点，原文按需下载并原样保存正文为 TXT。",
+      "raw": {
+        "url": "https://www.stats.gov.cn/sj/zxfb/202502/t20250228_1958817.html",
+        "sha256": "3e732426d3cbdb84b13168a3fa2daa7aa30663e05d7247e090abd4506aa03e39",
+        "container_class": "detail-text-content"
+      }
+    },
+    {
+      "sha256": "fc8d94e210f51d879859c6fcabc622274418e4c0b4be03b326a2a711bfa73e89",
+      "bytes": 60236,
+      "pages": null,
+      "lines": 1108,
+      "id": "bulletin_2025",
+      "filename": "2025年国民经济和社会发展统计公报.txt",
+      "title": "中华人民共和国2025年国民经济和社会发展统计公报",
+      "knowledge_base": "统计公报",
+      "folder": [
+        "2025"
+      ],
+      "url": "https://www.stats.gov.cn/sj/zxfb/202602/t20260228_1962662.html",
+      "source_type": "html_body_as_txt",
+      "license": "国家统计局官网公开发布的政府统计公报；仅保存来源元数据与证据锚点，原文按需下载并原样保存正文为 TXT。",
+      "raw": {
+        "url": "https://www.stats.gov.cn/sj/zxfb/202602/t20260228_1962662.html",
+        "sha256": "38686120cd89155f7614f959d12252b386ada9cda282edd1777616afab0bfcc6",
+        "container_class": "detail-text-content"
+      }
+    }
+  ]
+}

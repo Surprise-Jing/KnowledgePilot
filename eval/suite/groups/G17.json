@@ -1,0 +1,291 @@
+{
+ "id": "G17",
+ "title": "多跳与比较题（HotpotQA / MuSiQue 原题）",
+ "knowledge_bases": [
+  "多跳问答"
+ ],
+ "split": "dev",
+ "dimensions": [
+  "D1",
+  "D3",
+  "D8"
+ ],
+ "compare": true,
+ "demo_candidate": false,
+ "overrides": {},
+ "changelog": [
+  {
+   "date": "2026-11-24",
+   "change": "KB6 按主题合并为 334 个文件，证据位置随之更新；题目与答案不变"
+  }
+ ],
+ "cases": [
+  {
+   "id": "G17-5ab28019554299722f9b4d51",
+   "origin": "dataset",
+   "source_ref": "hotpotqa:5ab28019554299722f9b4d51",
+   "documents": [
+    "kb6_film_018",
+    "kb6_person_038"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "What amount was the settlement that the character from the Son of al Quada got in 2017?"
+    }
+   ],
+   "claims": [
+    {
+     "id": "answer",
+     "label": "最终答案",
+     "evidence_groups": [
+      [
+       "kb6.5ab28019554299722f9b4d51.1"
+      ],
+      [
+       "kb6.5ab28019554299722f9b4d51.2"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "$10.5 million"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "$10.5 million",
+   "semantic_rubric": [
+    "答案与数据集答案一致（允许同义写法）",
+    "每一跳的支撑句都应被引用"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "数据集原题与原标注"
+   }
+  },
+  {
+   "id": "G17-5ac3165c5542995ef918c10a",
+   "origin": "dataset",
+   "source_ref": "hotpotqa:5ac3165c5542995ef918c10a",
+   "documents": [
+    "kb6_other_001",
+    "kb6_person_026"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "Which American film director hosted the 18th Independent Spirit Awards in 2002?"
+    }
+   ],
+   "claims": [
+    {
+     "id": "answer",
+     "label": "最终答案",
+     "evidence_groups": [
+      [
+       "kb6.5ac3165c5542995ef918c10a.1"
+      ],
+      [
+       "kb6.5ac3165c5542995ef918c10a.2"
+      ],
+      [
+       "kb6.5ac3165c5542995ef918c10a.3"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "John Waters"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "John Waters",
+   "semantic_rubric": [
+    "答案与数据集答案一致（允许同义写法）",
+    "每一跳的支撑句都应被引用"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "数据集原题与原标注"
+   }
+  },
+  {
+   "id": "G17-5a88d745554299206df2b378",
+   "origin": "dataset",
+   "source_ref": "hotpotqa:5a88d745554299206df2b378",
+   "documents": [
+    "kb6_person_010",
+    "kb6_person_039"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "What occupation was shared by David Yates and Pietro Germi?"
+    }
+   ],
+   "claims": [
+    {
+     "id": "answer",
+     "label": "最终答案",
+     "evidence_groups": [
+      [
+       "kb6.5a88d745554299206df2b378.1"
+      ],
+      [
+       "kb6.5a88d745554299206df2b378.2"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "director"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "director",
+   "semantic_rubric": [
+    "答案与数据集答案一致（允许同义写法）",
+    "每一跳的支撑句都应被引用"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "数据集原题与原标注"
+   }
+  },
+  {
+   "id": "G17-3hop1__389955_132457_51423",
+   "origin": "dataset",
+   "source_ref": "musique:3hop1__389955_132457_51423",
+   "documents": [
+    "kb6_music_005",
+    "kb6_music_009",
+    "kb6_place_013"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "What is the name of the castle in the city where the performer of I'm Alive and on Fire was formed?"
+    }
+   ],
+   "claims": [
+    {
+     "id": "answer",
+     "label": "最终答案",
+     "evidence_groups": [
+      [
+       "kb6.3hop1__389955_132457_51423.1"
+      ],
+      [
+       "kb6.3hop1__389955_132457_51423.2"
+      ],
+      [
+       "kb6.3hop1__389955_132457_51423.3"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "Casa Loma"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "Casa Loma",
+   "semantic_rubric": [
+    "答案与数据集答案一致（允许同义写法）",
+    "每一跳的支撑句都应被引用"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "数据集原题与原标注"
+   }
+  },
+  {
+   "id": "G17-2hop__36269_63853",
+   "origin": "dataset",
+   "source_ref": "musique:2hop__36269_63853",
+   "documents": [
+    "kb6_place_049",
+    "kb6_place_052"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "What is the source of the river Orlam clans crossed to migrate to Namibia?"
+    }
+   ],
+   "claims": [
+    {
+     "id": "answer",
+     "label": "最终答案",
+     "evidence_groups": [
+      [
+       "kb6.2hop__36269_63853.1"
+      ],
+      [
+       "kb6.2hop__36269_63853.2"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "Thaba Putsoa"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "Thaba Putsoa",
+   "semantic_rubric": [
+    "答案与数据集答案一致（允许同义写法）",
+    "每一跳的支撑句都应被引用"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "数据集原题与原标注"
+   }
+  }
+ ]
+}

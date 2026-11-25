@@ -1,0 +1,179 @@
+{
+ "id": "G20",
+ "title": "检索服务降级与对话中删除文档",
+ "knowledge_bases": [
+  "易方达上证50ETF",
+  "易方达沪深300ETF"
+ ],
+ "split": "dev",
+ "dimensions": [
+  "D9",
+  "D7"
+ ],
+ "compare": false,
+ "demo_candidate": false,
+ "overrides": {
+  "embedding_query_timeout": 0.001
+ },
+ "changelog": [
+  {
+   "date": "2026-11-24",
+   "change": "用户初审：题目与参考答案无问题，待审题标为 approved"
+  }
+ ],
+ "cases": [
+  {
+   "id": "G20-1",
+   "origin": "drafted",
+   "source_ref": null,
+   "knowledge_bases": [
+    "易方达上证50ETF"
+   ],
+   "documents": [
+    "s50_2025q3"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "510100在2025年第三季度的年化跟踪误差是多少？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "s50_2025q3.te",
+     "label": "年化跟踪误差",
+     "evidence_groups": [
+      [
+       "s50_2025q3.tracking_error"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "0.72",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null,
+    "degraded": true
+   },
+   "reference_answer": "0.72%；检索服务异常时降级为关键词检索，回答中说明检索已降级。",
+   "semantic_rubric": [
+    "数值正确且带引用",
+    "降级标记为真"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G20-2",
+   "origin": "drafted",
+   "source_ref": null,
+   "knowledge_bases": [
+    "易方达沪深300ETF"
+   ],
+   "documents": [
+    "c300_2025q3"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "沪深300ETF在2025年第三季度末的基金资产净值是多少？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "c300_2025q3.nav",
+     "label": "期末基金资产净值",
+     "evidence_groups": [
+      [
+       "c300_2025q3.net_assets"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "305165362944.88",
+       "unit": "CNY",
+       "tolerance": "50000000"
+      }
+     ]
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null,
+    "degraded": true
+   },
+   "reference_answer": "给出2025Q3季报“期末基金资产净值”的数值并引用；检索降级时仍应作答。",
+   "semantic_rubric": [
+    "数值与2025Q3季报一致",
+    "降级标记为真"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G20-3",
+   "origin": "drafted",
+   "source_ref": null,
+   "knowledge_bases": [
+    "易方达上证50ETF"
+   ],
+   "documents": [
+    "s50_2025q3"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "510100在2025年第三季度末的基金份额总额是多少？"
+    },
+    {
+     "content": "刚才那份季报里的期末基金资产净值是多少？",
+     "before": [
+      {
+       "action": "delete_document",
+       "document": "s50_2025q3"
+      }
+     ]
+    }
+   ],
+   "claims": [],
+   "calculations": [],
+   "expect": {
+    "no_answer": true,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "第一轮正常回答；第二轮前该季报已被删除，应说明文档已删除或找不到，不得引用已删除文档、不得编造数值。",
+   "semantic_rubric": [
+    "第二轮明确说明找不到或文档已删除",
+    "不否认第一轮回答曾有依据",
+    "不引用已删除文档"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  }
+ ]
+}

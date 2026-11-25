@@ -1,0 +1,318 @@
+{
+ "id": "G12",
+ "title": "统计公报：多年对比与计算（含追问）",
+ "knowledge_bases": [
+  "统计公报"
+ ],
+ "split": "dev",
+ "dimensions": [
+  "D2",
+  "D6",
+  "D8"
+ ],
+ "compare": true,
+ "demo_candidate": false,
+ "overrides": {},
+ "changelog": [
+  {
+   "date": "2026-11-24",
+   "change": "用户初审：题目与参考答案无问题，待审题标为 approved"
+  }
+ ],
+ "cases": [
+  {
+   "id": "G12-1",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "bulletin_2021",
+    "bulletin_2025"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "2021年末和2025年末全国人口分别是多少？这期间减少了多少万人？"
+    },
+    {
+     "content": "那同期城镇常住人口增加了多少万人？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "urban21",
+     "label": "2021年末城镇常住人口",
+     "evidence_groups": [
+      [
+       "b21.urban"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "91425"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "urban25",
+     "label": "2025年末城镇常住人口",
+     "evidence_groups": [
+      [
+       "b25.urban"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "95380"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "urban_change",
+     "label": "城镇常住人口增加",
+     "evidence_groups": [
+      [
+       "b21.urban"
+      ],
+      [
+       "b25.urban"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "3955"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [
+    {
+     "id": "urban_change",
+     "operation": "subtract",
+     "operands": [
+      "b25.urban",
+      "b21.urban"
+     ],
+     "expected": "3955",
+     "unit": "10k_people",
+     "decimal_places": 0
+    }
+   ],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "第一轮：141260万人→140489万人，减少771万人。追问：城镇常住人口91425万人→95380万人，增加3955万人。",
+   "semantic_rubric": [
+    "第二轮“同期”须指2021年末到2025年末",
+    "增加量计算正确",
+    "两年数值分别引用对应年份公报"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G12-2",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "bulletin_2022",
+    "bulletin_2024"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "2022年到2024年，国内生产总值从多少亿元增长到多少亿元？按现价算名义增长了百分之几？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "gdp22",
+     "label": "2022年GDP",
+     "evidence_groups": [
+      [
+       "b22.gdp"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "1210207"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "gdp24",
+     "label": "2024年GDP",
+     "evidence_groups": [
+      [
+       "b24.gdp"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "1349084"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "gdp_growth",
+     "label": "两年名义增长率",
+     "evidence_groups": [
+      [
+       "b22.gdp"
+      ],
+      [
+       "b24.gdp"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "11.48",
+       "unit": "percent",
+       "tolerance": "0.01"
+      }
+     ]
+    }
+   ],
+   "calculations": [
+    {
+     "id": "gdp_growth",
+     "operation": "relative_change_pct",
+     "operands": [
+      "b24.gdp",
+      "b22.gdp"
+     ],
+     "expected": "11.48",
+     "unit": "percent",
+     "decimal_places": 2
+    }
+   ],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "1210207亿元→1349084亿元，名义增长约11.48%。",
+   "semantic_rubric": [
+    "分母为2022年GDP",
+    "说明为现价名义增长，不等同于公报的实际增速"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G12-3",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "bulletin_2019",
+    "bulletin_2025"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "2019年和2025年全国居民人均可支配收入各是多少元？2025年比2019年高多少元？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "inc19",
+     "label": "2019年人均可支配收入",
+     "evidence_groups": [
+      [
+       "b19.income"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "30733",
+       "unit": "CNY",
+       "tolerance": "0.5"
+      }
+     ]
+    },
+    {
+     "id": "inc25",
+     "label": "2025年人均可支配收入",
+     "evidence_groups": [
+      [
+       "b25.income"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "43377",
+       "unit": "CNY",
+       "tolerance": "0.5"
+      }
+     ]
+    },
+    {
+     "id": "inc_diff",
+     "label": "差额",
+     "evidence_groups": [
+      [
+       "b19.income"
+      ],
+      [
+       "b25.income"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "12644",
+       "unit": "CNY",
+       "tolerance": "0.5"
+      }
+     ]
+    }
+   ],
+   "calculations": [
+    {
+     "id": "inc_diff",
+     "operation": "subtract",
+     "operands": [
+      "b25.income",
+      "b19.income"
+     ],
+     "expected": "12644",
+     "unit": "CNY",
+     "decimal_places": 0
+    }
+   ],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "30733元→43377元，高12644元。",
+   "semantic_rubric": [
+    "差额计算正确",
+    "两年分别引用"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  }
+ ]
+}

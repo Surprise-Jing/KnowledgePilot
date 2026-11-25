@@ -1,0 +1,2580 @@
+{
+ "s50_2024q4.net_assets": {
+  "id": "s50_2024q4.net_assets",
+  "document": "s50_2024q4",
+  "section": "3.1 主要财务指标",
+  "label": "期末基金资产净值",
+  "value": "3454232757.385",
+  "unit": "CNY",
+  "anchor": "期末基金资产净值3,454,232,757.385",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  }
+ },
+ "s50_2024q4.unit_nav": {
+  "id": "s50_2024q4.unit_nav",
+  "document": "s50_2024q4",
+  "section": "3.1 主要财务指标",
+  "label": "期末基金份额净值",
+  "value": "1.3320",
+  "unit": "CNY/share",
+  "anchor": "期末基金份额净值1.3320",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  }
+ },
+ "s50_2024q4.profit": {
+  "id": "s50_2024q4.profit",
+  "document": "s50_2024q4",
+  "section": "3.1 主要财务指标",
+  "label": "本期利润",
+  "value": "-107844362.213",
+  "unit": "CNY",
+  "anchor": "2.本期利润-107,844,362.213",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  }
+ },
+ "s50_2024q4.realized": {
+  "id": "s50_2024q4.realized",
+  "document": "s50_2024q4",
+  "section": "3.1 主要财务指标",
+  "label": "本期已实现收益",
+  "value": "182373918.43",
+  "unit": "CNY",
+  "anchor": "1.本期已实现收益182,373,918.43",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  }
+ },
+ "s50_2024q4.return": {
+  "id": "s50_2024q4.return",
+  "document": "s50_2024q4",
+  "section": "3.2.1 净值表现",
+  "label": "季度净值增长率",
+  "value": "-2.40",
+  "unit": "percent",
+  "anchor": "过去三个月-2.40%1.48%-2.56%1.48%0.16%0.00%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  }
+ },
+ "s50_2024q4.benchmark_return": {
+  "id": "s50_2024q4.benchmark_return",
+  "document": "s50_2024q4",
+  "section": "3.2.1 净值表现",
+  "label": "季度基准收益率",
+  "value": "-2.56",
+  "unit": "percent",
+  "anchor": "过去三个月-2.40%1.48%-2.56%1.48%0.16%0.00%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  }
+ },
+ "s50_2024q4.active_return": {
+  "id": "s50_2024q4.active_return",
+  "document": "s50_2024q4",
+  "section": "3.2.1 净值表现",
+  "label": "季度净值增长率减基准收益率",
+  "value": "0.16",
+  "unit": "percent",
+  "anchor": "过去三个月-2.40%1.48%-2.56%1.48%0.16%0.00%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  }
+ },
+ "s50_2024q4.tracking_error": {
+  "id": "s50_2024q4.tracking_error",
+  "document": "s50_2024q4",
+  "section": "4.5 业绩表现",
+  "label": "年化跟踪误差",
+  "value": "0.59",
+  "unit": "percent",
+  "anchor": "年化跟踪误差0.59%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 8
+  }
+ },
+ "s50_2024q4.shares_start": {
+  "id": "s50_2024q4.shares_start",
+  "document": "s50_2024q4",
+  "section": "6 开放式基金份额变动",
+  "label": "期初份额",
+  "value": "2706619926.00",
+  "unit": "share",
+  "anchor": "报告期期初基金份额总额2,706,619,926.00",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 12
+  }
+ },
+ "s50_2024q4.subscriptions": {
+  "id": "s50_2024q4.subscriptions",
+  "document": "s50_2024q4",
+  "section": "6 开放式基金份额变动",
+  "label": "申购份额",
+  "value": "1464000000.00",
+  "unit": "share",
+  "anchor": "报告期期间基金总申购份额1,464,000,000.00",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 12
+  }
+ },
+ "s50_2024q4.redemptions": {
+  "id": "s50_2024q4.redemptions",
+  "document": "s50_2024q4",
+  "section": "6 开放式基金份额变动",
+  "label": "赎回份额",
+  "value": "1577400000.00",
+  "unit": "share",
+  "anchor": "报告期期间基金总赎回份额1,577,400,000.00",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 12
+  }
+ },
+ "s50_2024q4.shares_end": {
+  "id": "s50_2024q4.shares_end",
+  "document": "s50_2024q4",
+  "section": "6 开放式基金份额变动",
+  "label": "期末份额",
+  "value": "2593219926.00",
+  "unit": "share",
+  "anchor": "报告期期末基金份额总额2,593,219,926.00",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 12
+  }
+ },
+ "s50_2024q4.share_adjustment": {
+  "id": "s50_2024q4.share_adjustment",
+  "document": "s50_2024q4",
+  "section": "6 开放式基金份额变动",
+  "label": "拆分变动为横杠（计算按零处理）",
+  "value": "0",
+  "unit": "share",
+  "anchor": "报告期期间基金拆分变动份额（份额减少以“-”填列）-",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 12
+  }
+ },
+ "s50_2024q4.manufacturing": {
+  "id": "s50_2024q4.manufacturing",
+  "document": "s50_2024q4",
+  "section": "5.2.1 行业分类",
+  "label": "制造业占基金净值比例",
+  "value": "35.28",
+  "unit": "percent_of_NAV",
+  "anchor": "C制造业1,218,511,824.4735.28",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 9
+  }
+ },
+ "s50_2024q4.finance": {
+  "id": "s50_2024q4.finance",
+  "document": "s50_2024q4",
+  "section": "5.2.1 行业分类",
+  "label": "金融业占基金净值比例",
+  "value": "32.13",
+  "unit": "percent_of_NAV",
+  "anchor": "J金融业1,109,837,042.1932.13",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 9
+  }
+ },
+ "s50_2024q4.top10": {
+  "id": "s50_2024q4.top10",
+  "document": "s50_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "前十名股票",
+  "value": [
+   {
+    "rank": 1,
+    "code": "600519",
+    "name": "贵州茅台",
+    "shares": "267872",
+    "fair_value": "408236928.00",
+    "weight": "11.82"
+   },
+   {
+    "rank": 2,
+    "code": "601318",
+    "name": "中国平安",
+    "shares": "4631934",
+    "fair_value": "243871325.10",
+    "weight": "7.06"
+   },
+   {
+    "rank": 3,
+    "code": "600036",
+    "name": "招商银行",
+    "shares": "5307945",
+    "fair_value": "208602238.50",
+    "weight": "6.04"
+   },
+   {
+    "rank": 4,
+    "code": "600900",
+    "name": "长江电力",
+    "shares": "5272487",
+    "fair_value": "155801990.85",
+    "weight": "4.51"
+   },
+   {
+    "rank": 5,
+    "code": "600030",
+    "name": "中信证券",
+    "shares": "4200306",
+    "fair_value": "122522926.02",
+    "weight": "3.55"
+   },
+   {
+    "rank": 6,
+    "code": "601166",
+    "name": "兴业银行",
+    "shares": "6272800",
+    "fair_value": "120186848.00",
+    "weight": "3.48"
+   },
+   {
+    "rank": 7,
+    "code": "601899",
+    "name": "紫金矿业",
+    "shares": "7101339",
+    "fair_value": "107372245.68",
+    "weight": "3.11"
+   },
+   {
+    "rank": 8,
+    "code": "601398",
+    "name": "工商银行",
+    "shares": "15094191",
+    "fair_value": "104451801.72",
+    "weight": "3.02"
+   },
+   {
+    "rank": 9,
+    "code": "600276",
+    "name": "恒瑞医药",
+    "shares": "1931151",
+    "fair_value": "88639830.90",
+    "weight": "2.57"
+   },
+   {
+    "rank": 10,
+    "code": "600887",
+    "name": "伊利股份",
+    "shares": "2747900",
+    "fair_value": "82931622.00",
+    "weight": "2.40"
+   }
+  ],
+  "unit": "table",
+  "anchor": "1600519贵州茅台267,872408,236,928.0011.82",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2024q4.maotai_weight": {
+  "id": "s50_2024q4.maotai_weight",
+  "document": "s50_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "贵州茅台占净值比例",
+  "value": "11.82",
+  "unit": "percent_of_NAV",
+  "anchor": "1600519贵州茅台267,872408,236,928.0011.82",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2024q4.bonds": {
+  "id": "s50_2024q4.bonds",
+  "document": "s50_2024q4",
+  "section": "5.4 债券投资组合",
+  "label": "期末未持有债券",
+  "value": "0",
+  "unit": "CNY",
+  "anchor": "本基金本报告期末未持有债券。",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2024q4.unaudited": {
+  "id": "s50_2024q4.unaudited",
+  "document": "s50_2024q4",
+  "section": "1 重要提示",
+  "label": "财务资料未经审计",
+  "value": true,
+  "unit": "boolean",
+  "anchor": "本报告中财务资料未经审计。",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 2
+  }
+ },
+ "s50_2024q4.replication": {
+  "id": "s50_2024q4.replication",
+  "document": "s50_2024q4",
+  "section": "2 基金产品概况",
+  "label": "主要采取完全复制法",
+  "value": "完全复制法",
+  "unit": "text",
+  "anchor": "本基金主要采取完全复制法",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 2
+  }
+ },
+ "s50_2024q4.benchmark": {
+  "id": "s50_2024q4.benchmark",
+  "document": "s50_2024q4",
+  "section": "2 基金产品概况",
+  "label": "业绩比较基准",
+  "value": "上证50指数收益率",
+  "unit": "text",
+  "anchor": "业绩比较基准上证50指数收益率",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  }
+ },
+ "s50_2025q1.net_assets": {
+  "id": "s50_2025q1.net_assets",
+  "document": "s50_2025q1",
+  "section": "3.1 主要财务指标",
+  "label": "期末基金资产净值",
+  "value": "3835745650.085",
+  "unit": "CNY",
+  "anchor": "期末基金资产净值3,835,745,650.085",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  }
+ },
+ "s50_2025q1.unit_nav": {
+  "id": "s50_2025q1.unit_nav",
+  "document": "s50_2025q1",
+  "section": "3.1 主要财务指标",
+  "label": "期末基金份额净值",
+  "value": "2.6644",
+  "unit": "CNY/share",
+  "anchor": "期末基金份额净值2.6644",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  }
+ },
+ "s50_2025q1.profit": {
+  "id": "s50_2025q1.profit",
+  "document": "s50_2025q1",
+  "section": "3.1 主要财务指标",
+  "label": "本期利润",
+  "value": "-2591373.523",
+  "unit": "CNY",
+  "anchor": "2.本期利润-2,591,373.523",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  }
+ },
+ "s50_2025q1.realized": {
+  "id": "s50_2025q1.realized",
+  "document": "s50_2025q1",
+  "section": "3.1 主要财务指标",
+  "label": "本期已实现收益",
+  "value": "50830833.28",
+  "unit": "CNY",
+  "anchor": "1.本期已实现收益50,830,833.28",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  }
+ },
+ "s50_2025q1.return": {
+  "id": "s50_2025q1.return",
+  "document": "s50_2025q1",
+  "section": "3.2.1 净值表现",
+  "label": "季度净值增长率",
+  "value": "-0.55",
+  "unit": "percent",
+  "anchor": "过去三个月-0.55%0.90%-0.71%0.89%0.16%0.01%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  }
+ },
+ "s50_2025q1.benchmark_return": {
+  "id": "s50_2025q1.benchmark_return",
+  "document": "s50_2025q1",
+  "section": "3.2.1 净值表现",
+  "label": "季度基准收益率",
+  "value": "-0.71",
+  "unit": "percent",
+  "anchor": "过去三个月-0.55%0.90%-0.71%0.89%0.16%0.01%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  }
+ },
+ "s50_2025q1.active_return": {
+  "id": "s50_2025q1.active_return",
+  "document": "s50_2025q1",
+  "section": "3.2.1 净值表现",
+  "label": "季度净值增长率减基准收益率",
+  "value": "0.16",
+  "unit": "percent",
+  "anchor": "过去三个月-0.55%0.90%-0.71%0.89%0.16%0.01%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  }
+ },
+ "s50_2025q1.tracking_error": {
+  "id": "s50_2025q1.tracking_error",
+  "document": "s50_2025q1",
+  "section": "4.5 业绩表现",
+  "label": "年化跟踪误差",
+  "value": "0.30",
+  "unit": "percent",
+  "anchor": "年化跟踪误差0.30%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 8
+  }
+ },
+ "s50_2025q1.shares_start": {
+  "id": "s50_2025q1.shares_start",
+  "document": "s50_2025q1",
+  "section": "6 开放式基金份额变动",
+  "label": "期初份额",
+  "value": "2593219926.00",
+  "unit": "share",
+  "anchor": "报告期期初基金份额总额2,593,219,926.00",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 12
+  }
+ },
+ "s50_2025q1.subscriptions": {
+  "id": "s50_2025q1.subscriptions",
+  "document": "s50_2025q1",
+  "section": "6 开放式基金份额变动",
+  "label": "申购份额",
+  "value": "1104900000.00",
+  "unit": "share",
+  "anchor": "报告期期间基金总申购份额1,104,900,000.00",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 12
+  }
+ },
+ "s50_2025q1.redemptions": {
+  "id": "s50_2025q1.redemptions",
+  "document": "s50_2025q1",
+  "section": "6 开放式基金份额变动",
+  "label": "赎回份额",
+  "value": "784500000.00",
+  "unit": "share",
+  "anchor": "报告期期间基金总赎回份额784,500,000.00",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 12
+  }
+ },
+ "s50_2025q1.shares_end": {
+  "id": "s50_2025q1.shares_end",
+  "document": "s50_2025q1",
+  "section": "6 开放式基金份额变动",
+  "label": "期末份额",
+  "value": "1439606830.00",
+  "unit": "share",
+  "anchor": "报告期期末基金份额总额1,439,606,830.00",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 12
+  }
+ },
+ "s50_2025q1.merge_ratio": {
+  "id": "s50_2025q1.merge_ratio",
+  "document": "s50_2025q1",
+  "section": "3.1 注3",
+  "label": "2025-03-07份额合并比例",
+  "value": "0.49719902",
+  "unit": "ratio",
+  "anchor": "本基金已于2025年3月7日进行了基金份额合并，合并比例为0.49719902。",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  }
+ },
+ "s50_2025q1.share_adjustment": {
+  "id": "s50_2025q1.share_adjustment",
+  "document": "s50_2025q1",
+  "section": "6 开放式基金份额变动",
+  "label": "合并调整份额",
+  "value": "-1474013096.00",
+  "unit": "share",
+  "anchor": "-1,474,013,096.00",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 12
+  }
+ },
+ "s50_2025q1.manufacturing": {
+  "id": "s50_2025q1.manufacturing",
+  "document": "s50_2025q1",
+  "section": "5.2.1 行业分类",
+  "label": "制造业占基金净值比例",
+  "value": "35.66",
+  "unit": "percent_of_NAV",
+  "anchor": "C制造业1,367,914,238.6235.66",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 9
+  }
+ },
+ "s50_2025q1.finance": {
+  "id": "s50_2025q1.finance",
+  "document": "s50_2025q1",
+  "section": "5.2.1 行业分类",
+  "label": "金融业占基金净值比例",
+  "value": "32.72",
+  "unit": "percent_of_NAV",
+  "anchor": "J金融业1,255,138,675.8332.72",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 9
+  }
+ },
+ "s50_2025q1.top10": {
+  "id": "s50_2025q1.top10",
+  "document": "s50_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "前十名股票",
+  "value": [
+   {
+    "rank": 1,
+    "code": "600519",
+    "name": "贵州茅台",
+    "shares": "303972",
+    "fair_value": "474500292.00",
+    "weight": "12.37"
+   },
+   {
+    "rank": 2,
+    "code": "601318",
+    "name": "中国平安",
+    "shares": "5203234",
+    "fair_value": "268642971.42",
+    "weight": "7.00"
+   },
+   {
+    "rank": 3,
+    "code": "600036",
+    "name": "招商银行",
+    "shares": "5985145",
+    "fair_value": "259096927.05",
+    "weight": "6.75"
+   },
+   {
+    "rank": 4,
+    "code": "600900",
+    "name": "长江电力",
+    "shares": "5913487",
+    "fair_value": "164454073.47",
+    "weight": "4.29"
+   },
+   {
+    "rank": 5,
+    "code": "601166",
+    "name": "兴业银行",
+    "shares": "7032100",
+    "fair_value": "151893360.00",
+    "weight": "3.96"
+   },
+   {
+    "rank": 6,
+    "code": "601899",
+    "name": "紫金矿业",
+    "shares": "7967339",
+    "fair_value": "144368182.68",
+    "weight": "3.76"
+   },
+   {
+    "rank": 7,
+    "code": "600030",
+    "name": "中信证券",
+    "shares": "4718506",
+    "fair_value": "125134779.12",
+    "weight": "3.26"
+   },
+   {
+    "rank": 8,
+    "code": "601398",
+    "name": "工商银行",
+    "shares": "16950691",
+    "fair_value": "116790260.99",
+    "weight": "3.04"
+   },
+   {
+    "rank": 9,
+    "code": "600276",
+    "name": "恒瑞医药",
+    "shares": "2165951",
+    "fair_value": "106564789.20",
+    "weight": "2.78"
+   },
+   {
+    "rank": 10,
+    "code": "600887",
+    "name": "伊利股份",
+    "shares": "3077800",
+    "fair_value": "86424624.00",
+    "weight": "2.25"
+   }
+  ],
+  "unit": "table",
+  "anchor": "1600519贵州茅台303,972474,500,292.0012.37",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2025q1.maotai_weight": {
+  "id": "s50_2025q1.maotai_weight",
+  "document": "s50_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "贵州茅台占净值比例",
+  "value": "12.37",
+  "unit": "percent_of_NAV",
+  "anchor": "1600519贵州茅台303,972474,500,292.0012.37",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2025q1.bonds": {
+  "id": "s50_2025q1.bonds",
+  "document": "s50_2025q1",
+  "section": "5.4 债券投资组合",
+  "label": "期末未持有债券",
+  "value": "0",
+  "unit": "CNY",
+  "anchor": "本基金本报告期末未持有债券。",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2025q1.unaudited": {
+  "id": "s50_2025q1.unaudited",
+  "document": "s50_2025q1",
+  "section": "1 重要提示",
+  "label": "财务资料未经审计",
+  "value": true,
+  "unit": "boolean",
+  "anchor": "本报告中财务资料未经审计。",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 2
+  }
+ },
+ "s50_2025q1.replication": {
+  "id": "s50_2025q1.replication",
+  "document": "s50_2025q1",
+  "section": "2 基金产品概况",
+  "label": "主要采取完全复制法",
+  "value": "完全复制法",
+  "unit": "text",
+  "anchor": "本基金主要采取完全复制法",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 2
+  }
+ },
+ "s50_2025q1.benchmark": {
+  "id": "s50_2025q1.benchmark",
+  "document": "s50_2025q1",
+  "section": "2 基金产品概况",
+  "label": "业绩比较基准",
+  "value": "上证50指数收益率",
+  "unit": "text",
+  "anchor": "业绩比较基准上证50指数收益率",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  }
+ },
+ "c300_2024q4.net_assets": {
+  "id": "c300_2024q4.net_assets",
+  "document": "c300_2024q4",
+  "section": "3.1 主要财务指标",
+  "label": "期末基金资产净值",
+  "value": "247680127647.645",
+  "unit": "CNY",
+  "anchor": "期末基金资产净值247,680,127,647.645",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  }
+ },
+ "c300_2024q4.unit_nav": {
+  "id": "c300_2024q4.unit_nav",
+  "document": "c300_2024q4",
+  "section": "3.1 主要财务指标",
+  "label": "期末基金份额净值",
+  "value": "3.8644",
+  "unit": "CNY/share",
+  "anchor": "期末基金份额净值3.8644",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  }
+ },
+ "c300_2024q4.profit": {
+  "id": "c300_2024q4.profit",
+  "document": "c300_2024q4",
+  "section": "3.1 主要财务指标",
+  "label": "本期利润",
+  "value": "-5018357636.183",
+  "unit": "CNY",
+  "anchor": "2.本期利润-5,018,357,636.183",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  }
+ },
+ "c300_2024q4.realized": {
+  "id": "c300_2024q4.realized",
+  "document": "c300_2024q4",
+  "section": "3.1 主要财务指标",
+  "label": "本期已实现收益",
+  "value": "4873764329.112",
+  "unit": "CNY",
+  "anchor": "1.本期已实现收益4,873,764,329.112",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  }
+ },
+ "c300_2024q4.return": {
+  "id": "c300_2024q4.return",
+  "document": "c300_2024q4",
+  "section": "3.2.1 净值表现",
+  "label": "季度净值增长率",
+  "value": "-1.84",
+  "unit": "percent",
+  "anchor": "过去三个月-1.84%1.73%-2.06%1.74%0.22%-0.01%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  }
+ },
+ "c300_2024q4.benchmark_return": {
+  "id": "c300_2024q4.benchmark_return",
+  "document": "c300_2024q4",
+  "section": "3.2.1 净值表现",
+  "label": "季度基准收益率",
+  "value": "-2.06",
+  "unit": "percent",
+  "anchor": "过去三个月-1.84%1.73%-2.06%1.74%0.22%-0.01%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  }
+ },
+ "c300_2024q4.active_return": {
+  "id": "c300_2024q4.active_return",
+  "document": "c300_2024q4",
+  "section": "3.2.1 净值表现",
+  "label": "季度净值增长率减基准收益率",
+  "value": "0.22",
+  "unit": "percent",
+  "anchor": "过去三个月-1.84%1.73%-2.06%1.74%0.22%-0.01%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  }
+ },
+ "c300_2024q4.tracking_error": {
+  "id": "c300_2024q4.tracking_error",
+  "document": "c300_2024q4",
+  "section": "4.5 业绩表现",
+  "label": "年化跟踪误差",
+  "value": "0.21",
+  "unit": "percent",
+  "anchor": "年化跟踪误差0.21%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 9
+  }
+ },
+ "c300_2024q4.shares_start": {
+  "id": "c300_2024q4.shares_start",
+  "document": "c300_2024q4",
+  "section": "6 开放式基金份额变动",
+  "label": "期初份额",
+  "value": "65546006249.00",
+  "unit": "share",
+  "anchor": "报告期期初基金份额总额65,546,006,249.00",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 13
+  }
+ },
+ "c300_2024q4.subscriptions": {
+  "id": "c300_2024q4.subscriptions",
+  "document": "c300_2024q4",
+  "section": "6 开放式基金份额变动",
+  "label": "申购份额",
+  "value": "4047244286.00",
+  "unit": "share",
+  "anchor": "报告期期间基金总申购份额4,047,244,286.00",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 13
+  }
+ },
+ "c300_2024q4.redemptions": {
+  "id": "c300_2024q4.redemptions",
+  "document": "c300_2024q4",
+  "section": "6 开放式基金份额变动",
+  "label": "赎回份额",
+  "value": "5499862071.00",
+  "unit": "share",
+  "anchor": "报告期期间基金总赎回份额5,499,862,071.00",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 13
+  }
+ },
+ "c300_2024q4.shares_end": {
+  "id": "c300_2024q4.shares_end",
+  "document": "c300_2024q4",
+  "section": "6 开放式基金份额变动",
+  "label": "期末份额",
+  "value": "64093388464.00",
+  "unit": "share",
+  "anchor": "报告期期末基金份额总额64,093,388,464.00",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 13
+  }
+ },
+ "c300_2024q4.share_adjustment": {
+  "id": "c300_2024q4.share_adjustment",
+  "document": "c300_2024q4",
+  "section": "6 开放式基金份额变动",
+  "label": "拆分变动为横杠（计算按零处理）",
+  "value": "0",
+  "unit": "share",
+  "anchor": "报告期期间基金拆分变动份额（份额减少以“-”填列）-",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 13
+  }
+ },
+ "c300_2024q4.manufacturing": {
+  "id": "c300_2024q4.manufacturing",
+  "document": "c300_2024q4",
+  "section": "5.2.1 行业分类",
+  "label": "制造业占基金净值比例",
+  "value": "51.95",
+  "unit": "percent_of_NAV",
+  "anchor": "C制造业128,658,433,244.3451.95",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "c300_2024q4.finance": {
+  "id": "c300_2024q4.finance",
+  "document": "c300_2024q4",
+  "section": "5.2.1 行业分类",
+  "label": "金融业占基金净值比例",
+  "value": "24.38",
+  "unit": "percent_of_NAV",
+  "anchor": "J金融业60,382,699,753.1524.38",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "c300_2024q4.top10": {
+  "id": "c300_2024q4.top10",
+  "document": "c300_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "前十名股票",
+  "value": [
+   {
+    "rank": 1,
+    "code": "600519",
+    "name": "贵州茅台",
+    "shares": "7486490",
+    "fair_value": "11409410760.00",
+    "weight": "4.61"
+   },
+   {
+    "rank": 2,
+    "code": "300750",
+    "name": "宁德时代",
+    "shares": "31454782",
+    "fair_value": "8366972012.00",
+    "weight": "3.38"
+   },
+   {
+    "rank": 3,
+    "code": "601318",
+    "name": "中国平安",
+    "shares": "128167007",
+    "fair_value": "6747992918.55",
+    "weight": "2.72"
+   },
+   {
+    "rank": 4,
+    "code": "600036",
+    "name": "招商银行",
+    "shares": "147572693",
+    "fair_value": "5799606834.90",
+    "weight": "2.34"
+   },
+   {
+    "rank": 5,
+    "code": "000333",
+    "name": "美的集团",
+    "shares": "58219643",
+    "fair_value": "4379281546.46",
+    "weight": "1.77"
+   },
+   {
+    "rank": 6,
+    "code": "600900",
+    "name": "长江电力",
+    "shares": "145704783",
+    "fair_value": "4305576337.65",
+    "weight": "1.74"
+   },
+   {
+    "rank": 7,
+    "code": "300059",
+    "name": "东方财富",
+    "shares": "150507306",
+    "fair_value": "3886098640.92",
+    "weight": "1.57"
+   },
+   {
+    "rank": 8,
+    "code": "600030",
+    "name": "中信证券",
+    "shares": "116237184",
+    "fair_value": "3390638657.28",
+    "weight": "1.37"
+   },
+   {
+    "rank": 9,
+    "code": "601166",
+    "name": "兴业银行",
+    "shares": "173373790",
+    "fair_value": "3321841816.40",
+    "weight": "1.34"
+   },
+   {
+    "rank": 10,
+    "code": "000858",
+    "name": "五粮液",
+    "shares": "23122800",
+    "fair_value": "3238116912.00",
+    "weight": "1.31"
+   }
+  ],
+  "unit": "table",
+  "anchor": "1600519贵州茅台7,486,49011,409,410,760.004.61",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 11
+  }
+ },
+ "c300_2024q4.maotai_weight": {
+  "id": "c300_2024q4.maotai_weight",
+  "document": "c300_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "贵州茅台占净值比例",
+  "value": "4.61",
+  "unit": "percent_of_NAV",
+  "anchor": "1600519贵州茅台7,486,49011,409,410,760.004.61",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 11
+  }
+ },
+ "c300_2024q4.bonds": {
+  "id": "c300_2024q4.bonds",
+  "document": "c300_2024q4",
+  "section": "5.4 债券投资组合",
+  "label": "期末未持有债券",
+  "value": "0",
+  "unit": "CNY",
+  "anchor": "本基金本报告期末未持有债券。",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 11
+  }
+ },
+ "c300_2024q4.unaudited": {
+  "id": "c300_2024q4.unaudited",
+  "document": "c300_2024q4",
+  "section": "1 重要提示",
+  "label": "财务资料未经审计",
+  "value": true,
+  "unit": "boolean",
+  "anchor": "本报告中财务资料未经审计。",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 2
+  }
+ },
+ "c300_2024q4.replication": {
+  "id": "c300_2024q4.replication",
+  "document": "c300_2024q4",
+  "section": "2 基金产品概况",
+  "label": "主要采取完全复制法",
+  "value": "完全复制法",
+  "unit": "text",
+  "anchor": "本基金主要采取完全复制法",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 2
+  }
+ },
+ "c300_2024q4.benchmark": {
+  "id": "c300_2024q4.benchmark",
+  "document": "c300_2024q4",
+  "section": "2 基金产品概况",
+  "label": "业绩比较基准",
+  "value": "沪深300指数",
+  "unit": "text",
+  "anchor": "业绩比较基准沪深300指数",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  }
+ },
+ "c300_2025q1.net_assets": {
+  "id": "c300_2025q1.net_assets",
+  "document": "c300_2025q1",
+  "section": "3.1 主要财务指标",
+  "label": "期末基金资产净值",
+  "value": "235019757763.095",
+  "unit": "CNY",
+  "anchor": "期末基金资产净值235,019,757,763.095",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  }
+ },
+ "c300_2025q1.unit_nav": {
+  "id": "c300_2025q1.unit_nav",
+  "document": "c300_2025q1",
+  "section": "3.1 主要财务指标",
+  "label": "期末基金份额净值",
+  "value": "3.8255",
+  "unit": "CNY/share",
+  "anchor": "期末基金份额净值3.8255",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  }
+ },
+ "c300_2025q1.profit": {
+  "id": "c300_2025q1.profit",
+  "document": "c300_2025q1",
+  "section": "3.1 主要财务指标",
+  "label": "本期利润",
+  "value": "-2295148799.753",
+  "unit": "CNY",
+  "anchor": "2.本期利润-2,295,148,799.753",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  }
+ },
+ "c300_2025q1.realized": {
+  "id": "c300_2025q1.realized",
+  "document": "c300_2025q1",
+  "section": "3.1 主要财务指标",
+  "label": "本期已实现收益",
+  "value": "2999471308.692",
+  "unit": "CNY",
+  "anchor": "1.本期已实现收益2,999,471,308.692",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  }
+ },
+ "c300_2025q1.return": {
+  "id": "c300_2025q1.return",
+  "document": "c300_2025q1",
+  "section": "3.2.1 净值表现",
+  "label": "季度净值增长率",
+  "value": "-1.01",
+  "unit": "percent",
+  "anchor": "过去三个月-1.01%0.94%-1.21%0.94%0.20%0.00%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  }
+ },
+ "c300_2025q1.benchmark_return": {
+  "id": "c300_2025q1.benchmark_return",
+  "document": "c300_2025q1",
+  "section": "3.2.1 净值表现",
+  "label": "季度基准收益率",
+  "value": "-1.21",
+  "unit": "percent",
+  "anchor": "过去三个月-1.01%0.94%-1.21%0.94%0.20%0.00%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  }
+ },
+ "c300_2025q1.active_return": {
+  "id": "c300_2025q1.active_return",
+  "document": "c300_2025q1",
+  "section": "3.2.1 净值表现",
+  "label": "季度净值增长率减基准收益率",
+  "value": "0.20",
+  "unit": "percent",
+  "anchor": "过去三个月-1.01%0.94%-1.21%0.94%0.20%0.00%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  }
+ },
+ "c300_2025q1.tracking_error": {
+  "id": "c300_2025q1.tracking_error",
+  "document": "c300_2025q1",
+  "section": "4.5 业绩表现",
+  "label": "年化跟踪误差",
+  "value": "0.19",
+  "unit": "percent",
+  "anchor": "年化跟踪误差0.19%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 8
+  }
+ },
+ "c300_2025q1.shares_start": {
+  "id": "c300_2025q1.shares_start",
+  "document": "c300_2025q1",
+  "section": "6 开放式基金份额变动",
+  "label": "期初份额",
+  "value": "64093388464.00",
+  "unit": "share",
+  "anchor": "报告期期初基金份额总额64,093,388,464.00",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 13
+  }
+ },
+ "c300_2025q1.subscriptions": {
+  "id": "c300_2025q1.subscriptions",
+  "document": "c300_2025q1",
+  "section": "6 开放式基金份额变动",
+  "label": "申购份额",
+  "value": "2988000000.00",
+  "unit": "share",
+  "anchor": "报告期期间基金总申购份额2,988,000,000.00",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 13
+  }
+ },
+ "c300_2025q1.redemptions": {
+  "id": "c300_2025q1.redemptions",
+  "document": "c300_2025q1",
+  "section": "6 开放式基金份额变动",
+  "label": "赎回份额",
+  "value": "5645700000.00",
+  "unit": "share",
+  "anchor": "报告期期间基金总赎回份额5,645,700,000.00",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 13
+  }
+ },
+ "c300_2025q1.shares_end": {
+  "id": "c300_2025q1.shares_end",
+  "document": "c300_2025q1",
+  "section": "6 开放式基金份额变动",
+  "label": "期末份额",
+  "value": "61435688464.00",
+  "unit": "share",
+  "anchor": "报告期期末基金份额总额61,435,688,464.00",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 13
+  }
+ },
+ "c300_2025q1.share_adjustment": {
+  "id": "c300_2025q1.share_adjustment",
+  "document": "c300_2025q1",
+  "section": "6 开放式基金份额变动",
+  "label": "拆分变动为横杠（计算按零处理）",
+  "value": "0",
+  "unit": "share",
+  "anchor": "报告期期间基金拆分变动份额（份额减少以“-”填列）-",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 13
+  }
+ },
+ "c300_2025q1.manufacturing": {
+  "id": "c300_2025q1.manufacturing",
+  "document": "c300_2025q1",
+  "section": "5.2.1 行业分类",
+  "label": "制造业占基金净值比例",
+  "value": "52.61",
+  "unit": "percent_of_NAV",
+  "anchor": "C制造业123,635,666,609.6352.61",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 9
+  }
+ },
+ "c300_2025q1.finance": {
+  "id": "c300_2025q1.finance",
+  "document": "c300_2025q1",
+  "section": "5.2.1 行业分类",
+  "label": "金融业占基金净值比例",
+  "value": "24.34",
+  "unit": "percent_of_NAV",
+  "anchor": "J金融业57,202,290,406.3024.34",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "c300_2025q1.top10": {
+  "id": "c300_2025q1.top10",
+  "document": "c300_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "前十名股票",
+  "value": [
+   {
+    "rank": 1,
+    "code": "600519",
+    "name": "贵州茅台",
+    "shares": "7218281",
+    "fair_value": "11267736641.00",
+    "weight": "4.79"
+   },
+   {
+    "rank": 2,
+    "code": "300750",
+    "name": "宁德时代",
+    "shares": "30190282",
+    "fair_value": "7636329929.08",
+    "weight": "3.25"
+   },
+   {
+    "rank": 3,
+    "code": "601318",
+    "name": "中国平安",
+    "shares": "123037307",
+    "fair_value": "6352416160.41",
+    "weight": "2.70"
+   },
+   {
+    "rank": 4,
+    "code": "600036",
+    "name": "招商银行",
+    "shares": "141452893",
+    "fair_value": "6123495737.97",
+    "weight": "2.61"
+   },
+   {
+    "rank": 5,
+    "code": "000333",
+    "name": "美的集团",
+    "shares": "55876743",
+    "fair_value": "4386324325.50",
+    "weight": "1.87"
+   },
+   {
+    "rank": 6,
+    "code": "600900",
+    "name": "长江电力",
+    "shares": "140071983",
+    "fair_value": "3895401847.23",
+    "weight": "1.66"
+   },
+   {
+    "rank": 7,
+    "code": "002594",
+    "name": "比亚迪",
+    "shares": "10355139",
+    "fair_value": "3882141611.10",
+    "weight": "1.65"
+   },
+   {
+    "rank": 8,
+    "code": "601166",
+    "name": "兴业银行",
+    "shares": "166482090",
+    "fair_value": "3596013144.00",
+    "weight": "1.53"
+   },
+   {
+    "rank": 9,
+    "code": "601899",
+    "name": "紫金矿业",
+    "shares": "188324758",
+    "fair_value": "3412444614.96",
+    "weight": "1.45"
+   },
+   {
+    "rank": 10,
+    "code": "300059",
+    "name": "东方财富",
+    "shares": "144427406",
+    "fair_value": "3261170827.48",
+    "weight": "1.39"
+   }
+  ],
+  "unit": "table",
+  "anchor": "1600519贵州茅台7,218,28111,267,736,641.004.79",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "c300_2025q1.maotai_weight": {
+  "id": "c300_2025q1.maotai_weight",
+  "document": "c300_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "贵州茅台占净值比例",
+  "value": "4.79",
+  "unit": "percent_of_NAV",
+  "anchor": "1600519贵州茅台7,218,28111,267,736,641.004.79",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "c300_2025q1.bonds": {
+  "id": "c300_2025q1.bonds",
+  "document": "c300_2025q1",
+  "section": "5.4 债券投资组合",
+  "label": "债券投资公允价值",
+  "value": "34661115.47",
+  "unit": "CNY",
+  "anchor": "合计34,661,115.470.01",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 11
+  }
+ },
+ "c300_2025q1.unaudited": {
+  "id": "c300_2025q1.unaudited",
+  "document": "c300_2025q1",
+  "section": "1 重要提示",
+  "label": "财务资料未经审计",
+  "value": true,
+  "unit": "boolean",
+  "anchor": "本报告中财务资料未经审计。",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 2
+  }
+ },
+ "c300_2025q1.replication": {
+  "id": "c300_2025q1.replication",
+  "document": "c300_2025q1",
+  "section": "2 基金产品概况",
+  "label": "主要采取完全复制法",
+  "value": "完全复制法",
+  "unit": "text",
+  "anchor": "本基金主要采取完全复制法",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 2
+  }
+ },
+ "c300_2025q1.benchmark": {
+  "id": "c300_2025q1.benchmark",
+  "document": "c300_2025q1",
+  "section": "2 基金产品概况",
+  "label": "业绩比较基准",
+  "value": "沪深300指数",
+  "unit": "text",
+  "anchor": "业绩比较基准沪深300指数",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  }
+ },
+ "s50_2024q4.performance_return": {
+  "id": "s50_2024q4.performance_return",
+  "document": "s50_2024q4",
+  "section": "4.5 业绩表现",
+  "label": "季度净值增长率",
+  "value": "-2.40",
+  "unit": "percent",
+  "anchor": "本报告期份额净值增长率为-2.40%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 8
+  }
+ },
+ "s50_2024q4.performance_benchmark_return": {
+  "id": "s50_2024q4.performance_benchmark_return",
+  "document": "s50_2024q4",
+  "section": "4.5 业绩表现",
+  "label": "季度基准收益率",
+  "value": "-2.56",
+  "unit": "percent",
+  "anchor": "同期业绩比较基准收益率为-2.56%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 8
+  }
+ },
+ "s50_2024q4.holding_600519": {
+  "id": "s50_2024q4.holding_600519",
+  "document": "s50_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "贵州茅台",
+  "value": {
+   "rank": 1,
+   "code": "600519",
+   "name": "贵州茅台",
+   "shares": "267872",
+   "fair_value": "408236928.00",
+   "weight": "11.82"
+  },
+  "unit": "holding",
+  "anchor": "1600519贵州茅台267,872408,236,928.0011.82",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2024q4.holding_601318": {
+  "id": "s50_2024q4.holding_601318",
+  "document": "s50_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "中国平安",
+  "value": {
+   "rank": 2,
+   "code": "601318",
+   "name": "中国平安",
+   "shares": "4631934",
+   "fair_value": "243871325.10",
+   "weight": "7.06"
+  },
+  "unit": "holding",
+  "anchor": "2601318中国平安4,631,934243,871,325.107.06",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2024q4.holding_600036": {
+  "id": "s50_2024q4.holding_600036",
+  "document": "s50_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "招商银行",
+  "value": {
+   "rank": 3,
+   "code": "600036",
+   "name": "招商银行",
+   "shares": "5307945",
+   "fair_value": "208602238.50",
+   "weight": "6.04"
+  },
+  "unit": "holding",
+  "anchor": "3600036招商银行5,307,945208,602,238.506.04",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2024q4.holding_600900": {
+  "id": "s50_2024q4.holding_600900",
+  "document": "s50_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "长江电力",
+  "value": {
+   "rank": 4,
+   "code": "600900",
+   "name": "长江电力",
+   "shares": "5272487",
+   "fair_value": "155801990.85",
+   "weight": "4.51"
+  },
+  "unit": "holding",
+  "anchor": "4600900长江电力5,272,487155,801,990.854.51",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2024q4.holding_600030": {
+  "id": "s50_2024q4.holding_600030",
+  "document": "s50_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "中信证券",
+  "value": {
+   "rank": 5,
+   "code": "600030",
+   "name": "中信证券",
+   "shares": "4200306",
+   "fair_value": "122522926.02",
+   "weight": "3.55"
+  },
+  "unit": "holding",
+  "anchor": "5600030中信证券4,200,306122,522,926.023.55",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2024q4.holding_601166": {
+  "id": "s50_2024q4.holding_601166",
+  "document": "s50_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "兴业银行",
+  "value": {
+   "rank": 6,
+   "code": "601166",
+   "name": "兴业银行",
+   "shares": "6272800",
+   "fair_value": "120186848.00",
+   "weight": "3.48"
+  },
+  "unit": "holding",
+  "anchor": "6601166兴业银行6,272,800120,186,848.003.48",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2024q4.holding_601899": {
+  "id": "s50_2024q4.holding_601899",
+  "document": "s50_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "紫金矿业",
+  "value": {
+   "rank": 7,
+   "code": "601899",
+   "name": "紫金矿业",
+   "shares": "7101339",
+   "fair_value": "107372245.68",
+   "weight": "3.11"
+  },
+  "unit": "holding",
+  "anchor": "7601899紫金矿业7,101,339107,372,245.683.11",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2024q4.holding_601398": {
+  "id": "s50_2024q4.holding_601398",
+  "document": "s50_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "工商银行",
+  "value": {
+   "rank": 8,
+   "code": "601398",
+   "name": "工商银行",
+   "shares": "15094191",
+   "fair_value": "104451801.72",
+   "weight": "3.02"
+  },
+  "unit": "holding",
+  "anchor": "8601398工商银行15,094,191104,451,801.723.02",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2024q4.holding_600276": {
+  "id": "s50_2024q4.holding_600276",
+  "document": "s50_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "恒瑞医药",
+  "value": {
+   "rank": 9,
+   "code": "600276",
+   "name": "恒瑞医药",
+   "shares": "1931151",
+   "fair_value": "88639830.90",
+   "weight": "2.57"
+  },
+  "unit": "holding",
+  "anchor": "9600276恒瑞医药1,931,15188,639,830.902.57",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2024q4.holding_600887": {
+  "id": "s50_2024q4.holding_600887",
+  "document": "s50_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "伊利股份",
+  "value": {
+   "rank": 10,
+   "code": "600887",
+   "name": "伊利股份",
+   "shares": "2747900",
+   "fair_value": "82931622.00",
+   "weight": "2.40"
+  },
+  "unit": "holding",
+  "anchor": "10600887伊利股份2,747,90082,931,622.002.40",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2024q4.stock_total_assets": {
+  "id": "s50_2024q4.stock_total_assets",
+  "document": "s50_2024q4",
+  "section": "5.1 资产组合",
+  "label": "股票占基金总资产比例",
+  "value": "99.06",
+  "unit": "percent_of_total_assets",
+  "anchor": "其中：股票3,423,480,025.8599.06",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 8
+  }
+ },
+ "s50_2024q4.stock_net_assets": {
+  "id": "s50_2024q4.stock_net_assets",
+  "document": "s50_2024q4",
+  "section": "5.2.1 行业分类",
+  "label": "股票合计占基金净资产比例",
+  "value": "99.11",
+  "unit": "percent_of_NAV",
+  "anchor": "合计3,423,489,241.8599.11",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2025q1.performance_return": {
+  "id": "s50_2025q1.performance_return",
+  "document": "s50_2025q1",
+  "section": "4.5 业绩表现",
+  "label": "季度净值增长率",
+  "value": "-0.55",
+  "unit": "percent",
+  "anchor": "本报告期份额净值增长率为-0.55%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 8
+  }
+ },
+ "s50_2025q1.performance_benchmark_return": {
+  "id": "s50_2025q1.performance_benchmark_return",
+  "document": "s50_2025q1",
+  "section": "4.5 业绩表现",
+  "label": "季度基准收益率",
+  "value": "-0.71",
+  "unit": "percent",
+  "anchor": "同期业绩比较基准收益率为-0.71%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 8
+  }
+ },
+ "s50_2025q1.holding_600519": {
+  "id": "s50_2025q1.holding_600519",
+  "document": "s50_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "贵州茅台",
+  "value": {
+   "rank": 1,
+   "code": "600519",
+   "name": "贵州茅台",
+   "shares": "303972",
+   "fair_value": "474500292.00",
+   "weight": "12.37"
+  },
+  "unit": "holding",
+  "anchor": "1600519贵州茅台303,972474,500,292.0012.37",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2025q1.holding_601318": {
+  "id": "s50_2025q1.holding_601318",
+  "document": "s50_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "中国平安",
+  "value": {
+   "rank": 2,
+   "code": "601318",
+   "name": "中国平安",
+   "shares": "5203234",
+   "fair_value": "268642971.42",
+   "weight": "7.00"
+  },
+  "unit": "holding",
+  "anchor": "2601318中国平安5,203,234268,642,971.427.00",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2025q1.holding_600036": {
+  "id": "s50_2025q1.holding_600036",
+  "document": "s50_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "招商银行",
+  "value": {
+   "rank": 3,
+   "code": "600036",
+   "name": "招商银行",
+   "shares": "5985145",
+   "fair_value": "259096927.05",
+   "weight": "6.75"
+  },
+  "unit": "holding",
+  "anchor": "3600036招商银行5,985,145259,096,927.056.75",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2025q1.holding_600900": {
+  "id": "s50_2025q1.holding_600900",
+  "document": "s50_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "长江电力",
+  "value": {
+   "rank": 4,
+   "code": "600900",
+   "name": "长江电力",
+   "shares": "5913487",
+   "fair_value": "164454073.47",
+   "weight": "4.29"
+  },
+  "unit": "holding",
+  "anchor": "4600900长江电力5,913,487164,454,073.474.29",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2025q1.holding_601166": {
+  "id": "s50_2025q1.holding_601166",
+  "document": "s50_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "兴业银行",
+  "value": {
+   "rank": 5,
+   "code": "601166",
+   "name": "兴业银行",
+   "shares": "7032100",
+   "fair_value": "151893360.00",
+   "weight": "3.96"
+  },
+  "unit": "holding",
+  "anchor": "5601166兴业银行7,032,100151,893,360.003.96",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2025q1.holding_601899": {
+  "id": "s50_2025q1.holding_601899",
+  "document": "s50_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "紫金矿业",
+  "value": {
+   "rank": 6,
+   "code": "601899",
+   "name": "紫金矿业",
+   "shares": "7967339",
+   "fair_value": "144368182.68",
+   "weight": "3.76"
+  },
+  "unit": "holding",
+  "anchor": "6601899紫金矿业7,967,339144,368,182.683.76",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2025q1.holding_600030": {
+  "id": "s50_2025q1.holding_600030",
+  "document": "s50_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "中信证券",
+  "value": {
+   "rank": 7,
+   "code": "600030",
+   "name": "中信证券",
+   "shares": "4718506",
+   "fair_value": "125134779.12",
+   "weight": "3.26"
+  },
+  "unit": "holding",
+  "anchor": "7600030中信证券4,718,506125,134,779.123.26",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2025q1.holding_601398": {
+  "id": "s50_2025q1.holding_601398",
+  "document": "s50_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "工商银行",
+  "value": {
+   "rank": 8,
+   "code": "601398",
+   "name": "工商银行",
+   "shares": "16950691",
+   "fair_value": "116790260.99",
+   "weight": "3.04"
+  },
+  "unit": "holding",
+  "anchor": "8601398工商银行16,950,691116,790,260.993.04",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2025q1.holding_600276": {
+  "id": "s50_2025q1.holding_600276",
+  "document": "s50_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "恒瑞医药",
+  "value": {
+   "rank": 9,
+   "code": "600276",
+   "name": "恒瑞医药",
+   "shares": "2165951",
+   "fair_value": "106564789.20",
+   "weight": "2.78"
+  },
+  "unit": "holding",
+  "anchor": "9600276恒瑞医药2,165,951106,564,789.202.78",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2025q1.holding_600887": {
+  "id": "s50_2025q1.holding_600887",
+  "document": "s50_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "伊利股份",
+  "value": {
+   "rank": 10,
+   "code": "600887",
+   "name": "伊利股份",
+   "shares": "3077800",
+   "fair_value": "86424624.00",
+   "weight": "2.25"
+  },
+  "unit": "holding",
+  "anchor": "10600887伊利股份3,077,80086,424,624.002.25",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "s50_2025q1.stock_total_assets": {
+  "id": "s50_2025q1.stock_total_assets",
+  "document": "s50_2025q1",
+  "section": "5.1 资产组合",
+  "label": "股票占基金总资产比例",
+  "value": "99.292",
+  "unit": "percent_of_total_assets",
+  "anchor": "其中：股票3,809,597,430.2899.292",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 8
+  }
+ },
+ "s50_2025q1.stock_net_assets": {
+  "id": "s50_2025q1.stock_net_assets",
+  "document": "s50_2025q1",
+  "section": "5.2.1 行业分类",
+  "label": "股票合计占基金净资产比例",
+  "value": "99.32",
+  "unit": "percent_of_NAV",
+  "anchor": "合计3,809,597,430.2899.32",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 9
+  }
+ },
+ "c300_2024q4.performance_return": {
+  "id": "c300_2024q4.performance_return",
+  "document": "c300_2024q4",
+  "section": "4.5 业绩表现",
+  "label": "季度净值增长率",
+  "value": "-1.84",
+  "unit": "percent",
+  "anchor": "本报告期份额净值增长率为-1.84%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 9
+  }
+ },
+ "c300_2024q4.performance_benchmark_return": {
+  "id": "c300_2024q4.performance_benchmark_return",
+  "document": "c300_2024q4",
+  "section": "4.5 业绩表现",
+  "label": "季度基准收益率",
+  "value": "-2.06",
+  "unit": "percent",
+  "anchor": "同期业绩比较基准收益率为-2.06%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 9
+  }
+ },
+ "c300_2024q4.holding_600519": {
+  "id": "c300_2024q4.holding_600519",
+  "document": "c300_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "贵州茅台",
+  "value": {
+   "rank": 1,
+   "code": "600519",
+   "name": "贵州茅台",
+   "shares": "7486490",
+   "fair_value": "11409410760.00",
+   "weight": "4.61"
+  },
+  "unit": "holding",
+  "anchor": "1600519贵州茅台7,486,49011,409,410,760.004.61",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 11
+  }
+ },
+ "c300_2024q4.holding_300750": {
+  "id": "c300_2024q4.holding_300750",
+  "document": "c300_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "宁德时代",
+  "value": {
+   "rank": 2,
+   "code": "300750",
+   "name": "宁德时代",
+   "shares": "31454782",
+   "fair_value": "8366972012.00",
+   "weight": "3.38"
+  },
+  "unit": "holding",
+  "anchor": "2300750宁德时代31,454,7828,366,972,012.003.38",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 11
+  }
+ },
+ "c300_2024q4.holding_601318": {
+  "id": "c300_2024q4.holding_601318",
+  "document": "c300_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "中国平安",
+  "value": {
+   "rank": 3,
+   "code": "601318",
+   "name": "中国平安",
+   "shares": "128167007",
+   "fair_value": "6747992918.55",
+   "weight": "2.72"
+  },
+  "unit": "holding",
+  "anchor": "3601318中国平安128,167,0076,747,992,918.552.72",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 11
+  }
+ },
+ "c300_2024q4.holding_600036": {
+  "id": "c300_2024q4.holding_600036",
+  "document": "c300_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "招商银行",
+  "value": {
+   "rank": 4,
+   "code": "600036",
+   "name": "招商银行",
+   "shares": "147572693",
+   "fair_value": "5799606834.90",
+   "weight": "2.34"
+  },
+  "unit": "holding",
+  "anchor": "4600036招商银行147,572,6935,799,606,834.902.34",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 11
+  }
+ },
+ "c300_2024q4.holding_000333": {
+  "id": "c300_2024q4.holding_000333",
+  "document": "c300_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "美的集团",
+  "value": {
+   "rank": 5,
+   "code": "000333",
+   "name": "美的集团",
+   "shares": "58219643",
+   "fair_value": "4379281546.46",
+   "weight": "1.77"
+  },
+  "unit": "holding",
+  "anchor": "5000333美的集团58,219,6434,379,281,546.461.77",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 11
+  }
+ },
+ "c300_2024q4.holding_600900": {
+  "id": "c300_2024q4.holding_600900",
+  "document": "c300_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "长江电力",
+  "value": {
+   "rank": 6,
+   "code": "600900",
+   "name": "长江电力",
+   "shares": "145704783",
+   "fair_value": "4305576337.65",
+   "weight": "1.74"
+  },
+  "unit": "holding",
+  "anchor": "6600900长江电力145,704,7834,305,576,337.651.74",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 11
+  }
+ },
+ "c300_2024q4.holding_300059": {
+  "id": "c300_2024q4.holding_300059",
+  "document": "c300_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "东方财富",
+  "value": {
+   "rank": 7,
+   "code": "300059",
+   "name": "东方财富",
+   "shares": "150507306",
+   "fair_value": "3886098640.92",
+   "weight": "1.57"
+  },
+  "unit": "holding",
+  "anchor": "7300059东方财富150,507,3063,886,098,640.921.57",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 11
+  }
+ },
+ "c300_2024q4.holding_600030": {
+  "id": "c300_2024q4.holding_600030",
+  "document": "c300_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "中信证券",
+  "value": {
+   "rank": 8,
+   "code": "600030",
+   "name": "中信证券",
+   "shares": "116237184",
+   "fair_value": "3390638657.28",
+   "weight": "1.37"
+  },
+  "unit": "holding",
+  "anchor": "8600030中信证券116,237,1843,390,638,657.281.37",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 11
+  }
+ },
+ "c300_2024q4.holding_601166": {
+  "id": "c300_2024q4.holding_601166",
+  "document": "c300_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "兴业银行",
+  "value": {
+   "rank": 9,
+   "code": "601166",
+   "name": "兴业银行",
+   "shares": "173373790",
+   "fair_value": "3321841816.40",
+   "weight": "1.34"
+  },
+  "unit": "holding",
+  "anchor": "9601166兴业银行173,373,7903,321,841,816.401.34",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 11
+  }
+ },
+ "c300_2024q4.holding_000858": {
+  "id": "c300_2024q4.holding_000858",
+  "document": "c300_2024q4",
+  "section": "5.3.1 前十名股票",
+  "label": "五粮液",
+  "value": {
+   "rank": 10,
+   "code": "000858",
+   "name": "五粮液",
+   "shares": "23122800",
+   "fair_value": "3238116912.00",
+   "weight": "1.31"
+  },
+  "unit": "holding",
+  "anchor": "10000858五粮液23,122,8003,238,116,912.001.31",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 11
+  }
+ },
+ "c300_2024q4.stock_total_assets": {
+  "id": "c300_2024q4.stock_total_assets",
+  "document": "c300_2024q4",
+  "section": "5.1 资产组合",
+  "label": "股票占基金总资产比例",
+  "value": "99.042",
+  "unit": "percent_of_total_assets",
+  "anchor": "其中：股票245,625,261,923.7899.042",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 9
+  }
+ },
+ "c300_2024q4.stock_net_assets": {
+  "id": "c300_2024q4.stock_net_assets",
+  "document": "c300_2024q4",
+  "section": "5.2.1 行业分类",
+  "label": "股票合计占基金净资产比例",
+  "value": "99.17",
+  "unit": "percent_of_NAV",
+  "anchor": "合计245,625,261,923.7899.17",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "c300_2025q1.performance_return": {
+  "id": "c300_2025q1.performance_return",
+  "document": "c300_2025q1",
+  "section": "4.5 业绩表现",
+  "label": "季度净值增长率",
+  "value": "-1.01",
+  "unit": "percent",
+  "anchor": "本报告期份额净值增长率为-1.01%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 8
+  }
+ },
+ "c300_2025q1.performance_benchmark_return": {
+  "id": "c300_2025q1.performance_benchmark_return",
+  "document": "c300_2025q1",
+  "section": "4.5 业绩表现",
+  "label": "季度基准收益率",
+  "value": "-1.21",
+  "unit": "percent",
+  "anchor": "同期业绩比较基准收益率为-1.21%",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 8
+  }
+ },
+ "c300_2025q1.holding_600519": {
+  "id": "c300_2025q1.holding_600519",
+  "document": "c300_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "贵州茅台",
+  "value": {
+   "rank": 1,
+   "code": "600519",
+   "name": "贵州茅台",
+   "shares": "7218281",
+   "fair_value": "11267736641.00",
+   "weight": "4.79"
+  },
+  "unit": "holding",
+  "anchor": "1600519贵州茅台7,218,28111,267,736,641.004.79",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "c300_2025q1.holding_300750": {
+  "id": "c300_2025q1.holding_300750",
+  "document": "c300_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "宁德时代",
+  "value": {
+   "rank": 2,
+   "code": "300750",
+   "name": "宁德时代",
+   "shares": "30190282",
+   "fair_value": "7636329929.08",
+   "weight": "3.25"
+  },
+  "unit": "holding",
+  "anchor": "2300750宁德时代30,190,2827,636,329,929.083.25",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "c300_2025q1.holding_601318": {
+  "id": "c300_2025q1.holding_601318",
+  "document": "c300_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "中国平安",
+  "value": {
+   "rank": 3,
+   "code": "601318",
+   "name": "中国平安",
+   "shares": "123037307",
+   "fair_value": "6352416160.41",
+   "weight": "2.70"
+  },
+  "unit": "holding",
+  "anchor": "3601318中国平安123,037,3076,352,416,160.412.70",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "c300_2025q1.holding_600036": {
+  "id": "c300_2025q1.holding_600036",
+  "document": "c300_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "招商银行",
+  "value": {
+   "rank": 4,
+   "code": "600036",
+   "name": "招商银行",
+   "shares": "141452893",
+   "fair_value": "6123495737.97",
+   "weight": "2.61"
+  },
+  "unit": "holding",
+  "anchor": "4600036招商银行141,452,8936,123,495,737.972.61",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "c300_2025q1.holding_000333": {
+  "id": "c300_2025q1.holding_000333",
+  "document": "c300_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "美的集团",
+  "value": {
+   "rank": 5,
+   "code": "000333",
+   "name": "美的集团",
+   "shares": "55876743",
+   "fair_value": "4386324325.50",
+   "weight": "1.87"
+  },
+  "unit": "holding",
+  "anchor": "5000333美的集团55,876,7434,386,324,325.501.87",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "c300_2025q1.holding_600900": {
+  "id": "c300_2025q1.holding_600900",
+  "document": "c300_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "长江电力",
+  "value": {
+   "rank": 6,
+   "code": "600900",
+   "name": "长江电力",
+   "shares": "140071983",
+   "fair_value": "3895401847.23",
+   "weight": "1.66"
+  },
+  "unit": "holding",
+  "anchor": "6600900长江电力140,071,9833,895,401,847.231.66",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "c300_2025q1.holding_002594": {
+  "id": "c300_2025q1.holding_002594",
+  "document": "c300_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "比亚迪",
+  "value": {
+   "rank": 7,
+   "code": "002594",
+   "name": "比亚迪",
+   "shares": "10355139",
+   "fair_value": "3882141611.10",
+   "weight": "1.65"
+  },
+  "unit": "holding",
+  "anchor": "7002594比亚迪10,355,1393,882,141,611.101.65",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "c300_2025q1.holding_601166": {
+  "id": "c300_2025q1.holding_601166",
+  "document": "c300_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "兴业银行",
+  "value": {
+   "rank": 8,
+   "code": "601166",
+   "name": "兴业银行",
+   "shares": "166482090",
+   "fair_value": "3596013144.00",
+   "weight": "1.53"
+  },
+  "unit": "holding",
+  "anchor": "8601166兴业银行166,482,0903,596,013,144.001.53",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "c300_2025q1.holding_601899": {
+  "id": "c300_2025q1.holding_601899",
+  "document": "c300_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "紫金矿业",
+  "value": {
+   "rank": 9,
+   "code": "601899",
+   "name": "紫金矿业",
+   "shares": "188324758",
+   "fair_value": "3412444614.96",
+   "weight": "1.45"
+  },
+  "unit": "holding",
+  "anchor": "9601899紫金矿业188,324,7583,412,444,614.961.45",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "c300_2025q1.holding_300059": {
+  "id": "c300_2025q1.holding_300059",
+  "document": "c300_2025q1",
+  "section": "5.3.1 前十名股票",
+  "label": "东方财富",
+  "value": {
+   "rank": 10,
+   "code": "300059",
+   "name": "东方财富",
+   "shares": "144427406",
+   "fair_value": "3261170827.48",
+   "weight": "1.39"
+  },
+  "unit": "holding",
+  "anchor": "10300059东方财富144,427,4063,261,170,827.481.39",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "c300_2025q1.stock_total_assets": {
+  "id": "c300_2025q1.stock_total_assets",
+  "document": "c300_2025q1",
+  "section": "5.1 资产组合",
+  "label": "股票占基金总资产比例",
+  "value": "99.382",
+  "unit": "percent_of_total_assets",
+  "anchor": "其中：股票233,649,646,831.8099.382",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 9
+  }
+ },
+ "c300_2025q1.stock_net_assets": {
+  "id": "c300_2025q1.stock_net_assets",
+  "document": "c300_2025q1",
+  "section": "5.2.1 行业分类",
+  "label": "股票合计占基金净资产比例",
+  "value": "99.42",
+  "unit": "percent_of_NAV",
+  "anchor": "合计233,649,647,131.8099.42",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 10
+  }
+ },
+ "c300_2025q1.bond_name": {
+  "id": "c300_2025q1.bond_name",
+  "document": "c300_2025q1",
+  "section": "5.5 前五名债券",
+  "label": "债券名称",
+  "value": "亿纬转债",
+  "unit": "text",
+  "anchor": "123254亿纬转债346,59934,661,115.470.01",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 11
+  }
+ },
+ "s50_2025q3.return": {
+  "id": "s50_2025q3.return",
+  "document": "s50_2025q3",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 8
+  },
+  "label": "季度净值增长率",
+  "value": "11.33",
+  "unit": "percent",
+  "anchor": "11.33%，同期业绩比较基准收益率为10.21%",
+  "section": "4.5 报告期内基金的业绩表现"
+ },
+ "s50_2025q3.benchmark_return": {
+  "id": "s50_2025q3.benchmark_return",
+  "document": "s50_2025q3",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 8
+  },
+  "label": "季度业绩比较基准收益率",
+  "value": "10.21",
+  "unit": "percent",
+  "anchor": "11.33%，同期业绩比较基准收益率为10.21%",
+  "section": "4.5 报告期内基金的业绩表现"
+ },
+ "sz100_2025q2.top1": {
+  "id": "sz100_2025q2.top1",
+  "document": "sz100_2025q2",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 11
+  },
+  "label": "第一大重仓股及占净值比例",
+  "value": "10.06",
+  "unit": "percent_of_NAV",
+  "anchor": "300750宁德时代2,558,757645,369,690.5410.06",
+  "section": "5.3 前十名股票投资明细"
+ },
+ "sz100_2025q3.top1": {
+  "id": "sz100_2025q3.top1",
+  "document": "sz100_2025q3",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 11
+  },
+  "label": "第一大重仓股及占净值比例",
+  "value": "12.25",
+  "unit": "percent_of_NAV",
+  "anchor": "300750宁德时代2,362,436949,699,272.0012.25",
+  "section": "5.3 前十名股票投资明细"
+ },
+ "sz100_2025q2.shares_end": {
+  "id": "sz100_2025q2.shares_end",
+  "document": "sz100_2025q2",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 2
+  },
+  "label": "报告期末基金份额总额",
+  "value": "2347130702.00",
+  "unit": "share",
+  "anchor": "报告期末基金份额总额2,347,130,702.00份",
+  "section": "2 基金产品概况"
+ },
+ "sz100_2025q3.shares_end": {
+  "id": "sz100_2025q3.shares_end",
+  "document": "sz100_2025q3",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 2
+  },
+  "label": "报告期末基金份额总额",
+  "value": "2147630702.00",
+  "unit": "share",
+  "anchor": "报告期末基金份额总额2,147,630,702.00份",
+  "section": "2 基金产品概况"
+ },
+ "s50_2025q3.tracking_error": {
+  "id": "s50_2025q3.tracking_error",
+  "document": "s50_2025q3",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 8
+  },
+  "label": "年化跟踪误差",
+  "value": "0.72",
+  "unit": "percent",
+  "anchor": "年化跟踪误差0.72%",
+  "section": "4.5 报告期内基金的业绩表现"
+ },
+ "c300_2025q3.net_assets": {
+  "id": "c300_2025q3.net_assets",
+  "document": "c300_2025q3",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  },
+  "label": "期末基金资产净值",
+  "value": "305165362944.88",
+  "unit": "CNY",
+  "anchor": "期末基金资产净值305,165,362,944.88",
+  "section": "3.1 主要财务指标"
+ },
+ "s50_2025q3.custodian": {
+  "id": "s50_2025q3.custodian",
+  "document": "s50_2025q3",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 1
+  },
+  "label": "基金托管人",
+  "value": "招商银行股份有限公司",
+  "unit": null,
+  "anchor": "基金托管人：招商银行股份有限公司"
+ },
+ "c300_2025q3.custodian": {
+  "id": "c300_2025q3.custodian",
+  "document": "c300_2025q3",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 1
+  },
+  "label": "基金托管人",
+  "value": "中国建设银行股份有限公司",
+  "unit": null,
+  "anchor": "基金托管人：中国建设银行股份有限公司"
+ }
+}

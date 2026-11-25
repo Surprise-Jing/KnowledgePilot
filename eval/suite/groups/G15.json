@@ -1,0 +1,208 @@
+{
+ "id": "G15",
+ "title": "中文提问英文论文（跨语言）",
+ "knowledge_bases": [
+  "AI论文"
+ ],
+ "split": "dev",
+ "dimensions": [
+  "D1",
+  "D3",
+  "D6"
+ ],
+ "compare": true,
+ "demo_candidate": false,
+ "overrides": {},
+ "changelog": [
+  {
+   "date": "2026-11-24",
+   "change": "用户初审：题目与参考答案无问题，待审题标为 approved"
+  }
+ ],
+ "cases": [
+  {
+   "id": "G15-1",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "paper_m3_embedding"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "M3-Embedding 支持多少种语言？最长能处理多长的输入？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "langs",
+     "label": "支持语言数",
+     "evidence_groups": [
+      [
+       "m3.langs"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "100"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "length",
+     "label": "最大长度",
+     "evidence_groups": [
+      [
+       "m3.length"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "8192",
+       "8,192"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "支持100多种工作语言，最长可处理8192个token的长文档。",
+   "semantic_rubric": [
+    "中文问题需检索英文论文",
+    "两个数值均带引用"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G15-2",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "paper_self_rag"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "Self-RAG 论文里，模型通过什么特殊标记来控制检索和自我评估？"
+    },
+    {
+     "content": "这些标记分成哪两类？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "types",
+     "label": "标记类别",
+     "evidence_groups": [
+      [
+       "selfrag.types"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "检索",
+       "retrieval"
+      ],
+      [
+       "评判",
+       "批判",
+       "评价",
+       "critique"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "称为反思标记（reflection tokens）；分为检索标记（retrieval tokens）和评判标记（critique tokens）。",
+   "semantic_rubric": [
+    "第二轮“这些标记”指 reflection tokens",
+    "两类都要答出"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G15-3",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "paper_react"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "ReAct 在哪两个交互式决策基准上做了实验？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "alfworld",
+     "label": "ALFWorld",
+     "evidence_groups": [
+      [
+       "react.alfworld"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "ALFWorld"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "webshop",
+     "label": "WebShop",
+     "evidence_groups": [
+      [
+       "react.webshop"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "WebShop"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "ALFWorld（文本游戏）和 WebShop（网页购物导航）。",
+   "semantic_rubric": [
+    "两个基准都要答出且带引用"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  }
+ ]
+}

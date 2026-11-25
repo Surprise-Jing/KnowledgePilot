@@ -1,0 +1,1325 @@
+{
+ "id": "G01",
+ "title": "季度收益与规模矩阵（查询分解）",
+ "knowledge_bases": [
+  "易方达上证50ETF",
+  "易方达沪深300ETF"
+ ],
+ "split": "dev",
+ "dimensions": [
+  "D1",
+  "D2",
+  "D8"
+ ],
+ "compare": true,
+ "demo_candidate": false,
+ "overrides": {},
+ "changelog": [],
+ "cases": [
+  {
+   "id": "QD01",
+   "origin": "finance-v1",
+   "source_ref": "eval/finance/cases.jsonl#QD01",
+   "knowledge_bases": [
+    "易方达上证50ETF",
+    "易方达沪深300ETF"
+   ],
+   "documents": [
+    "s50_2024q4",
+    "s50_2025q1",
+    "c300_2024q4",
+    "c300_2025q1"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "请按基金和季度分别列出510100、510310在2024年四季度及2025年一季度的净值增长率、基准收益率，并判断四种情况下是否都跑赢基准。每个季度分别给出处。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "s50_2024q4.return",
+     "label": "季度净值增长率",
+     "evidence_groups": [
+      [
+       "s50_2024q4.return",
+       "s50_2024q4.performance_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-2.40",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "s50_2024q4.benchmark_return",
+     "label": "季度基准收益率",
+     "evidence_groups": [
+      [
+       "s50_2024q4.benchmark_return",
+       "s50_2024q4.performance_benchmark_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-2.56",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "s50_2024q4.active_return",
+     "label": "季度净值增长率减基准收益率",
+     "evidence_groups": [
+      [
+       "s50_2024q4.active_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "0.16",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q1.return",
+     "label": "季度净值增长率",
+     "evidence_groups": [
+      [
+       "s50_2025q1.return",
+       "s50_2025q1.performance_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-0.55",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q1.benchmark_return",
+     "label": "季度基准收益率",
+     "evidence_groups": [
+      [
+       "s50_2025q1.benchmark_return",
+       "s50_2025q1.performance_benchmark_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-0.71",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q1.active_return",
+     "label": "季度净值增长率减基准收益率",
+     "evidence_groups": [
+      [
+       "s50_2025q1.active_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "0.16",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "c300_2024q4.return",
+     "label": "季度净值增长率",
+     "evidence_groups": [
+      [
+       "c300_2024q4.return",
+       "c300_2024q4.performance_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-1.84",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "c300_2024q4.benchmark_return",
+     "label": "季度基准收益率",
+     "evidence_groups": [
+      [
+       "c300_2024q4.benchmark_return",
+       "c300_2024q4.performance_benchmark_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-2.06",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "c300_2024q4.active_return",
+     "label": "季度净值增长率减基准收益率",
+     "evidence_groups": [
+      [
+       "c300_2024q4.active_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "0.22",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "c300_2025q1.return",
+     "label": "季度净值增长率",
+     "evidence_groups": [
+      [
+       "c300_2025q1.return",
+       "c300_2025q1.performance_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-1.01",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "c300_2025q1.benchmark_return",
+     "label": "季度基准收益率",
+     "evidence_groups": [
+      [
+       "c300_2025q1.benchmark_return",
+       "c300_2025q1.performance_benchmark_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-1.21",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "c300_2025q1.active_return",
+     "label": "季度净值增长率减基准收益率",
+     "evidence_groups": [
+      [
+       "c300_2025q1.active_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "0.20",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "510100：2024Q4 -2.40%/-2.56%，超额0.16个百分点；2025Q1 -0.55%/-0.71%，超额0.16个百分点。510310：2024Q4 -1.84%/-2.06%，超额0.22个百分点；2025Q1 -1.01%/-1.21%，超额0.20个百分点。均跑赢各自基准，但四个季度收益均为负。",
+   "semantic_rubric": [
+    "四个基金×季度单元完整且不串值",
+    "采用过去三个月而非过去一年行",
+    "正超额不能解释为正收益",
+    "结论、基金、报告期、单位关联正确；关键词共现不能替代语义核查",
+    "关键结论的引用紧邻对应结论，且原文真正支持结论"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "沿用 eval/finance 人工标注"
+   },
+   "finance_category": "查询分解",
+   "finance_split": "dev"
+  },
+  {
+   "id": "QD02",
+   "origin": "finance-v1",
+   "source_ref": "eval/finance/cases.jsonl#QD02",
+   "knowledge_bases": [
+    "易方达上证50ETF",
+    "易方达沪深300ETF"
+   ],
+   "documents": [
+    "s50_2024q4",
+    "s50_2025q1",
+    "c300_2024q4",
+    "c300_2025q1"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "比较两只ETF从2024年末到2025年3月末的基金资产净值变化：分别列出两个时点的人民币元金额，计算变化金额及变化率。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "s50_2024q4.net_assets",
+     "label": "期末基金资产净值",
+     "evidence_groups": [
+      [
+       "s50_2024q4.net_assets"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "3454232757.385",
+       "unit": "CNY",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q1.net_assets",
+     "label": "期末基金资产净值",
+     "evidence_groups": [
+      [
+       "s50_2025q1.net_assets"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "3835745650.085",
+       "unit": "CNY",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "c300_2024q4.net_assets",
+     "label": "期末基金资产净值",
+     "evidence_groups": [
+      [
+       "c300_2024q4.net_assets"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "247680127647.645",
+       "unit": "CNY",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "c300_2025q1.net_assets",
+     "label": "期末基金资产净值",
+     "evidence_groups": [
+      [
+       "c300_2025q1.net_assets"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "235019757763.095",
+       "unit": "CNY",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "s50_assets_change",
+     "label": "510100净资产变动率",
+     "evidence_groups": [
+      [
+       "s50_2025q1.net_assets"
+      ],
+      [
+       "s50_2024q4.net_assets"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "11.04",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "c300_assets_change",
+     "label": "510310净资产变动率",
+     "evidence_groups": [
+      [
+       "c300_2025q1.net_assets"
+      ],
+      [
+       "c300_2024q4.net_assets"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-5.11",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "s50_assets_delta",
+     "label": "510100变化金额",
+     "evidence_groups": [
+      [
+       "s50_2025q1.net_assets"
+      ],
+      [
+       "s50_2024q4.net_assets"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "381512892.70",
+       "unit": "CNY",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "c300_assets_delta",
+     "label": "510310变化金额",
+     "evidence_groups": [
+      [
+       "c300_2025q1.net_assets"
+      ],
+      [
+       "c300_2024q4.net_assets"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-12660369884.55",
+       "unit": "CNY",
+       "tolerance": "0.01"
+      }
+     ]
+    }
+   ],
+   "calculations": [
+    {
+     "id": "s50_assets_change",
+     "label": "510100净资产变动率",
+     "operation": "relative_change_pct",
+     "operands": [
+      "s50_2025q1.net_assets",
+      "s50_2024q4.net_assets"
+     ],
+     "expected": "11.04",
+     "unit": "percent",
+     "decimal_places": 2
+    },
+    {
+     "id": "c300_assets_change",
+     "label": "510310净资产变动率",
+     "operation": "relative_change_pct",
+     "operands": [
+      "c300_2025q1.net_assets",
+      "c300_2024q4.net_assets"
+     ],
+     "expected": "-5.11",
+     "unit": "percent",
+     "decimal_places": 2
+    },
+    {
+     "id": "s50_assets_delta",
+     "label": "510100变化金额",
+     "operation": "subtract",
+     "operands": [
+      "s50_2025q1.net_assets",
+      "s50_2024q4.net_assets"
+     ],
+     "expected": "381512892.70",
+     "unit": "CNY",
+     "decimal_places": 2
+    },
+    {
+     "id": "c300_assets_delta",
+     "label": "510310变化金额",
+     "operation": "subtract",
+     "operands": [
+      "c300_2025q1.net_assets",
+      "c300_2024q4.net_assets"
+     ],
+     "expected": "-12660369884.55",
+     "unit": "CNY",
+     "decimal_places": 2
+    }
+   ],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "510100净资产3454232757.38→3835745650.08元，增加381512892.70元，约11.04%；510310为247680127647.64→235019757763.09元，减少12660369884.55元，约-5.11%。",
+   "semantic_rubric": [
+    "基金资产净值与总资产分开",
+    "变化率分母为2024年末净资产",
+    "不可把规模变化率当收益率",
+    "结论、基金、报告期、单位关联正确；关键词共现不能替代语义核查",
+    "关键结论的引用紧邻对应结论，且原文真正支持结论"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "沿用 eval/finance 人工标注"
+   },
+   "finance_category": "查询分解",
+   "finance_split": "dev"
+  },
+  {
+   "id": "QD04",
+   "origin": "finance-v1",
+   "source_ref": "eval/finance/cases.jsonl#QD04",
+   "knowledge_bases": [
+    "易方达上证50ETF",
+    "易方达沪深300ETF"
+   ],
+   "documents": [
+    "s50_2024q4",
+    "s50_2025q1",
+    "c300_2024q4",
+    "c300_2025q1"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "请分别列出两只ETF两个季度的申购份额、赎回份额和申购减赎回的差额，单位用份；指出哪些为净申购、哪些为净赎回。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "s50_2024q4.subscriptions",
+     "label": "申购份额",
+     "evidence_groups": [
+      [
+       "s50_2024q4.subscriptions"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "1464000000.00",
+       "unit": "share",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "s50_2024q4.redemptions",
+     "label": "赎回份额",
+     "evidence_groups": [
+      [
+       "s50_2024q4.redemptions"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "1577400000.00",
+       "unit": "share",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q1.subscriptions",
+     "label": "申购份额",
+     "evidence_groups": [
+      [
+       "s50_2025q1.subscriptions"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "1104900000.00",
+       "unit": "share",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q1.redemptions",
+     "label": "赎回份额",
+     "evidence_groups": [
+      [
+       "s50_2025q1.redemptions"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "784500000.00",
+       "unit": "share",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "c300_2024q4.subscriptions",
+     "label": "申购份额",
+     "evidence_groups": [
+      [
+       "c300_2024q4.subscriptions"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "4047244286.00",
+       "unit": "share",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "c300_2024q4.redemptions",
+     "label": "赎回份额",
+     "evidence_groups": [
+      [
+       "c300_2024q4.redemptions"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "5499862071.00",
+       "unit": "share",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "c300_2025q1.subscriptions",
+     "label": "申购份额",
+     "evidence_groups": [
+      [
+       "c300_2025q1.subscriptions"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "2988000000.00",
+       "unit": "share",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "c300_2025q1.redemptions",
+     "label": "赎回份额",
+     "evidence_groups": [
+      [
+       "c300_2025q1.redemptions"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "5645700000.00",
+       "unit": "share",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "s50_2024q4_net_flow",
+     "label": "s50_2024q4净申购份额",
+     "evidence_groups": [
+      [
+       "s50_2024q4.subscriptions"
+      ],
+      [
+       "s50_2024q4.redemptions"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-113400000.00",
+       "unit": "share",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q1_net_flow",
+     "label": "s50_2025q1净申购份额",
+     "evidence_groups": [
+      [
+       "s50_2025q1.subscriptions"
+      ],
+      [
+       "s50_2025q1.redemptions"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "320400000.00",
+       "unit": "share",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "c300_2024q4_net_flow",
+     "label": "c300_2024q4净申购份额",
+     "evidence_groups": [
+      [
+       "c300_2024q4.subscriptions"
+      ],
+      [
+       "c300_2024q4.redemptions"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-1452617785.00",
+       "unit": "share",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "c300_2025q1_net_flow",
+     "label": "c300_2025q1净申购份额",
+     "evidence_groups": [
+      [
+       "c300_2025q1.subscriptions"
+      ],
+      [
+       "c300_2025q1.redemptions"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-2657700000.00",
+       "unit": "share",
+       "tolerance": "0.01"
+      }
+     ]
+    }
+   ],
+   "calculations": [
+    {
+     "id": "s50_2024q4_net_flow",
+     "label": "s50_2024q4净申购份额",
+     "operation": "net_flow",
+     "operands": [
+      "s50_2024q4.subscriptions",
+      "s50_2024q4.redemptions"
+     ],
+     "expected": "-113400000.00",
+     "unit": "share",
+     "decimal_places": 2
+    },
+    {
+     "id": "s50_2025q1_net_flow",
+     "label": "s50_2025q1净申购份额",
+     "operation": "net_flow",
+     "operands": [
+      "s50_2025q1.subscriptions",
+      "s50_2025q1.redemptions"
+     ],
+     "expected": "320400000.00",
+     "unit": "share",
+     "decimal_places": 2
+    },
+    {
+     "id": "c300_2024q4_net_flow",
+     "label": "c300_2024q4净申购份额",
+     "operation": "net_flow",
+     "operands": [
+      "c300_2024q4.subscriptions",
+      "c300_2024q4.redemptions"
+     ],
+     "expected": "-1452617785.00",
+     "unit": "share",
+     "decimal_places": 2
+    },
+    {
+     "id": "c300_2025q1_net_flow",
+     "label": "c300_2025q1净申购份额",
+     "operation": "net_flow",
+     "operands": [
+      "c300_2025q1.subscriptions",
+      "c300_2025q1.redemptions"
+     ],
+     "expected": "-2657700000.00",
+     "unit": "share",
+     "decimal_places": 2
+    }
+   ],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "510100：2024Q4净赎回113400000份，2025Q1净申购320400000份。510310：2024Q4净赎回1452617785份，2025Q1净赎回2657700000份。",
+   "semantic_rubric": [
+    "按份额而非金额计算",
+    "510100的合并调整不能列入赎回",
+    "四个单元均列出原始申赎值",
+    "结论、基金、报告期、单位关联正确；关键词共现不能替代语义核查",
+    "关键结论的引用紧邻对应结论，且原文真正支持结论"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "沿用 eval/finance 人工标注"
+   },
+   "finance_category": "查询分解",
+   "finance_split": "dev"
+  },
+  {
+   "id": "QD05",
+   "origin": "finance-v1",
+   "source_ref": "eval/finance/cases.jsonl#QD05",
+   "knowledge_bases": [
+    "易方达上证50ETF",
+    "易方达沪深300ETF"
+   ],
+   "documents": [
+    "s50_2024q4",
+    "s50_2025q1",
+    "c300_2024q4",
+    "c300_2025q1"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "将两只ETF在两个季末的制造业、金融业占基金资产净值比例列成四行两列的表，并说明两只基金各自金融业权重变化方向。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "s50_2024q4.manufacturing",
+     "label": "制造业占基金净值比例",
+     "evidence_groups": [
+      [
+       "s50_2024q4.manufacturing"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "35.28",
+       "unit": "percent_of_NAV",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "s50_2024q4.finance",
+     "label": "金融业占基金净值比例",
+     "evidence_groups": [
+      [
+       "s50_2024q4.finance"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "32.13",
+       "unit": "percent_of_NAV",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q1.manufacturing",
+     "label": "制造业占基金净值比例",
+     "evidence_groups": [
+      [
+       "s50_2025q1.manufacturing"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "35.66",
+       "unit": "percent_of_NAV",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q1.finance",
+     "label": "金融业占基金净值比例",
+     "evidence_groups": [
+      [
+       "s50_2025q1.finance"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "32.72",
+       "unit": "percent_of_NAV",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "c300_2024q4.manufacturing",
+     "label": "制造业占基金净值比例",
+     "evidence_groups": [
+      [
+       "c300_2024q4.manufacturing"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "51.95",
+       "unit": "percent_of_NAV",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "c300_2024q4.finance",
+     "label": "金融业占基金净值比例",
+     "evidence_groups": [
+      [
+       "c300_2024q4.finance"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "24.38",
+       "unit": "percent_of_NAV",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "c300_2025q1.manufacturing",
+     "label": "制造业占基金净值比例",
+     "evidence_groups": [
+      [
+       "c300_2025q1.manufacturing"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "52.61",
+       "unit": "percent_of_NAV",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "c300_2025q1.finance",
+     "label": "金融业占基金净值比例",
+     "evidence_groups": [
+      [
+       "c300_2025q1.finance"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "24.34",
+       "unit": "percent_of_NAV",
+       "tolerance": "0.01"
+      }
+     ]
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "510100：制造业35.28%→35.66%，金融业32.13%→32.72%；510310：制造业51.95%→52.61%，金融业24.38%→24.34%。前者金融业权重上升，后者下降。",
+   "semantic_rubric": [
+    "所有占比均以基金资产净值为分母",
+    "不要把金融业写成仅银行业",
+    "方向判断分别关联对应基金",
+    "结论、基金、报告期、单位关联正确；关键词共现不能替代语义核查",
+    "关键结论的引用紧邻对应结论，且原文真正支持结论"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "沿用 eval/finance 人工标注"
+   },
+   "finance_category": "查询分解",
+   "finance_split": "dev"
+  },
+  {
+   "id": "BD01",
+   "origin": "finance-v1",
+   "source_ref": "eval/finance/cases.jsonl#BD01",
+   "knowledge_bases": [
+    "易方达上证50ETF"
+   ],
+   "documents": [
+    "s50_2024q4",
+    "s50_2025q1"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "有人比较510100两期季报的单位净值1.3320元与2.6644元，认为2025年一季度投资收益翻倍。请结合两份报告纠正这个判断，给出真实季度收益和发生的份额事件。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "s50_2024q4.unit_nav",
+     "label": "期末基金份额净值",
+     "evidence_groups": [
+      [
+       "s50_2024q4.unit_nav"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "1.3320",
+       "unit": "CNY/share",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q1.unit_nav",
+     "label": "期末基金份额净值",
+     "evidence_groups": [
+      [
+       "s50_2025q1.unit_nav"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "2.6644",
+       "unit": "CNY/share",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q1.return",
+     "label": "季度净值增长率",
+     "evidence_groups": [
+      [
+       "s50_2025q1.return",
+       "s50_2025q1.performance_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-0.55",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q1.merge_ratio",
+     "label": "2025-03-07份额合并比例",
+     "evidence_groups": [
+      [
+       "s50_2025q1.merge_ratio"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "0.49719902",
+       "unit": "ratio",
+       "tolerance": "0.000000005"
+      }
+     ]
+    },
+    {
+     "id": "merge_event",
+     "label": "2025-03-07合并",
+     "evidence_groups": [
+      [
+       "s50_2025q1.merge_ratio"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "合并"
+      ],
+      [
+       "2025年3月7日",
+       "2025-03-07"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "不能用单位净值直接相除推断收益翻倍。2025-03-07份额合并，比例0.49719902；报告披露季度收益-0.55%。",
+   "semantic_rubric": [
+    "不把折算产生的净值变化当成收益",
+    "引用旧期单位净值及新期合并说明",
+    "不能仅凭份额合并比例重算精确投资收益",
+    "结论、基金、报告期、单位关联正确；关键词共现不能替代语义核查",
+    "关键结论的引用紧邻对应结论，且原文真正支持结论"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "沿用 eval/finance 人工标注"
+   },
+   "finance_category": "口径与边界",
+   "finance_split": "dev"
+  },
+  {
+   "id": "BD02",
+   "origin": "finance-v1",
+   "source_ref": "eval/finance/cases.jsonl#BD02",
+   "knowledge_bases": [
+    "易方达上证50ETF"
+   ],
+   "documents": [
+    "s50_2024q4",
+    "s50_2025q1"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "510100期末份额从2024年末约25.93亿份降到2025年3月末约14.40亿份，是否说明一季度发生大额净赎回？请列出完整份额勾稽式并解释。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "s50_2024q4.shares_end",
+     "label": "期末份额",
+     "evidence_groups": [
+      [
+       "s50_2024q4.shares_end"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "2593219926.00",
+       "unit": "share",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q1.shares_start",
+     "label": "期初份额",
+     "evidence_groups": [
+      [
+       "s50_2025q1.shares_start"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "2593219926.00",
+       "unit": "share",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q1.subscriptions",
+     "label": "申购份额",
+     "evidence_groups": [
+      [
+       "s50_2025q1.subscriptions"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "1104900000.00",
+       "unit": "share",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q1.redemptions",
+     "label": "赎回份额",
+     "evidence_groups": [
+      [
+       "s50_2025q1.redemptions"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "784500000.00",
+       "unit": "share",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q1.share_adjustment",
+     "label": "合并调整份额",
+     "evidence_groups": [
+      [
+       "s50_2025q1.share_adjustment"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-1474013096.00",
+       "unit": "share",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q1.shares_end",
+     "label": "期末份额",
+     "evidence_groups": [
+      [
+       "s50_2025q1.shares_end"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "1439606830.00",
+       "unit": "share",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "s50_share_bridge",
+     "label": "期初加申购减赎回加合并调整",
+     "evidence_groups": [
+      [
+       "s50_2025q1.shares_start"
+      ],
+      [
+       "s50_2025q1.subscriptions"
+      ],
+      [
+       "s50_2025q1.redemptions"
+      ],
+      [
+       "s50_2025q1.share_adjustment"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "1439606830.00",
+       "unit": "share",
+       "tolerance": "0.01"
+      }
+     ]
+    }
+   ],
+   "calculations": [
+    {
+     "id": "s50_share_bridge",
+     "label": "期初加申购减赎回加合并调整",
+     "operation": "share_bridge",
+     "operands": [
+      "s50_2025q1.shares_start",
+      "s50_2025q1.subscriptions",
+      "s50_2025q1.redemptions",
+      "s50_2025q1.share_adjustment"
+     ],
+     "expected": "1439606830.00",
+     "unit": "share",
+     "decimal_places": 2
+    }
+   ],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "2593219926+1104900000-784500000-1474013096=1439606830份。一季度申购减赎回为正320400000份；份额下降受到合并调整影响，不能判断为净赎回。",
+   "semantic_rubric": [
+    "完整处理合并调整",
+    "正净申购指份额差额，不推定申购净现金",
+    "不能把合并调整列入赎回",
+    "结论、基金、报告期、单位关联正确；关键词共现不能替代语义核查",
+    "关键结论的引用紧邻对应结论，且原文真正支持结论"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "沿用 eval/finance 人工标注"
+   },
+   "finance_category": "口径与边界",
+   "finance_split": "dev"
+  }
+ ]
+}

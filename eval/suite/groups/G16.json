@@ -1,0 +1,241 @@
+{
+ "id": "G16",
+ "title": "论文方法对比与列文件",
+ "knowledge_bases": [
+  "AI论文"
+ ],
+ "split": "test",
+ "dimensions": [
+  "D1",
+  "D3",
+  "D5",
+  "D8"
+ ],
+ "compare": false,
+ "demo_candidate": false,
+ "overrides": {},
+ "changelog": [
+  {
+   "date": "2026-11-24",
+   "change": "用户初审：题目与参考答案无问题，待审题标为 approved"
+  }
+ ],
+ "cases": [
+  {
+   "id": "G16-1",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "paper_ragas",
+    "paper_ares"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "RAGAS 提出了哪三个评估维度？ARES 又用什么统计方法来减少需要的人工标注？请分别给出处。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "faith",
+     "label": "Faithfulness",
+     "evidence_groups": [
+      [
+       "ragas.faith"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "faithfulness",
+       "忠实"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "ansrel",
+     "label": "Answer Relevance",
+     "evidence_groups": [
+      [
+       "ragas.ansrel"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "answer relevance",
+       "答案相关"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "ctxrel",
+     "label": "Context Relevance",
+     "evidence_groups": [
+      [
+       "ragas.ctxrel"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "context relevance",
+       "上下文相关"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "ppi",
+     "label": "PPI",
+     "evidence_groups": [
+      [
+       "ares.ppi"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "prediction-powered",
+       "PPI",
+       "预测驱动"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "RAGAS：Faithfulness、Answer Relevance、Context Relevance；ARES 使用 prediction-powered inference（PPI），用少量人工标注校准评审模型。",
+   "semantic_rubric": [
+    "两篇论文分别引用",
+    "不能把 ARES 的方法说成 RAGAS 的"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G16-2",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "paper_raptor"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "RAPTOR 是怎样构建检索树的？在 QuALITY 基准上提升了多少？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "method",
+     "label": "构建方法",
+     "evidence_groups": [
+      [
+       "raptor.method"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "聚类",
+       "clustering"
+      ],
+      [
+       "摘要",
+       "summar"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "quality",
+     "label": "QuALITY 提升",
+     "evidence_groups": [
+      [
+       "raptor.quality"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "20%"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "递归地对文本块做嵌入、聚类和摘要，自底向上构建树；在 QuALITY 上绝对准确率提升20%。",
+   "semantic_rubric": [
+    "方法要点完整",
+    "20%为绝对准确率提升"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G16-3",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "AI论文这个知识库里有哪些论文？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "count",
+     "label": "论文清单",
+     "evidence_groups": [],
+     "answer_keywords": [
+      [
+       "RAPTOR"
+      ],
+      [
+       "ReAct"
+      ],
+      [
+       "Self-RAG"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [
+     "list_files"
+    ],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "共10篇：Self-RAG、Ragas、GraphRAG、ARES、M3-Embedding、Reflexion、ReAct、Chain-of-Note、RAPTOR、Adaptive-RAG。",
+   "semantic_rubric": [
+    "应通过列出文件得到完整清单"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  }
+ ]
+}

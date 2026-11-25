@@ -1,0 +1,142 @@
+{
+ "id": "G18",
+ "title": "不可回答题（MuSiQue-Full 原题）",
+ "knowledge_bases": [
+  "多跳问答"
+ ],
+ "split": "test",
+ "dimensions": [
+  "D7"
+ ],
+ "compare": false,
+ "demo_candidate": false,
+ "overrides": {},
+ "changelog": [
+  {
+   "date": "2026-11-24",
+   "change": "KB6 按主题合并；已复核数据集答案仍不出现在知识库中"
+  }
+ ],
+ "cases": [
+  {
+   "id": "G18-2hop__34595_160249",
+   "origin": "dataset",
+   "source_ref": "musique:2hop__34595_160249",
+   "documents": [],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "In which years did the war with the military leader from which the term Pyrrhic victory comes occur?"
+    }
+   ],
+   "claims": [],
+   "calculations": [],
+   "expect": {
+    "no_answer": true,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "资料不足以回答（数据集标注不可回答；数据集给出的答案 323–272 BC 不出现在知识库中）",
+   "semantic_rubric": [
+    "明确说明资料中找不到答案",
+    "不得给出编造的实体"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "数据集原题与原标注"
+   }
+  },
+  {
+   "id": "G18-2hop__58939_189318",
+   "origin": "dataset",
+   "source_ref": "musique:2hop__58939_189318",
+   "documents": [],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "Where was Obama's opponent in his first election educated?"
+    }
+   ],
+   "claims": [],
+   "calculations": [],
+   "expect": {
+    "no_answer": true,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "资料不足以回答（数据集标注不可回答；数据集给出的答案 National War College 不出现在知识库中）",
+   "semantic_rubric": [
+    "明确说明资料中找不到答案",
+    "不得给出编造的实体"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "数据集原题与原标注"
+   }
+  },
+  {
+   "id": "G18-2hop__124932_278133",
+   "origin": "dataset",
+   "source_ref": "musique:2hop__124932_278133",
+   "documents": [],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "Who was the father of Jujhar Singh's father?"
+    }
+   ],
+   "claims": [],
+   "calculations": [],
+   "expect": {
+    "no_answer": true,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "资料不足以回答（数据集标注不可回答；数据集给出的答案 Guru Tegh Bahadur 不出现在知识库中）",
+   "semantic_rubric": [
+    "明确说明资料中找不到答案",
+    "不得给出编造的实体"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "数据集原题与原标注"
+   }
+  },
+  {
+   "id": "G18-2hop__463353_80420",
+   "origin": "dataset",
+   "source_ref": "musique:2hop__463353_80420",
+   "documents": [],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "Who was the first African American student to attend the school that owns Swayze Field?"
+    }
+   ],
+   "claims": [],
+   "calculations": [],
+   "expect": {
+    "no_answer": true,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "资料不足以回答（数据集标注不可回答；数据集给出的答案 James Howard Meredith 不出现在知识库中）",
+   "semantic_rubric": [
+    "明确说明资料中找不到答案",
+    "不得给出编造的实体"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "数据集原题与原标注"
+   }
+  }
+ ]
+}

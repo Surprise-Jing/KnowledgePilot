@@ -1,0 +1,168 @@
+{
+ "id": "G07",
+ "title": "三只基金年报对比与列文件",
+ "knowledge_bases": [
+  "基金年度与中期报告",
+  "易方达上证50ETF",
+  "易方达沪深300ETF",
+  "易方达深证100ETF"
+ ],
+ "split": "dev",
+ "dimensions": [
+  "D1",
+  "D4",
+  "D5",
+  "D8"
+ ],
+ "compare": true,
+ "demo_candidate": false,
+ "overrides": {},
+ "changelog": [
+  {
+   "date": "2026-11-24",
+   "change": "用户初审：题目与参考答案无问题，待审题标为 approved"
+  }
+ ],
+ "cases": [
+  {
+   "id": "G07-1",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "s50_2024ar",
+    "c300_2024ar",
+    "sz100_2024ar"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "比较上证50ETF、沪深300ETF、深证100ETF三只基金2024年的管理费，按从高到低排序并给出金额。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "c300",
+     "label": "沪深300ETF",
+     "evidence_groups": [
+      [
+       "c300ar.mgmt"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "251528925.33",
+       "unit": "CNY",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "sz100",
+     "label": "深证100ETF",
+     "evidence_groups": [
+      [
+       "sz100ar.mgmt"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "29309653.21",
+       "unit": "CNY",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "s50",
+     "label": "上证50ETF",
+     "evidence_groups": [
+      [
+       "s50ar.mgmt"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "5916444.07",
+       "unit": "CNY",
+       "tolerance": "0.005"
+      }
+     ]
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "沪深300ETF 251,528,925.33元 > 深证100ETF 29,309,653.21元 > 上证50ETF 5,916,444.07元。",
+   "semantic_rubric": [
+    "三只基金各自引用年报",
+    "排序正确"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   },
+   "knowledge_bases": [
+    "基金年度与中期报告"
+   ]
+  },
+  {
+   "id": "G07-2",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "“基金年度与中期报告”这个库里有哪几份报告？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "list",
+     "label": "报告清单",
+     "evidence_groups": [],
+     "answer_keywords": [
+      [
+       "年度报告",
+       "年报"
+      ],
+      [
+       "中期报告",
+       "中报"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [
+     "list_files"
+    ],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "3只基金各有2024年年度报告和2025年中期报告，共6份。",
+   "semantic_rubric": [
+    "应通过列出文件得到完整清单"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   },
+   "knowledge_bases": [
+    "基金年度与中期报告"
+   ]
+  }
+ ]
+}

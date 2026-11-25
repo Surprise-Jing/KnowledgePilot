@@ -1,0 +1,182 @@
+{
+ "b21.urban": {
+  "id": "b21.urban",
+  "document": "bulletin_2021",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 7
+  },
+  "label": "年末城镇常住人口",
+  "value": "91425",
+  "unit": null,
+  "anchor": "其中城镇常住人口91425万人"
+ },
+ "b25.urban": {
+  "id": "b25.urban",
+  "document": "bulletin_2025",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 7
+  },
+  "label": "年末城镇常住人口",
+  "value": "95380",
+  "unit": null,
+  "anchor": "其中城镇常住人口95380万人"
+ },
+ "b21.pop": {
+  "id": "b21.pop",
+  "document": "bulletin_2021",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 7
+  },
+  "label": "年末全国人口",
+  "value": "141260",
+  "unit": null,
+  "anchor": "年末全国人口[7]141260万人"
+ },
+ "b25.pop": {
+  "id": "b25.pop",
+  "document": "bulletin_2025",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 7
+  },
+  "label": "年末全国人口",
+  "value": "140489",
+  "unit": null,
+  "anchor": "年末全国人口[5]140489万人"
+ },
+ "b22.gdp": {
+  "id": "b22.gdp",
+  "document": "bulletin_2022",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 6
+  },
+  "label": "国内生产总值",
+  "value": "1210207",
+  "unit": null,
+  "anchor": "全年国内生产总值[2]1210207亿元"
+ },
+ "b24.gdp": {
+  "id": "b24.gdp",
+  "document": "bulletin_2024",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 6
+  },
+  "label": "国内生产总值",
+  "value": "1349084",
+  "unit": null,
+  "anchor": "全年国内生产总值[2]1349084亿元"
+ },
+ "b23.gdp": {
+  "id": "b23.gdp",
+  "document": "bulletin_2023",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 6
+  },
+  "label": "国内生产总值",
+  "value": "1260582",
+  "unit": null,
+  "anchor": "全年国内生产总值[2]1260582亿元"
+ },
+ "b19.income": {
+  "id": "b19.income",
+  "document": "bulletin_2019",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 970
+  },
+  "label": "全国居民人均可支配收入",
+  "value": "30733",
+  "unit": null,
+  "anchor": "全年全国居民人均可支配收入30733元"
+ },
+ "b25.income": {
+  "id": "b25.income",
+  "document": "bulletin_2025",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 964
+  },
+  "label": "全国居民人均可支配收入",
+  "value": "43377",
+  "unit": null,
+  "anchor": "全年全国居民人均可支配收入43377元"
+ },
+ "b24.gdp_note": {
+  "id": "b24.gdp_note",
+  "document": "bulletin_2024",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 1019
+  },
+  "label": "GDP 计价口径",
+  "value": "现价/不变价格",
+  "unit": null,
+  "anchor": "绝对数按现价计算，增长速度按不变价格计算"
+ },
+ "b24.census_note": {
+  "id": "b24.census_note",
+  "document": "bulletin_2024",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 1019
+  },
+  "label": "普查修订说明",
+  "value": "第五次全国经济普查",
+  "unit": null,
+  "anchor": "根据第五次全国经济普查结果"
+ },
+ "b16.pop": {
+  "id": "b16.pop",
+  "document": "bulletin_2016",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 8
+  },
+  "label": "年末全国大陆总人口",
+  "value": "138271",
+  "unit": null,
+  "anchor": "年末全国大陆总人口138271万人"
+ },
+ "b16.productivity": {
+  "id": "b16.productivity",
+  "document": "bulletin_2016",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 41
+  },
+  "label": "全员劳动生产率",
+  "value": "94825",
+  "unit": null,
+  "anchor": "全年全员劳动生产率[8]为94825元/人"
+ },
+ "b16.productivity_note": {
+  "id": "b16.productivity_note",
+  "document": "bulletin_2016",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 1030
+  },
+  "label": "全员劳动生产率口径",
+  "value": "2015年价格",
+  "unit": null,
+  "anchor": "全员劳动生产率为国内生产总值（以2015年价格计算）与全部就业人员的比率"
+ },
+ "b24.carbon": {
+  "id": "b24.carbon",
+  "document": "bulletin_2024",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 1010
+  },
+  "label": "全国碳市场配额成交量",
+  "value": "1.89",
+  "unit": null,
+  "anchor": "成交量1.89亿吨，成交额181.1亿元"
+ }
+}

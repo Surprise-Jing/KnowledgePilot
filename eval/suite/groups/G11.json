@@ -1,0 +1,202 @@
+{
+ "id": "G11",
+ "title": "季报事项与法规条款跨库关联",
+ "knowledge_bases": [
+  "易方达上证50ETF",
+  "易方达沪深300ETF",
+  "金融法律法规"
+ ],
+ "split": "dev",
+ "dimensions": [
+  "D1",
+  "D4",
+  "D7",
+  "D8"
+ ],
+ "compare": false,
+ "demo_candidate": false,
+ "overrides": {},
+ "changelog": [
+  {
+   "date": "2026-11-24",
+   "change": "用户审阅：3 道题标为 approved"
+  }
+ ],
+ "cases": [
+  {
+   "id": "G11-1",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "s50_2025q3",
+    "securities_fund_law_2015"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "上证50ETF的基金托管人是哪家机构？按照证券投资基金法，基金托管人应当由哪类机构担任？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "custodian",
+     "label": "上证50ETF托管人",
+     "evidence_groups": [
+      [
+       "s50_2025q3.custodian"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "招商银行"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "qualification",
+     "label": "托管人资格",
+     "evidence_groups": [
+      [
+       "fund.custodian"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "商业银行"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "托管人为招商银行股份有限公司；基金法第三十二条规定基金托管人由依法设立的商业银行或者其他金融机构担任。",
+   "semantic_rubric": [
+    "季报与法律分别引用",
+    "两处事实不得张冠李戴"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户审阅通过（2026-11-24）"
+   },
+   "knowledge_bases": [
+    "易方达上证50ETF",
+    "金融法律法规"
+   ]
+  },
+  {
+   "id": "G11-2",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "c300_2025q3",
+    "securities_fund_law_2015"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "沪深300ETF 2025年三季报里写的基金托管人是谁？如果需要召开基金份额持有人大会而基金管理人不召集，按法律规定该由谁来召集？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "custodian",
+     "label": "沪深300ETF托管人",
+     "evidence_groups": [
+      [
+       "c300_2025q3.custodian"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "建设银行"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "convener",
+     "label": "替补召集人",
+     "evidence_groups": [
+      [
+       "fund.meeting"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "托管人"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "托管人为中国建设银行股份有限公司；基金管理人未按规定召集或不能召集时，由基金托管人（即中国建设银行）召集。",
+   "semantic_rubric": [
+    "把法律中的“基金托管人”对应到该基金的具体托管人",
+    "季报与法律分别引用"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户审阅通过（2026-11-24）"
+   },
+   "knowledge_bases": [
+    "易方达沪深300ETF",
+    "金融法律法规"
+   ]
+  },
+  {
+   "id": "G11-3",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [],
+   "forbidden_documents": [
+    "s50_2024q4",
+    "s50_2025q1",
+    "s50_2025q2",
+    "s50_2025q3",
+    "s50_2024q3"
+   ],
+   "turns": [
+    {
+     "content": "上证50ETF的基金托管人是哪家机构？"
+    }
+   ],
+   "claims": [],
+   "calculations": [],
+   "expect": {
+    "no_answer": true,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "本题只选择了“金融法律法规”库，资料中没有该基金的托管人信息，应明确说明找不到，不得引用季报或凭常识作答。",
+   "semantic_rubric": [
+    "只能依据所选知识库",
+    "明确说明未找到"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户审阅通过（2026-11-24）"
+   },
+   "knowledge_bases": [
+    "金融法律法规"
+   ]
+  }
+ ]
+}

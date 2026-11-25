@@ -1,0 +1,146 @@
+{
+ "m3.langs": {
+  "id": "m3.langs",
+  "document": "paper_m3_embedding",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 1
+  },
+  "label": "支持语言数",
+  "value": "100",
+  "unit": null,
+  "anchor": "more than 100 working languages"
+ },
+ "m3.length": {
+  "id": "m3.length",
+  "document": "paper_m3_embedding",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 1
+  },
+  "label": "最大输入长度",
+  "value": "8192",
+  "unit": null,
+  "anchor": "documents of up to 8,192"
+ },
+ "selfrag.tokens": {
+  "id": "selfrag.tokens",
+  "document": "paper_self_rag",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 1
+  },
+  "label": "反思标记",
+  "value": "reflection tokens",
+  "unit": null,
+  "anchor": "called reflection tokens"
+ },
+ "selfrag.types": {
+  "id": "selfrag.types",
+  "document": "paper_self_rag",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 1
+  },
+  "label": "反思标记类别",
+  "value": "retrieval/critique",
+  "unit": null,
+  "anchor": "categorized into retrieval and critique tokens"
+ },
+ "react.alfworld": {
+  "id": "react.alfworld",
+  "document": "paper_react",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  },
+  "label": "ALFWorld",
+  "value": "ALFWorld",
+  "unit": null,
+  "anchor": "text-based game (ALFWorld"
+ },
+ "react.webshop": {
+  "id": "react.webshop",
+  "document": "paper_react",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  },
+  "label": "WebShop",
+  "value": "WebShop",
+  "unit": null,
+  "anchor": "webpage navigation (WebShop"
+ },
+ "ragas.faith": {
+  "id": "ragas.faith",
+  "document": "paper_ragas",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  },
+  "label": "Faithfulness",
+  "value": "Faithfulness",
+  "unit": null,
+  "anchor": "Faithfulness refers to the idea"
+ },
+ "ragas.ansrel": {
+  "id": "ragas.ansrel",
+  "document": "paper_ragas",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  },
+  "label": "Answer Relevance",
+  "value": "Answer Relevance",
+  "unit": null,
+  "anchor": "Answer Relevance refers to the idea"
+ },
+ "ragas.ctxrel": {
+  "id": "ragas.ctxrel",
+  "document": "paper_ragas",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 3
+  },
+  "label": "Context Relevance",
+  "value": "Context Relevance",
+  "unit": null,
+  "anchor": "Finally,Context Relevance"
+ },
+ "ares.ppi": {
+  "id": "ares.ppi",
+  "document": "paper_ares",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 1
+  },
+  "label": "PPI",
+  "value": "prediction-powered inference",
+  "unit": null,
+  "anchor": "prediction-powered inference (PPI)"
+ },
+ "raptor.method": {
+  "id": "raptor.method",
+  "document": "paper_raptor",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 1
+  },
+  "label": "构建方法",
+  "value": "recursive clustering and summarizing",
+  "unit": null,
+  "anchor": "recursively embedding, clustering, and summarizing"
+ },
+ "raptor.quality": {
+  "id": "raptor.quality",
+  "document": "paper_raptor",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 1
+  },
+  "label": "QuALITY 提升",
+  "value": "20",
+  "unit": null,
+  "anchor": "QuALITY benchmark by 20% in absolute accuracy"
+ }
+}

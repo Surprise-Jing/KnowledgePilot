@@ -1,0 +1,230 @@
+{
+ "id": "G06",
+ "title": "中报与年报的表格数值",
+ "knowledge_bases": [
+  "基金年度与中期报告"
+ ],
+ "split": "test",
+ "dimensions": [
+  "D2",
+  "D8"
+ ],
+ "compare": false,
+ "demo_candidate": false,
+ "overrides": {},
+ "changelog": [
+  {
+   "date": "2026-11-24",
+   "change": "用户初审：题目与参考答案无问题，待审题标为 approved"
+  }
+ ],
+ "cases": [
+  {
+   "id": "G06-1",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "s50_2025ir",
+    "s50_2024ar"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "上证50ETF 2025年上半年的管理费是多少？相当于2024年全年管理费的百分之几？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "ir",
+     "label": "上半年管理费",
+     "evidence_groups": [
+      [
+       "s50ir.mgmt"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "3043055.32",
+       "unit": "CNY",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "share",
+     "label": "占比",
+     "evidence_groups": [
+      [
+       "s50ir.mgmt"
+      ],
+      [
+       "s50ar.mgmt"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "51.43",
+       "unit": "percent",
+       "tolerance": "0.01"
+      }
+     ]
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "3,043,055.32元，约为2024年全年5,916,444.07元的51.43%。",
+   "semantic_rubric": [
+    "分别引用中报与年报",
+    "比例计算正确"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   },
+   "knowledge_bases": [
+    "基金年度与中期报告"
+   ]
+  },
+  {
+   "id": "G06-2",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "c300_2024ar"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "沪深300ETF 2024年的托管费比上年度增加了多少元？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "delta",
+     "label": "托管费增加额",
+     "evidence_groups": [
+      [
+       "c300ar.cust_prev"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "71419855.27",
+       "unit": "CNY",
+       "tolerance": "0.005"
+      }
+     ]
+    }
+   ],
+   "calculations": [
+    {
+     "id": "delta",
+     "operation": "subtract",
+     "operands": [
+      "c300ar.cust",
+      "c300ar.cust_prev"
+     ],
+     "expected": "71419855.27",
+     "unit": "CNY",
+     "decimal_places": 2
+    }
+   ],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "由12,423,119.96元增至83,842,975.23元，增加71,419,855.27元。",
+   "semantic_rubric": [
+    "两期数值与列对应正确"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   },
+   "knowledge_bases": [
+    "基金年度与中期报告"
+   ]
+  },
+  {
+   "id": "G06-3",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "sz100_2024ar"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "深证100ETF 2024年的管理费与上年度可比期间相比是增加还是减少？变化多少元？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "delta",
+     "label": "管理费变化",
+     "evidence_groups": [
+      [
+       "sz100ar.mgmt_prev"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "减少",
+       "下降"
+      ]
+     ],
+     "answer_numbers": [
+      {
+       "value": "-4346915.65",
+       "unit": "CNY",
+       "tolerance": "0.005"
+      }
+     ]
+    }
+   ],
+   "calculations": [
+    {
+     "id": "delta",
+     "operation": "subtract",
+     "operands": [
+      "sz100ar.mgmt",
+      "sz100ar.mgmt_prev"
+     ],
+     "expected": "-4346915.65",
+     "unit": "CNY",
+     "decimal_places": 2
+    }
+   ],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "减少4,346,915.65元（33,656,568.86元→29,309,653.21元）。",
+   "semantic_rubric": [
+    "方向判断正确"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   },
+   "knowledge_bases": [
+    "基金年度与中期报告"
+   ]
+  }
+ ]
+}

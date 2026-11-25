@@ -1,0 +1,181 @@
+{
+ "id": "G08",
+ "title": "法规条款定位与多轮追问",
+ "knowledge_bases": [
+  "金融法律法规"
+ ],
+ "split": "dev",
+ "dimensions": [
+  "D1",
+  "D3",
+  "D6"
+ ],
+ "compare": true,
+ "demo_candidate": true,
+ "overrides": {},
+ "changelog": [
+  {
+   "date": "2026-11-24",
+   "change": "用户审阅：3 道题标为 approved"
+  }
+ ],
+ "cases": [
+  {
+   "id": "G08-1",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "securities_law_2019"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "证券法规定证券公司保存客户开户资料、委托记录和交易记录的期限是多少年？"
+    },
+    {
+     "content": "那证券登记结算机构保存登记、存管和结算原始凭证的期限呢？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "clearing",
+     "label": "登记结算机构保存期限",
+     "evidence_groups": [
+      [
+       "sec19.clearing_records"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "二十年",
+       "20年"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "第一轮：不得少于二十年；追问：证券登记结算机构的原始凭证及有关文件资料保存期限也不得少于二十年（第一百五十三条）。",
+   "semantic_rubric": [
+    "第二轮须理解“那……呢”指保存期限",
+    "引用第一百五十三条"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户审阅通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G08-2",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "securities_law_2019",
+    "securities_law_2014"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "现行证券法是从哪天开始施行的？"
+    },
+    {
+     "content": "那修订之前的那一版呢？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "old_effective",
+     "label": "旧版施行日期",
+     "evidence_groups": [
+      [
+       "sec14.effective"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "2006年1月1日"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "现行（2019年修订）自2020年3月1日起施行；追问：修订前的2014年版本条文写明自2006年1月1日起施行。",
+   "semantic_rubric": [
+    "第二轮须指代上一版证券法",
+    "不得把两版施行日期混淆",
+    "引用2014年版本附则条款"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户审阅通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G08-3",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "securities_fund_law_2015"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "证券投资基金法规定基金份额持有人大会由谁召集？如果基金管理人不召集，由谁召集？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "convener",
+     "label": "召集人",
+     "evidence_groups": [
+      [
+       "fund.meeting"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "基金管理人"
+      ],
+      [
+       "基金托管人",
+       "托管人"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "由基金管理人召集（设日常机构的由日常机构召集）；基金管理人未按规定召集或者不能召集的，由基金托管人召集。",
+   "semantic_rubric": [
+    "召集顺序完整",
+    "引用第八十三条"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户审阅通过（2026-11-24）"
+   }
+  }
+ ]
+}

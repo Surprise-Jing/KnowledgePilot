@@ -1,0 +1,269 @@
+{
+ "id": "G13",
+ "title": "统计公报：口径变化",
+ "knowledge_bases": [
+  "统计公报"
+ ],
+ "split": "test",
+ "dimensions": [
+  "D2",
+  "D3",
+  "D8"
+ ],
+ "compare": false,
+ "demo_candidate": false,
+ "overrides": {},
+ "changelog": [
+  {
+   "date": "2026-11-24",
+   "change": "用户初审：题目与参考答案无问题，待审题标为 approved"
+  }
+ ],
+ "cases": [
+  {
+   "id": "G13-1",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "bulletin_2023",
+    "bulletin_2024"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "2024年统计公报说国内生产总值比上年增长5.0%。如果用2023年和2024年公报里的GDP数值直接相除，名义增长率是多少？为什么和5.0%不一样？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "gdp23",
+     "label": "2023年GDP",
+     "evidence_groups": [
+      [
+       "b23.gdp"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "1260582"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "nominal",
+     "label": "直接计算的名义增长率",
+     "evidence_groups": [
+      [
+       "b23.gdp"
+      ],
+      [
+       "b24.gdp"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "7.02",
+       "unit": "percent",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "price_basis",
+     "label": "口径：现价与不变价格",
+     "evidence_groups": [
+      [
+       "b24.gdp_note"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "不变价格",
+       "不变价"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "census",
+     "label": "第五次经济普查修订",
+     "evidence_groups": [
+      [
+       "b24.census_note"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "经济普查"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [
+    {
+     "id": "nominal",
+     "operation": "relative_change_pct",
+     "operands": [
+      "b24.gdp",
+      "b23.gdp"
+     ],
+     "expected": "7.02",
+     "unit": "percent",
+     "decimal_places": 2
+    }
+   ],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "直接算约7.02%；公报绝对数按现价、增速按不变价格计算，且2024年公报按第五次全国经济普查修订了历史数据，因此不能直接相除比较。",
+   "semantic_rubric": [
+    "指出现价与不变价格口径差异",
+    "指出普查修订使2023年数据被修订",
+    "不得把7.02%说成实际增长率"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G13-2",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "bulletin_2016",
+    "bulletin_2021"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "2016年统计公报里年末人口指标是怎么表述的、数值多少？和2021年公报的表述有什么不同？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "pop16",
+     "label": "2016年年末全国大陆总人口",
+     "evidence_groups": [
+      [
+       "b16.pop"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "138271"
+      ],
+      [
+       "大陆总人口"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "pop21",
+     "label": "2021年年末全国人口",
+     "evidence_groups": [
+      [
+       "b21.pop"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "141260"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "2016年为“年末全国大陆总人口138271万人”，2021年为“年末全国人口141260万人”，指标名称不同。",
+   "semantic_rubric": [
+    "指出名称差异（大陆总人口 vs 全国人口）",
+    "数值与年份对应"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G13-3",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "bulletin_2016"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "2016年公报里的全员劳动生产率是多少？它是按哪一年的价格计算的？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "prod16",
+     "label": "全员劳动生产率",
+     "evidence_groups": [
+      [
+       "b16.productivity"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "94825",
+       "unit": "CNY",
+       "tolerance": "0.5"
+      }
+     ]
+    },
+    {
+     "id": "prod_basis",
+     "label": "计价年份",
+     "evidence_groups": [
+      [
+       "b16.productivity_note"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "2015"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "94825元/人；按2015年价格计算的GDP与全部就业人员之比。",
+   "semantic_rubric": [
+    "数值正确",
+    "指出以2015年价格计算"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  }
+ ]
+}

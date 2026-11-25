@@ -1,0 +1,330 @@
+{
+ "id": "G05",
+ "title": "长年报：目录与费用（范围隔离）",
+ "knowledge_bases": [
+  "基金年度与中期报告",
+  "易方达上证50ETF",
+  "易方达沪深300ETF",
+  "易方达深证100ETF"
+ ],
+ "split": "dev",
+ "dimensions": [
+  "D1",
+  "D4",
+  "D8"
+ ],
+ "compare": false,
+ "demo_candidate": false,
+ "overrides": {},
+ "changelog": [
+  {
+   "date": "2026-11-24",
+   "change": "用户初审：题目与参考答案无问题，待审题标为 approved"
+  }
+ ],
+ "cases": [
+  {
+   "id": "G05-1",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "s50_2024ar"
+   ],
+   "forbidden_documents": [
+    "s50_2024q4",
+    "s50_2025q1",
+    "s50_2025q2",
+    "s50_2025q3"
+   ],
+   "turns": [
+    {
+     "content": "易方达上证50ETF 2024年年度报告一共有多少个一级章节？请列出第9章到第13章的标题。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "count",
+     "label": "章节数",
+     "evidence_groups": [],
+     "answer_keywords": [
+      [
+       "13"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "toc9",
+     "label": "第9章标题",
+     "evidence_groups": [
+      [
+       "s50ar.toc9"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "基金份额持有人信息"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "toc10",
+     "label": "第10章标题",
+     "evidence_groups": [
+      [
+       "s50ar.toc10"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "开放式基金份额变动"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "toc11",
+     "label": "第11章标题",
+     "evidence_groups": [
+      [
+       "s50ar.toc11"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "重大事件揭示"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "toc12",
+     "label": "第12章标题",
+     "evidence_groups": [
+      [
+       "s50ar.toc12"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "影响投资者决策的其他重要信息"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "toc13",
+     "label": "第13章标题",
+     "evidence_groups": [
+      [
+       "s50ar.toc13"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "备查文件目录"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "共13章；§9基金份额持有人信息、§10开放式基金份额变动、§11重大事件揭示、§12影响投资者决策的其他重要信息、§13备查文件目录。",
+   "semantic_rubric": [
+    "标题与顺序正确",
+    "引用目录页"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   },
+   "knowledge_bases": [
+    "基金年度与中期报告"
+   ]
+  },
+  {
+   "id": "G05-2",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "s50_2024ar"
+   ],
+   "forbidden_documents": [
+    "s50_2024q4",
+    "s50_2025q1",
+    "s50_2025q2",
+    "s50_2025q3"
+   ],
+   "turns": [
+    {
+     "content": "上证50ETF 2024年年报中，本期当期发生的基金应支付的管理费和托管费分别是多少？两者合计多少元？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "mgmt",
+     "label": "管理费",
+     "evidence_groups": [
+      [
+       "s50ar.mgmt"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "5916444.07",
+       "unit": "CNY",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "cust",
+     "label": "托管费",
+     "evidence_groups": [
+      [
+       "s50ar.cust"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "1972148.01",
+       "unit": "CNY",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "sum",
+     "label": "合计",
+     "evidence_groups": [
+      [
+       "s50ar.mgmt"
+      ],
+      [
+       "s50ar.cust"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "7888592.08",
+       "unit": "CNY",
+       "tolerance": "0.005"
+      }
+     ]
+    }
+   ],
+   "calculations": [
+    {
+     "id": "sum",
+     "operation": "sum",
+     "operands": [
+      "s50ar.mgmt",
+      "s50ar.cust"
+     ],
+     "expected": "7888592.08",
+     "unit": "CNY",
+     "decimal_places": 2
+    }
+   ],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "管理费5,916,444.07元，托管费1,972,148.01元，合计7,888,592.08元。",
+   "semantic_rubric": [
+    "取“本期”列",
+    "合计正确"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   },
+   "knowledge_bases": [
+    "基金年度与中期报告"
+   ]
+  },
+  {
+   "id": "G05-3",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "s50_2024ar"
+   ],
+   "forbidden_documents": [
+    "s50_2024q4",
+    "s50_2025q1",
+    "s50_2025q2",
+    "s50_2025q3"
+   ],
+   "turns": [
+    {
+     "content": "和上年度可比期间相比，上证50ETF 2024年的管理费增加了多少元？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "delta",
+     "label": "管理费增加额",
+     "evidence_groups": [
+      [
+       "s50ar.mgmt_prev"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "2879110.72",
+       "unit": "CNY",
+       "tolerance": "0.005"
+      }
+     ]
+    }
+   ],
+   "calculations": [
+    {
+     "id": "delta",
+     "operation": "subtract",
+     "operands": [
+      "s50ar.mgmt",
+      "s50ar.mgmt_prev"
+     ],
+     "expected": "2879110.72",
+     "unit": "CNY",
+     "decimal_places": 2
+    }
+   ],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "由3,037,333.35元增至5,916,444.07元，增加2,879,110.72元。",
+   "semantic_rubric": [
+    "区分本期与上年度可比期间两列"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   },
+   "knowledge_bases": [
+    "基金年度与中期报告"
+   ]
+  }
+ ]
+}
