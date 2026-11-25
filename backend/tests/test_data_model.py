@@ -320,7 +320,7 @@ def test_migrate_v4_to_v5_adds_columns(settings):
     Database(path).migrate()
     connection = sqlite3.connect(path)
     connection.row_factory = sqlite3.Row
-    assert connection.execute("PRAGMA user_version").fetchone()[0] == 5
+    assert connection.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
     document = connection.execute("SELECT * FROM documents WHERE id='d'").fetchone()
     assert document["parse_mode"] == "standard"
     assert document["parser"] is None

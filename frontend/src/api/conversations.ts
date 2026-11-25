@@ -23,6 +23,12 @@ export function getConversation(id: string): Promise<ConversationDetail> {
   return request<ConversationDetail>(`/api/conversations/${encodeURIComponent(id)}`)
 }
 
+export function renameConversation(id: string, title: string): Promise<ConversationOut> {
+  return request<ConversationOut>('/api/conversations/' + encodeURIComponent(id), {
+    method: 'PATCH', json: { title },
+  })
+}
+
 export function deleteConversation(id: string): Promise<void> {
   return request<void>(`/api/conversations/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }

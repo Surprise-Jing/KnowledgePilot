@@ -1,8 +1,8 @@
-# KnowledgePilot 共享契约 v1.8
+# KnowledgePilot 共享契约 v1.10
 
 > **只有主 Agent（Tech Lead）可以修改本文件。** Subagent 发现契约不合理或缺失时，停止相关部分，在返回报告的“是否修改公共接口”中写明建议，由主 Agent 决定并更新本文件与变更记录。
 >
-> 对应代码：请求/响应模型 `backend/app/schemas.py`，错误类型 `backend/app/errors.py`，配置 `backend/app/config.py`，数据库 `backend/app/db.py`（schema v5）。代码与本文冲突时以本文为准，并报告主 Agent。
+> 对应代码：请求/响应模型 `backend/app/schemas.py`，错误类型 `backend/app/errors.py`，配置 `backend/app/config.py`，数据库 `backend/app/db.py`（schema v6）。代码与本文冲突时以本文为准，并报告主 Agent。
 
 ## 1. 通用约定
 
@@ -268,7 +268,7 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 | v1.5 | 2026-11-23 | 明确内部异常、未完成工具调用、max_steps 的 run 记录方式（采纳 B1 报告） |
 | v1.6 | 2026-11-23 | 工具失败降级（§10）；schema v4 轨迹字段；SSE `tool_call.attempt/retry_of`、`tool_result.fallback`、`done.degraded`；MCP 细化（§6） |
 | v1.7 | 2026-11-23 | 结构化解析（§11）：PDF/DOCX 改用 Docling，`Location.elements`、`DocumentOut.parse_mode/parser/page_count`；上传 `parse_mode`；新接口 reparse / markdown / file；错误码 `document_busy`、`markdown_not_available`；schema v5 |
-| v1.8 | 2026-11-23 | 多文档对比（§12）：检索支持 document_ids、按文档轮流取结果、保留跨文档相同内容来源；连续引用展开全部来源、相邻位置分组。无新增迁移 |
+| v1.10 | 2026-11-24 | 会话重命名接口；前端资料有效性检查、会话管理与运行状态显示（§14） |\n| v1.9 | 2026-11-24 | 自动检索与知识库/目录/文档范围；scope 快照、服务端强制边界与 schema v6（§13） |\n| v1.8 | 2026-11-23 | 多文档对比（§12）：检索支持 document_ids、按文档轮流取结果、保留跨文档相同内容来源；连续引用展开全部来源、相邻位置分组。无新增迁移 |
 
 ## 9. 检索策略与向量持久化
 
@@ -343,3 +343,21 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 - 来源组从回答正文与已持久化引用派生，因此历史会话同样可用；原 SSE、CitationOut 和数据库结构保持不变。
 - 证据复用：每轮模型调用附带从本 run 实际工具消息提取的来源索引，只含文档 ID、文件名及已有标记；索引 JSON 最多 2400 字符，内存最多保留 100 份文档、每份最近 10 个标记，不包含文档正文，也不表示所有问题维度已覆盖。仍组合成一条 system 消息以兼容模型服务。
 - 旧工具结果压缩时，在 tool 消息内保留每条最多 240 字符的原文短摘录和来源，优先不同文档；每条压缩结果的来源 JSON 最多 `min(1200, 工具结果预算/4)` 字符。完整依据不足时仍需定向检索/读取，引用有效性规则不变。此机制不增加模型调用、不把未返回资料加入证据池。
+
+
+## 13. 自动资料检索与指定范围对话（v1.9）
+- MessageCreate 新增 scope?: ChatScope：{mode: auto|selected, knowledge_base_ids: string[≤20], folder_ids: string[≤100], document_ids: string[≤100]}，各数组默认空。
+- 不传 scope/knowledge_base_ids 时为自动模式；auto 不能同时携带选项。显式旧 knowledge_base_ids 非空列表继续按指定知识库处理；显式空列表非法。scope 与旧非空 knowledge_base_ids 互斥。
+- auto 在发送时解析为当前用户全部知识库，不预先强制检索；闲聊和通用知识可直接回答，个人资料类结论必须通过工具取证。没有知识库也可发送。
+- selected 至少选择一项，可混选知识库、目录和文档，按并集解析。目录递归包含子目录。显式文件必须 success；知识库/目录可包含未就绪文件，但搜索只召回 success 文件。
+- 服务端在短事务中校验归属，并冻结该轮允许的文档 ID。空目录的空集合必须保持为空，不能回退全库。后续新上传文件不自动加入已开始的一轮。
+- ToolContext 新增可选 allowed_document_ids（默认 None 保持 MCP/旧测试兼容）；search_chunks 即使模型省略 document_ids 也强制过滤，显式越范围文档返回 out_of_scope，read_document/list_files/list_knowledge_bases 同样限制。列表先过滤再分页和计数；检索降级沿用相同边界。
+- 检索服务 search 新增内部关键字 allowed_document_ids，文件列表服务 list_files 同样新增该内部关键字，不改变公开 SearchRequest 的 document_ids 上限。内部 scope_kb_ids 支持自动范围超出旧单次请求的 20 库上限。
+- schema v6：messages.scope_json 可空 JSON。每轮 user/assistant 持久化同一 ScopeSnapshot {selection: ChatScope, labels: string[], knowledge_base_ids: string[], document_ids: string[]|null}。auto 的 document_ids=null；selected 为发送时解析出的完整文档集合。
+- MessageOut 新增 scope: ScopeSnapshot|null，旧数据为 null，不虚构原范围。前端展示当时的名称快照；重新选择会话恢复最后一条用户消息的 selection，旧会话恢复自动模式。后续选择不会改写历史记录。
+- 对话左侧常驻可折叠资料栏，浏览与勾选分开；历史会话使用抽屉；输入区展示范围标签、逐项移除与恢复自动。正在生成的请求和失败重试均使用发送时快照。
+
+## 14. 会话重命名与前端状态完善
+- PATCH /api/conversations/{id}，请求 ConversationUpdate {title: string(1–100)}，去除首尾空白且不可全空；返回 ConversationOut。
+- 归属校验与读取会话一致，越权/不存在返回 conversation_not_found；只更新标题和 updated_at，不修改消息、引用或范围快照。
+- 前端资料状态刷新/发送前检查仅提供更及时的反馈，最终权限与检索边界仍由服务端校验；失效选择不得自动丢弃或扩大范围。

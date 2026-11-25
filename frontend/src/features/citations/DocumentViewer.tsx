@@ -57,7 +57,9 @@ export function DocumentViewer() {
           <SheetDescription>
             {document?.location?.label
               ? `引用位置：${document.location.label}`
-              : '按顺序展示解析出的全部片段及其位置。'}
+              : pdf
+                ? '查看原始 PDF，也可切换到解析片段或 Markdown 预览。'
+                : '按顺序展示解析出的全部片段及其位置。'}
           </SheetDescription>
         </SheetHeader>
         {document && (
@@ -228,7 +230,7 @@ function ChunkList({ target }: { target: DocumentTarget }) {
                 <span className="text-xs text-muted-foreground">文档已重新解析，按位置匹配</span>
               )}
             </div>
-            <p className="leading-relaxed whitespace-pre-wrap">{chunk.content}</p>
+            <div className="min-w-0 break-words leading-relaxed"><Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{chunk.content}</Markdown></div>
           </section>
         )
       })}

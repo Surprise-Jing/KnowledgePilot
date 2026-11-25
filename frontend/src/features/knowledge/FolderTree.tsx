@@ -41,7 +41,7 @@ interface FolderTreeProps extends FolderActions {
 }
 
 const rowClass =
-  'group/row flex min-w-0 items-center gap-1 rounded-md pr-1 text-sm hover:bg-muted data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground'
+  'group/row flex min-w-0 items-center gap-1 rounded-md pr-1 text-sm hover:bg-muted data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground data-[selected=true]:font-medium'
 
 /**
  * Arrow keys move between visible folders (Up/Down/Home/End); Right expands, Left collapses
@@ -105,7 +105,7 @@ export function FolderTree({ nodes, selectedId, onSelect, ...rest }: FolderTreeP
         <span className="size-6 shrink-0" aria-hidden />
         <button
           type="button"
-          className="flex min-w-0 flex-1 items-center gap-2 py-1 text-left rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="flex min-w-0 flex-1 items-center gap-2 py-2 text-left rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           onClick={() => onSelect(null)}
           data-tree-select
         >
@@ -169,7 +169,7 @@ function FolderRow({
         )}
         <button
           type="button"
-          className="flex min-w-0 flex-1 items-center gap-2 py-1 text-left rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="flex min-w-0 flex-1 items-center gap-2 py-2 text-left rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           onClick={() => onSelect(folder.id)}
           title={folder.name}
           data-tree-select

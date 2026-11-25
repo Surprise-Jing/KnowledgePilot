@@ -111,6 +111,7 @@ class AgentRun:
             allowed_kb_ids=list(setup.knowledge_base_ids),
             run_id=self.run_id,
             markers=MarkerAllocator(),
+            allowed_document_ids=setup.started.scope.document_ids if setup.started.scope else None,
         )
         self.tool_specs = openai_tool_specs()
 
@@ -215,6 +216,12 @@ class AgentRun:
             setup.db, setup.user_id, started.conversation_id, started.run_id
         )
         parts = [SYSTEM_PROMPT, scope_message(names)]
+        if setup_scope := self.setup.started.scope:
+            parts.append(
+                "本轮资料范围："
+                + setup_scope.model_dump_json(exclude={"document_ids", "knowledge_base_ids"})
+                + "。自动模式按需检索；指定模式只能使用这些资料，历史回答不能作为范围外文档的新证据。"
+            )
         focus_text = focus_message(focus)
         if focus_text:
             parts.append(focus_text)

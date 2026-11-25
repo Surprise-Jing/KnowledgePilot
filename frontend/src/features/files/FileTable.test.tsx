@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { ErrorProvider } from '@/components/error-feedback'
 import { InspectorProvider } from '@/features/citations/InspectorProvider'
+import { InspectorContext, type InspectorValue } from '@/features/citations/inspector-context'
 import { documentOut, knowledgeBase, routeFetch } from '@/test/fixtures'
 
 import { FileTable } from './FileTable'
@@ -173,5 +174,32 @@ describe('FilesView polling', () => {
     await user.click(within(row('queued.txt')).getByRole('button', { name: /更多操作/ }))
     expect(screen.queryByRole('menuitem', { name: /重新解析/ })).toBeNull()
     expect(screen.queryByRole('menuitem', { name: '导出 Markdown' })).toBeNull()
+  })
+})
+
+describe('FilesView 查看原文', () => {
+  it('passes the file type so PDFs open on the original-PDF tab', async () => {
+    const pdf = documentOut({ id: 'p1', filename: '财报.pdf', file_type: 'pdf', page_count: 91 })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(routeFetch({ 'GET /api/knowledge-bases/kb-1/documents': () => Response.json([pdf]) })),
+    )
+    const openDocument = vi.fn()
+    const inspector: InspectorValue = {
+      subject: null, setSubject: vi.fn(), highlight: null, focusCitation: vi.fn(),
+      tab: 'citations', setTab: vi.fn(), panelOpen: false, setPanelOpen: vi.fn(),
+      document: null, openDocument, closeDocument: vi.fn(),
+    }
+    render(
+      <ErrorProvider>
+        {() => (
+          <InspectorContext.Provider value={inspector}>
+            <FilesView knowledgeBase={knowledgeBase} folders={[]} foldersKnown folderId={null} refreshToken={0} />
+          </InspectorContext.Provider>
+        )}
+      </ErrorProvider>,
+    )
+    await userEvent.click(await screen.findByRole('button', { name: '查看原文' }))
+    expect(openDocument).toHaveBeenCalledWith({ documentId: 'p1', filename: '财报.pdf', fileType: 'pdf' })
   })
 })

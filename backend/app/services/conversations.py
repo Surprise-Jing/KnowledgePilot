@@ -10,17 +10,20 @@ from uuid import uuid4
 from app.db import Database
 from app.errors import AppError
 from app.schemas import (
+    ChatScope,
     CitationOut,
     ConversationDetail,
     ConversationOut,
     Location,
     MessageOut,
     RunOut,
+    ScopeSnapshot,
     ToolCallOut,
     ToolError,
     Usage,
 )
 from app.services.access import require_knowledge_bases
+from app.services.chat_scope import resolve_scope
 
 DEFAULT_TITLE = "新对话"
 TITLE_CHARS = 30
@@ -45,6 +48,18 @@ def create_conversation(db: Database, user_id: str, title: str | None) -> Conver
         connection.execute(
             "INSERT INTO conversations(id, user_id, title) VALUES (?, ?, ?)",
             (conversation_id, user_id, title),
+        )
+        return ConversationOut(**require_conversation(connection, user_id, conversation_id))
+
+
+def rename_conversation(
+    db: Database, user_id: str, conversation_id: str, title: str
+) -> ConversationOut:
+    with db.connect() as connection:
+        require_conversation(connection, user_id, conversation_id)
+        connection.execute(
+            "UPDATE conversations SET title=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (title, conversation_id),
         )
         return ConversationOut(**require_conversation(connection, user_id, conversation_id))
 
@@ -106,6 +121,9 @@ def get_conversation(db: Database, user_id: str, conversation_id: str) -> Conver
                 created_at=row["created_at"],
                 run_id=row["run_id"],
                 citations=citations.get(row["id"], []),
+                scope=ScopeSnapshot.model_validate_json(row["scope_json"])
+                if row["scope_json"]
+                else None,
             )
             for row in messages
         ],
@@ -126,6 +144,7 @@ class StartedRun:
     conversation_id: str
     user_message_id: str
     assistant_message_id: str
+    scope: ScopeSnapshot | None = None
 
 
 def start_run(
@@ -135,6 +154,8 @@ def start_run(
     content: str,
     knowledge_base_ids: list[str],
     model: str | None,
+    *,
+    scope: ChatScope | None = None,
 ) -> StartedRun:
     """Write the user message, the streaming assistant message and the running run in one
     transaction. The run insert is conditional on no other running run in the conversation;
@@ -142,7 +163,12 @@ def start_run(
     run_id, user_message_id, assistant_message_id = str(uuid4()), str(uuid4()), str(uuid4())
     with db.connect() as connection:
         require_conversation(connection, user_id, conversation_id)
-        kb_ids = require_knowledge_bases(connection, user_id, knowledge_base_ids)
+        snapshot = resolve_scope(connection, user_id, scope) if scope is not None else None
+        kb_ids = (
+            snapshot.knowledge_base_ids
+            if snapshot
+            else require_knowledge_bases(connection, user_id, knowledge_base_ids)
+        )
         # The first question names a conversation that was created without a title.
         connection.execute(
             """UPDATE conversations SET title=?
@@ -160,6 +186,11 @@ def start_run(
                 (assistant_message_id, conversation_id, "assistant", "", "streaming"),
             ],
         )
+        if snapshot:
+            connection.execute(
+                "UPDATE messages SET scope_json=? WHERE id IN (?,?)",
+                (snapshot.model_dump_json(), user_message_id, assistant_message_id),
+            )
         inserted = connection.execute(
             """INSERT INTO runs(id, conversation_id, user_message_id, assistant_message_id,
                 knowledge_base_ids, status, model)
@@ -181,7 +212,7 @@ def start_run(
             raise AppError(
                 409, "conversation_busy", "该会话正在回答上一个问题，请稍后再试", retryable=True
             )
-    return StartedRun(run_id, conversation_id, user_message_id, assistant_message_id)
+    return StartedRun(run_id, conversation_id, user_message_id, assistant_message_id, snapshot)
 
 
 def knowledge_base_names(db: Database, user_id: str, kb_ids: list[str]) -> list[tuple[str, str]]:

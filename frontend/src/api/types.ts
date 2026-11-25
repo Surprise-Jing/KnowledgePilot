@@ -144,9 +144,23 @@ export interface ConversationOut {
   updated_at: string
 }
 
+export interface ChatScope {
+  mode: 'auto' | 'selected'
+  knowledge_base_ids: string[]
+  folder_ids: string[]
+  document_ids: string[]
+}
+export interface ScopeSnapshot {
+  selection: ChatScope
+  labels: string[]
+  knowledge_base_ids: string[]
+  document_ids: string[] | null
+}
+
 export interface MessageCreate {
   content: string
-  knowledge_base_ids: string[]
+  knowledge_base_ids?: string[]
+  scope?: ChatScope
 }
 
 export interface CitationOut {
@@ -164,6 +178,7 @@ export type MessageRole = 'user' | 'assistant'
 export type MessageStatus = 'streaming' | 'completed' | 'failed'
 
 export interface MessageOut {
+  scope?: ScopeSnapshot | null
   id: string
   role: MessageRole
   content: string

@@ -91,7 +91,10 @@ def test_pre_stream_errors_are_json(client):
     error_of(ask(client, conversation, "   ", [kb]), 422, "invalid_argument")
     error_of(ask(client, conversation, "问题", []), 422, "invalid_argument")
     error_of(ask(client, conversation, "x" * 4001, [kb]), 422, "invalid_argument")
-    response = client.post(f"/api/conversations/{conversation}/messages", json={"content": "q"})
+    response = client.post(
+        f"/api/conversations/{conversation}/messages",
+        json={"content": "q", "scope": {"mode": "selected"}},
+    )
     error_of(response, 422, "invalid_argument")
     # Nothing was written for rejected questions.
     assert client.get(f"/api/conversations/{conversation}").json()["messages"] == []
@@ -258,3 +261,27 @@ def test_delete_conversation_cascades_runs(client):
     with client.app.state.db.connect() as connection:
         for table in ("messages", "runs", "tool_calls", "citations"):
             assert connection.execute(f"SELECT count(*) FROM {table}").fetchone()[0] == 0
+
+
+def test_rename_conversation_preserves_messages_and_checks_owner(client):
+    kb = make_kb(client)
+    install_llm(client, ScriptedLLM([text("好的")]))
+    conversation = make_conversation(client)
+    read_sse(ask(client, conversation, "公开测试问题", [kb]))
+    before = client.get(f"/api/conversations/{conversation}").json()
+    response = client.patch(f"/api/conversations/{conversation}", json={"title": "  财报讨论  "})
+    assert response.status_code == 200
+    assert response.json()["title"] == "财报讨论"
+    after = client.get(f"/api/conversations/{conversation}").json()
+    assert after["messages"] == before["messages"]
+    denied = client.patch(
+        f"/api/conversations/{conversation}", json={"title": "越权"}, headers=headers("bob")
+    )
+    error_of(denied, 404, "conversation_not_found")
+    for title in ["   ", "x" * 101]:
+        error_of(
+            client.patch(f"/api/conversations/{conversation}", json={"title": title}),
+            422,
+            "invalid_argument",
+        )
+    assert client.get(f"/api/conversations/{conversation}").json()["title"] == "财报讨论"

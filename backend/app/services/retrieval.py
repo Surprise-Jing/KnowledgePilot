@@ -59,22 +59,38 @@ def reciprocal_rank_fusion(rankings: list[list[int]]) -> dict[int, float]:
 
 
 def search(
-    db: Database, user_id: str, request: SearchRequest, settings: Settings | None = None
+    db: Database,
+    user_id: str,
+    request: SearchRequest,
+    settings: Settings | None = None,
+    *,
+    allowed_document_ids: list[str] | None = None,
+    scope_kb_ids: list[str] | None = None,
 ) -> list[SearchHit]:
     settings = settings or Settings()
     vector_mode = settings.retriever in {"vector", "hybrid"}
 
     def validate_scope(connection) -> list[str]:
-        kb_ids = require_knowledge_bases(connection, user_id, request.knowledge_base_ids)
+        kb_ids = require_knowledge_bases(
+            connection,
+            user_id,
+            scope_kb_ids if scope_kb_ids is not None else request.knowledge_base_ids,
+        )
         for document_id in request.document_ids or []:
             document = require_document(connection, user_id, document_id)
             if document["knowledge_base_id"] not in kb_ids:
                 raise AppError(403, "out_of_scope", "指定文档不在本次检索选择的知识库内")
+        if allowed_document_ids is not None and any(
+            doc_id not in allowed_document_ids for doc_id in request.document_ids or []
+        ):
+            raise AppError(403, "out_of_scope", "指定文档不在本次提问选择的范围内")
         return kb_ids
 
     # Validate scope before transmitting the query to an external embedding service.
     with db.connect() as connection:
         ids = validate_scope(connection)
+    if allowed_document_ids == []:
+        return []
     query_settings = settings.model_copy(
         update={
             "embedding_timeout": min(settings.embedding_timeout, settings.embedding_query_timeout)
@@ -85,7 +101,7 @@ def search(
         # Revalidate after the network call; no DB transaction spans provider latency.
         ids = validate_scope(connection)
         placeholders = ",".join("?" for _ in ids)
-        document_ids = list(dict.fromkeys(request.document_ids or []))
+        document_ids = list(dict.fromkeys(request.document_ids or allowed_document_ids or []))
         document_filter = (
             f" AND d.id IN ({','.join('?' for _ in document_ids)})" if document_ids else ""
         )

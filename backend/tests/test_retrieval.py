@@ -220,6 +220,7 @@ def test_v2_migration_preserves_chunks(settings, provider):
             ("documents", "parser"),
             ("documents", "page_count"),
             ("chunks", "elements"),
+            ("messages", "scope_json"),
         ]:
             connection.execute(f"ALTER TABLE {table} DROP COLUMN {column}")
         connection.execute("PRAGMA user_version=2")

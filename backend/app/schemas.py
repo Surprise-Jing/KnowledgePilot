@@ -295,6 +295,15 @@ class ConversationCreate(BaseModel):
     title: str | None = Field(default=None, max_length=100)
 
 
+class ConversationUpdate(BaseModel):
+    title: str = Field(min_length=1, max_length=100)
+
+    @field_validator("title")
+    @classmethod
+    def strip_title(cls, value):
+        return _strip_required(value, "会话名称不能为空")
+
+
 class ConversationOut(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
@@ -303,9 +312,50 @@ class ConversationOut(BaseModel):
     updated_at: str
 
 
+class ChatScope(BaseModel):
+    mode: Literal["auto", "selected"] = "auto"
+    knowledge_base_ids: list[str] = Field(default_factory=list, max_length=20)
+    folder_ids: list[str] = Field(default_factory=list, max_length=100)
+    document_ids: list[str] = Field(default_factory=list, max_length=100)
+
+    @field_validator("knowledge_base_ids", "folder_ids", "document_ids")
+    @classmethod
+    def unique_scope_ids(cls, values):
+        return list(dict.fromkeys(values))
+
+    @model_validator(mode="after")
+    def validate_selection(self):
+        has_items = bool(self.knowledge_base_ids or self.folder_ids or self.document_ids)
+        if self.mode == "selected" and not has_items:
+            raise ValueError("指定资料时请至少选择一个知识库、目录或文档")
+        if self.mode == "auto" and has_items:
+            raise ValueError("自动模式不能同时指定资料")
+        return self
+
+
+class ScopeSnapshot(BaseModel):
+    selection: ChatScope
+    labels: list[str] = Field(default_factory=list)
+    knowledge_base_ids: list[str] = Field(default_factory=list)
+    document_ids: list[str] | None = None
+
+
 class MessageCreate(BaseModel):
     content: str = Field(min_length=1, max_length=4000)
-    knowledge_base_ids: list[str] = Field(min_length=1, max_length=20)
+    knowledge_base_ids: list[str] = Field(default_factory=list, max_length=20)
+    scope: ChatScope | None = None
+
+    @model_validator(mode="after")
+    def exclusive_scope(self):
+        if (
+            self.scope is None
+            and "knowledge_base_ids" in self.model_fields_set
+            and not self.knowledge_base_ids
+        ):
+            raise ValueError("显式知识库范围不能为空，请使用自动模式")
+        if self.scope is not None and self.knowledge_base_ids:
+            raise ValueError("scope 与 knowledge_base_ids 不能同时指定")
+        return self
 
     @field_validator("content")
     @classmethod
@@ -324,6 +374,7 @@ class CitationOut(BaseModel):
 
 
 class MessageOut(BaseModel):
+    scope: ScopeSnapshot | None = None
     id: str
     role: Literal["user", "assistant"]
     content: str

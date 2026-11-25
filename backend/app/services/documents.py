@@ -120,6 +120,7 @@ def list_files(
     recursive: bool = True,
     offset: int = 0,
     limit: int = MAX_LIST_LIMIT,
+    allowed_document_ids: list[str] | None = None,
 ) -> FileListing:
     """List documents of one knowledge base. `folder_id=None` starts at the root; with
     `recursive` descendants are included, otherwise only direct children."""
@@ -147,6 +148,7 @@ def list_files(
         )
         for row in rows
         if included(row["folder_id"])
+        and (allowed_document_ids is None or row["id"] in allowed_document_ids)
     ]
     entries.sort(key=lambda entry: (entry.folder_path, entry.filename, entry.document_id))
     return FileListing(

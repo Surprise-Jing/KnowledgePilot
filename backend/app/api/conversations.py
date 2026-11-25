@@ -13,15 +13,18 @@ from app.agent.sse import HEARTBEAT_SECONDS, stream_run
 from app.deps import DB, AppSettings, User
 from app.llm.factory import default_llm_factory
 from app.schemas import (
+    ChatScope,
     ConversationCreate,
     ConversationDetail,
     ConversationOut,
+    ConversationUpdate,
     MessageCreate,
     RunOut,
     Usage,
 )
 from app.services import conversations
 from app.services.access import require_knowledge_bases
+from app.services.chat_scope import resolve_scope
 
 logger = logging.getLogger(__name__)
 
@@ -68,16 +71,24 @@ def get_conversation(conversation_id: str, user_id: User, db: DB):
     return conversations.get_conversation(db, user_id, conversation_id)
 
 
+@router.patch("/api/conversations/{conversation_id}", response_model=ConversationOut)
+def rename_conversation(conversation_id: str, payload: ConversationUpdate, user_id: User, db: DB):
+    return conversations.rename_conversation(db, user_id, conversation_id, payload.title)
+
+
 @router.delete("/api/conversations/{conversation_id}", status_code=204)
 def delete_conversation(conversation_id: str, user_id: User, db: DB):
     conversations.delete_conversation(db, user_id, conversation_id)
     return Response(status_code=204)
 
 
-def _validate_scope(db, user_id: str, conversation_id: str, kb_ids: list[str]) -> list[str]:
+def _validate_scope(
+    db, user_id: str, conversation_id: str, kb_ids: list[str], selection: ChatScope
+) -> list[str]:
     with db.connect() as connection:
         conversations.require_conversation(connection, user_id, conversation_id)
-        return require_knowledge_bases(connection, user_id, kb_ids)
+        require_knowledge_bases(connection, user_id, kb_ids)
+        return resolve_scope(connection, user_id, selection).knowledge_base_ids
 
 
 @router.post(
@@ -95,13 +106,25 @@ async def post_message(
 ):
     # Everything that can fail before streaming is checked here, so those errors are ordinary
     # JSON responses: ownership, model configuration and the one-running-run rule.
+    selection = payload.scope or (
+        ChatScope(mode="selected", knowledge_base_ids=payload.knowledge_base_ids)
+        if payload.knowledge_base_ids
+        else ChatScope()
+    )
     kb_ids = await asyncio.to_thread(
-        _validate_scope, db, user_id, conversation_id, payload.knowledge_base_ids
+        _validate_scope, db, user_id, conversation_id, payload.knowledge_base_ids, selection
     )
     factory = request.app.state.llm_factory or default_llm_factory
     llm = factory(settings)
     started = await asyncio.to_thread(
-        conversations.start_run, db, user_id, conversation_id, payload.content, kb_ids, llm.model
+        conversations.start_run,
+        db,
+        user_id,
+        conversation_id,
+        payload.content,
+        kb_ids,
+        llm.model,
+        scope=selection,
     )
     setup = RunSetup(
         db=db,
@@ -109,7 +132,7 @@ async def post_message(
         llm=llm,
         user_id=user_id,
         question=payload.content,
-        knowledge_base_ids=kb_ids,
+        knowledge_base_ids=started.scope.knowledge_base_ids,
         started=started,
     )
     # Tests shorten the heartbeat through app.state; production uses the contract's 15 s.

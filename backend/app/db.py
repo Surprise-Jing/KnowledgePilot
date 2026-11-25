@@ -2,7 +2,7 @@ import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 # Schema v1. Statements run one by one inside the migration transaction
 # (executescript would commit implicitly). The table design is documented in docs/data-model.md.
@@ -244,7 +244,19 @@ def _migrate_v5(connection):
     connection.execute("ALTER TABLE chunks ADD COLUMN elements TEXT NOT NULL DEFAULT '[]'")
 
 
-MIGRATIONS = {1: _migrate_v1, 2: _migrate_v2, 3: _migrate_v3, 4: _migrate_v4, 5: _migrate_v5}
+def _migrate_v6(connection):
+    """Per-question retrieval boundaries; old messages keep an unknown scope."""
+    connection.execute("ALTER TABLE messages ADD COLUMN scope_json TEXT")
+
+
+MIGRATIONS = {
+    6: _migrate_v6,
+    1: _migrate_v1,
+    2: _migrate_v2,
+    3: _migrate_v3,
+    4: _migrate_v4,
+    5: _migrate_v5,
+}
 
 
 class Database:

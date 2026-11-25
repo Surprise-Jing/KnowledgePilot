@@ -1,4 +1,4 @@
-import { BrainCircuitIcon, FilesIcon, LibraryIcon, MenuIcon, MessagesSquareIcon, PanelRightIcon } from 'lucide-react'
+import { BrainCircuitIcon, FilesIcon, LibraryIcon, MenuIcon, MessagesSquareIcon, PanelRightIcon, XIcon } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 
 import { listFolders } from '@/api/folders'
@@ -12,6 +12,8 @@ import { Toaster } from '@/components/ui/sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { UserSwitcher } from '@/components/user-switcher'
+import { ChatSources } from '@/features/chat/ChatSources'
+import { ChatScopeProvider } from '@/features/chat/ChatScopeProvider'
 import { ChatView } from '@/features/chat/ChatView'
 import { DocumentViewer } from '@/features/citations/DocumentViewer'
 import { InspectorPanel } from '@/features/citations/InspectorPanel'
@@ -36,7 +38,7 @@ export default function App() {
         {(banner) => (
           // Keyed by user: switching users drops all state and reloads every list (isolation demo).
           <InspectorProvider key={userId}>
-            <Workspace userId={userId} onSwitchUser={switchUser} banner={banner} />
+            <ChatScopeProvider><Workspace userId={userId} onSwitchUser={switchUser} banner={banner} /></ChatScopeProvider>
           </InspectorProvider>
         )}
       </ErrorProvider>
@@ -60,6 +62,7 @@ function Workspace({
   const isMedium = useMediaQuery('(min-width: 768px)')
   const { panelOpen, setPanelOpen } = useInspector()
   const [navOpen, setNavOpen] = useState(false)
+  const [knowledgeOpen, setKnowledgeOpen] = useState(true)
   const [view, setView] = useState<CenterView>('files')
 
   const knowledgeBases = useResource('knowledge-bases', listKnowledgeBases)
@@ -95,26 +98,26 @@ function Workspace({
   )
 
   return (
-    <div className="flex h-svh flex-col bg-background text-foreground">
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
-        {!isMedium && (
-          <Button size="icon-sm" variant="ghost" aria-label="打开知识库与目录" onClick={() => setNavOpen(true)}>
+    <div className="kp-workspace flex h-svh flex-col bg-background text-foreground">
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-card px-3 sm:gap-3 sm:px-5">
+        {(!isMedium || view === 'chat') && (
+          <Button size="icon-sm" variant="ghost" aria-label="打开知识库与目录" aria-expanded={isMedium ? knowledgeOpen : navOpen} onClick={() => isMedium ? setKnowledgeOpen((open) => !open) : setNavOpen(true)}>
             <MenuIcon />
           </Button>
         )}
         <div className="flex min-w-0 items-center gap-2">
-          <BrainCircuitIcon className="size-5" aria-hidden />
-          <h1 className="truncate font-heading text-base font-semibold">KnowledgePilot</h1>
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground sm:size-9"><BrainCircuitIcon className="size-4 sm:size-5" aria-hidden /></span>
+          <div className="min-w-0"><h1 className="truncate font-heading text-sm font-semibold tracking-tight sm:text-base">KnowledgePilot</h1><p className="hidden text-[11px] text-muted-foreground md:block">个人知识工作台</p></div>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <HealthBadge />
           <UserSwitcher userId={userId} onChange={onSwitchUser} />
-          {!isWide && (
+          {view === 'chat' && (
             <Button
               size="icon-sm"
               variant="outline"
               aria-label="打开引用与工具轨迹"
-              onClick={() => setPanelOpen(true)}
+              aria-expanded={panelOpen} onClick={() => setPanelOpen(!panelOpen)}
             >
               <PanelRightIcon />
             </Button>
@@ -124,18 +127,18 @@ function Workspace({
       {banner && <div className="shrink-0 px-4 pt-3">{banner}</div>}
 
       <div className="flex min-h-0 flex-1">
-        {isMedium && (
-          <aside className="flex w-72 shrink-0 flex-col border-r p-4" aria-label="知识库与目录">
-            {sidebar}
+        {isMedium && (view === 'files' || knowledgeOpen) && (
+          <aside className="flex w-72 shrink-0 flex-col border-r bg-sidebar p-4 lg:w-80 lg:p-5" aria-label="知识库与目录">
+            {view === 'chat' ? <ChatSources knowledgeBases={kbList} /> : sidebar}
           </aside>
         )}
-        <main className="flex min-w-0 flex-1 flex-col p-4">
+        <main className="flex min-w-0 flex-1 flex-col p-3 sm:p-5 lg:p-6">
           <Tabs
             value={view}
             onValueChange={(value) => setView(value as CenterView)}
-            className="flex min-h-0 flex-1 flex-col gap-3"
+            className="flex min-h-0 flex-1 flex-col gap-5"
           >
-            <TabsList>
+            <TabsList className="workspace-tabs">
               <TabsTrigger value="files">
                 <FilesIcon data-icon="inline-start" />
                 文件
@@ -155,6 +158,7 @@ function Workspace({
                   foldersKnown={Boolean(folders.data)}
                   folderId={folderId}
                   refreshToken={filesVersion}
+                  onNavigateFolder={setSelectedFolderId}
                 />
               ) : (
                 <Empty className="border border-dashed">
@@ -173,8 +177,9 @@ function Workspace({
             </TabsContent>
           </Tabs>
         </main>
-        {isWide && (
-          <aside className="flex w-96 shrink-0 flex-col border-l p-4" aria-label="引用与工具轨迹">
+        {isWide && view === 'chat' && panelOpen && (
+          <aside className="flex w-96 shrink-0 flex-col border-l bg-card p-5" aria-label="引用与工具轨迹">
+            <div className="mb-3 flex items-center justify-between"><span className="text-sm font-medium">回答依据与轨迹</span><Button size="icon-sm" variant="ghost" aria-label="关闭引用与工具轨迹" onClick={() => setPanelOpen(false)}><XIcon /></Button></div>
             <InspectorPanel />
           </aside>
         )}
@@ -182,18 +187,18 @@ function Workspace({
 
       {!isMedium && (
         <Sheet open={navOpen} onOpenChange={setNavOpen}>
-          <SheetContent side="left" className="flex w-80 flex-col p-4">
+          <SheetContent side="left" className="flex flex-col p-4 data-[side=left]:w-full data-[side=left]:sm:w-80">
             <SheetHeader className="p-0">
-              <SheetTitle>知识库与目录</SheetTitle>
-              <SheetDescription className="sr-only">选择知识库和目录</SheetDescription>
+              <SheetTitle>{view === 'chat' ? '选择资料' : '知识库与目录'}</SheetTitle>
+              <SheetDescription className="sr-only">{view === 'chat' ? '勾选知识库、目录或文档限定提问范围' : '选择知识库和目录'}</SheetDescription>
             </SheetHeader>
-            {sidebar}
+            {view === 'chat' ? <ChatSources knowledgeBases={kbList} /> : sidebar}
           </SheetContent>
         </Sheet>
       )}
       {!isWide && (
-        <Sheet open={panelOpen} onOpenChange={setPanelOpen}>
-          <SheetContent side="right" className="flex w-full flex-col p-4 sm:max-w-md">
+        <Sheet open={panelOpen && view === 'chat'} onOpenChange={setPanelOpen}>
+          <SheetContent side="right" className="flex flex-col p-4 data-[side=right]:w-full data-[side=right]:sm:max-w-md">
             <SheetHeader className="p-0">
               <SheetTitle>引用与工具轨迹</SheetTitle>
               <SheetDescription className="sr-only">当前选中回答的引用和工具调用</SheetDescription>

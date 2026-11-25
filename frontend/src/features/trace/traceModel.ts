@@ -37,8 +37,8 @@ export function traceFromLive(run: LiveRun): TraceView {
     droppedCitations: [],
     degraded: run.degraded,
     modelRetries: null,
-    startedAt: null,
-    finishedAt: null,
+    startedAt: run.startedAt ? new Date(run.startedAt).toISOString() : null,
+    finishedAt: run.finishedAt ? new Date(run.finishedAt).toISOString() : null,
   }
 }
 

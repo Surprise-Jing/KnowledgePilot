@@ -1,17 +1,14 @@
-import { FileUpIcon, FilesIcon, RefreshCwIcon, UploadIcon } from 'lucide-react'
+import { FileUpIcon, FilesIcon, RefreshCwIcon, SearchIcon, UploadIcon } from 'lucide-react'
 import { type DragEvent, useEffect, useId, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import {
-  SUPPORTED_EXTENSIONS,
   deleteDocument,
   exportMarkdown,
-  hasSupportedExtension,
   listDocuments,
   reparseDocument,
   retryDocument,
   updateDocument,
-  uploadDocument,
 } from '@/api/documents'
 import type { DocumentOut, FolderOut, KnowledgeBaseOut, ParseMode } from '@/api/types'
 import { ConfirmDialog } from '@/components/confirm-dialog'
@@ -31,7 +28,7 @@ import {
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Spinner } from '@/components/ui/spinner'
+import { Input } from '@/components/ui/input'
 import { useInspector } from '@/features/citations/inspector-context'
 import { MoveDialog } from '@/features/knowledge/MoveDialog'
 import { useResource } from '@/hooks/use-resource'
@@ -41,6 +38,8 @@ import { folderPath } from '@/lib/tree'
 import { cn } from '@/lib/utils'
 
 import { FileTable } from './FileTable'
+import { UploadDialog } from './UploadDialog'
+import { compareFiles, nextFileSort, type FileSort } from './fileSort'
 
 export const POLL_INTERVAL_MS = 2000
 
@@ -56,6 +55,7 @@ export interface FilesViewProps {
   folderId: string | null
   /** Bumped by the parent when folder changes may have moved or removed files. */
   refreshToken: number
+  onNavigateFolder?: (folderId: string | null) => void
 }
 
 export function FilesView({
@@ -64,17 +64,18 @@ export function FilesView({
   foldersKnown,
   folderId,
   refreshToken,
+  onNavigateFolder,
 }: FilesViewProps) {
   const report = useReportError()
   const { openDocument } = useInspector()
   const recursiveId = useId()
-  const inputRef = useRef<HTMLInputElement>(null)
   const [recursive, setRecursive] = useState(true)
-  const [uploading, setUploading] = useState(0)
   const [dragging, setDragging] = useState(false)
   const [retrying, setRetrying] = useState<Set<string>>(() => new Set())
-  // Applies to PDF/DOCX in the next upload; TXT is always parsed in the standard mode.
-  const [parseMode, setParseMode] = useState<ParseMode>('standard')
+  const [uploadTarget, setUploadTarget] = useState<{ folderId: string | null; destination: string; files: File[] } | null>(null)
+  const [query, setQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [sort, setSort] = useState<FileSort>({ key: 'updated_at', direction: 'desc' })
   const [dialog, setDialog] = useState<DialogState | null>(null)
 
   const kbId = knowledgeBase.id
@@ -101,31 +102,8 @@ export function FilesView({
 
   const scopeLabel = ['根目录', ...folderPath(folders, folderId)].join(' / ')
 
-  async function uploadOne(file: File): Promise<void> {
-    setUploading((n) => n + 1)
-    try {
-      const doc = await uploadDocument(kbId, file, folderId, parseMode)
-      if (doc.duplicate) {
-        const where = doc.folder_id === folderId ? '' : `（位于「${['根目录', ...folderPath(folders, doc.folder_id)].join(' / ')}」）`
-        toast.info(`已存在相同内容的文件：${doc.filename}${where}`)
-      } else {
-        toast.success(`已上传 ${doc.filename}，等待解析`)
-      }
-    } catch (error) {
-      report(error, () => uploadOne(file).then(() => reload({ silent: true })))
-    } finally {
-      setUploading((n) => n - 1)
-    }
-  }
-
-  async function uploadFiles(files: File[]) {
-    const accepted: File[] = []
-    for (const file of files) {
-      if (hasSupportedExtension(file.name)) accepted.push(file)
-      else toast.error(`${file.name}：仅支持 ${SUPPORTED_EXTENSIONS.join('、')} 文件`)
-    }
-    for (const file of accepted) await uploadOne(file)
-    if (accepted.length > 0) await reload({ silent: true })
+  function openUpload(files: File[] = []) {
+    setUploadTarget({ folderId, destination: knowledgeBase.name + ' / ' + scopeLabel, files })
   }
 
   async function reparse(doc: DocumentOut, mode: ParseMode) {
@@ -176,16 +154,31 @@ export function FilesView({
     event.preventDefault()
     setDragging(false)
     const files = Array.from(event.dataTransfer.files)
-    if (files.length > 0) void uploadFiles(files)
+    if (files.length > 0) openUpload(files)
   }
 
   const list = docs.data ?? []
+  const filtered = list.filter((doc) =>
+    doc.filename.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()) &&
+    (statusFilter === 'all' || doc.status === statusFilter),
+  ).sort((a, b) => compareFiles(a, b, sort, folders))
+  const hasFilters = Boolean(query.trim()) || statusFilter !== 'all'
+  const clearFilters = () => { setQuery(''); setStatusFilter('all') }
+  const pathNames = folderPath(folders, folderId)
+  const pathIds: string[] = []
+  let current = folders.find((folder) => folder.id === folderId)
+  const seen = new Set<string>()
+  while (current && !seen.has(current.id)) {
+    seen.add(current.id)
+    pathIds.unshift(current.id)
+    current = folders.find((folder) => folder.id === current?.parent_id)
+  }
   const close = (open: boolean) => !open && setDialog(null)
 
   return (
     <div
       className={cn(
-        'flex min-h-0 flex-1 flex-col gap-3 rounded-lg',
+        'flex min-h-0 flex-1 flex-col gap-4 rounded-lg',
         dragging && 'ring-2 ring-ring/50',
       )}
       onDragOver={(event) => {
@@ -198,13 +191,18 @@ export function FilesView({
       onDrop={onDrop}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex min-w-0 flex-1 flex-col">
-          <h2 className="truncate text-sm font-medium" title={knowledgeBase.name}>
+        <div className="flex min-w-0 basis-full flex-col sm:flex-1 sm:basis-auto">
+          <p className="mb-1 text-xs font-medium text-muted-foreground">知识库文件</p>
+          <h2 className="mb-1 truncate text-xl font-semibold tracking-tight sm:text-2xl" title={knowledgeBase.name}>
             {knowledgeBase.name}
           </h2>
-          <p className="truncate text-xs text-muted-foreground" title={scopeLabel}>
-            当前范围：{scopeLabel}
-          </p>
+          <nav aria-label="文件路径" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+            <button className="rounded hover:underline focus-visible:ring-2 focus-visible:ring-ring" aria-current={!folderId ? 'page' : undefined} onClick={() => onNavigateFolder?.(null)}>{knowledgeBase.name}</button>
+            {pathNames.map((name, index) => <span key={pathIds[index]} className="flex items-center gap-1">
+              <span aria-hidden>/</span>
+              <button className="rounded hover:underline focus-visible:ring-2 focus-visible:ring-ring" aria-current={index === pathNames.length - 1 ? 'page' : undefined} onClick={() => onNavigateFolder?.(pathIds[index])}>{name}</button>
+            </span>)}
+          </nav>
         </div>
         <Field orientation="horizontal" className="w-auto">
           <Checkbox
@@ -226,42 +224,33 @@ export function FilesView({
           <RefreshCwIcon data-icon="inline-start" />
           刷新
         </Button>
-        <Select value={parseMode} onValueChange={(value) => setParseMode(value as ParseMode)}>
-          <SelectTrigger size="sm" aria-label="PDF/DOCX 解析模式">
-            <SelectValue />
-          </SelectTrigger>
+        <Button size="sm" onClick={() => openUpload()}>
+          <UploadIcon data-icon="inline-start" />上传文件
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-40 flex-1 sm:max-w-sm"><SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden /><Input className="bg-card pl-9" aria-label="搜索当前范围文件名" placeholder="搜索当前范围的文件名…" value={query} onChange={(event) => setQuery(event.target.value)} /></div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger size="sm" aria-label="筛选解析状态"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="standard">普通模式</SelectItem>
-            <SelectItem value="enhanced">增强模式（OCR）</SelectItem>
+            <SelectItem value="all">全部状态</SelectItem>
+            <SelectItem value="success">解析成功</SelectItem>
+            <SelectItem value="queued">排队中</SelectItem>
+            <SelectItem value="parsing">解析中</SelectItem>
+            <SelectItem value="failed">解析失败</SelectItem>
           </SelectContent>
         </Select>
-        <Button size="sm" onClick={() => inputRef.current?.click()} disabled={uploading > 0}>
-          {uploading > 0 ? <Spinner data-icon="inline-start" /> : <UploadIcon data-icon="inline-start" />}
-          {uploading > 0 ? `上传中（${uploading}）` : '上传文件'}
-        </Button>
-        <input
-          ref={inputRef}
-          type="file"
-          multiple
-          hidden
-          accept={SUPPORTED_EXTENSIONS.join(',')}
-          data-testid="file-input"
-          onChange={(event) => {
-            const files = Array.from(event.target.files ?? [])
-            event.target.value = ''
-            if (files.length > 0) void uploadFiles(files)
-          }}
-        />
-        {parseMode === 'enhanced' && (
-          <p className="basis-full text-right text-xs text-muted-foreground">
-            {ENHANCED_SLOWER_HINT}。TXT 始终使用普通模式。
-          </p>
-        )}
+        {hasFilters && <Button size="sm" variant="ghost" onClick={clearFilters}>清除筛选</Button>}
       </div>
+      <p className="text-xs text-muted-foreground" role="status">
+        {docs.data ? '当前显示 ' + filtered.length + ' / ' + list.length + ' 份文件' : docs.error ? '无法获取文件列表，请重试' : '正在获取文件列表…'}
+        {' · 搜索范围：当前目录' + (recursive ? '及子目录' : '') + '，按文件名匹配'}
+      </p>
 
       {docs.error && <ErrorAlert error={docs.error} onRetry={() => void reload()} forceRetry />}
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-lg border">
+      <div className="min-h-0 flex-1 overflow-auto rounded-xl border bg-card shadow-xs">
         {docs.loading && !docs.data ? (
           <div className="flex flex-col gap-2 p-3" aria-busy="true">
             {[0, 1, 2, 3].map((i) => (
@@ -281,20 +270,29 @@ export function FilesView({
                 </EmptyDescription>
               </EmptyHeader>
               <EmptyContent>
-                <Button size="sm" onClick={() => inputRef.current?.click()}>
+                <Button size="sm" onClick={() => openUpload()}>
                   <FileUpIcon data-icon="inline-start" />
                   选择文件
                 </Button>
               </EmptyContent>
             </Empty>
           )
+        ) : filtered.length === 0 ? (
+          <Empty>
+            <EmptyHeader><EmptyTitle>没有符合条件的文件</EmptyTitle><EmptyDescription>试试其他文件名或解析状态。</EmptyDescription></EmptyHeader>
+            <EmptyContent><Button variant="outline" size="sm" onClick={clearFilters}>清除筛选</Button></EmptyContent>
+          </Empty>
         ) : (
           <FileTable
-            documents={list}
+            documents={filtered}
+            sort={sort}
+            onSort={(key) => setSort((current) => nextFileSort(current, key))}
             folders={folders}
             foldersKnown={foldersKnown}
             retryingIds={retrying}
-            onView={(doc) => openDocument({ documentId: doc.id, filename: doc.filename })}
+            onView={(doc) =>
+              openDocument({ documentId: doc.id, filename: doc.filename, fileType: doc.file_type })
+            }
             onRetry={(doc) => void retry(doc)}
             onRename={(doc) => setDialog({ kind: 'rename', doc })}
             onMove={(doc) => setDialog({ kind: 'move', doc })}
@@ -310,6 +308,12 @@ export function FilesView({
           {hasQueuedStructured && ' 后端同一时间只解析一份 PDF/DOCX，排队的文件可能要等几分钟。'}
         </p>
       )}
+
+      {uploadTarget && <UploadDialog
+        kbId={kbId} folderId={uploadTarget.folderId} destination={uploadTarget.destination}
+        initialFiles={uploadTarget.files} folders={folders}
+        onClose={() => setUploadTarget(null)} onUploaded={() => reload({ silent: true })}
+      />}
 
       <NameDialog
         open={dialog?.kind === 'rename'}
