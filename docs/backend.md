@@ -1,231 +1,183 @@
-# 首日后端开发说明
+# 后端开发说明
 
-## 本次实现范围
+本文说明后端的代码结构、启动与配置、命令行工具、接口调用示例和测试方法。架构与算法见[系统设计文档](design.md)，接口定义见[接口契约](contracts.md)，表结构见[数据模型设计](data-model.md)。
 
-后端已实现知识库创建和列表、文档上传、异步解析、片段持久化、按库检索、单轮回答及来源返回，供后续前端和 Agent 接入。在首日最小闭环的基础上，数据模型已升级到 v1：按用户隔离数据，位置改为结构化字段，并为目录、会话和调用轨迹预留了表。这不代表全部 P0/P1 已完成。表结构见[数据模型设计](./data-model.md)。
-
-- 请求通过 `X-User-Id` 请求头标识用户，缺省时使用 `PK_DEFAULT_USER_ID`（默认 `demo`）。所有知识库、文档和检索操作只能访问自己的数据，访问他人数据返回 404。这是本地演示用的身份传递方式，不做身份认证。
-- 文件支持 TXT（UTF-8 或 GBK）、文本型 PDF、DOCX（段落和表格）。暂不支持旧版 `.doc`、OCR、图片和嵌套表格内容提取。
-- 解析状态为 `queued → parsing → success / failed`，失败可重试。
-- 同一知识库内按 SHA-256 去重，重复上传返回已有记录；失败记录需要显式重试。
-- 片段按格式合并切分：TXT 连续行合并，PDF 按页，DOCX 按标题小节合并段落，表格按表合并行；每段最多约 800 字符，超长单元按 200 字符重叠拆分。
-- 每个片段的 `location` 是结构化对象，包含类型、起止行/页/段/表格行、DOCX 标题路径和拆分时的字符范围，以及展示文本 `label`。
-- 检索支持词频余弦、BM25、BGE-M3 稠密向量与 BM25 + 向量 RRF 混合检索，返回前 K 项并按内容去重。各策略分数不可互相比大小，也不是答案置信度。
-- 默认回答是检索片段的原文摘录；配置模型后通过兼容 Chat Completions 的接口生成回答。
-- SQLite 持久保存知识库、文档和片段；原文件保存在本地。删除文档同步删除片段，并清理原文件。
-
-## 目录结构
+## 1. 代码结构
 
 ```text
 backend/
   app/
-    main.py                 应用工厂：错误处理、中间件、路由装配
-    deps.py                 共享依赖：配置、数据库、当前用户
-    logging_setup.py        JSON 日志、X-Request-Id 与 run_id 关联
-    api/                    HTTP 路由（knowledge_bases、folders、documents、search、conversations）
-    config.py               环境变量配置
-    db.py                   SQLite 表结构、版本迁移、连接和启动恢复
-    schemas.py              输入输出模型
-    errors.py               业务错误
-    services/
-      ingestion.py          文档解析、切片和入库
-      access.py             按用户校验知识库和文档归属
-      retrieval.py          按库过滤、打分和去重
-      answering.py          摘录回答和真实模型适配
-  tests/test_api.py         闭环与异常场景测试
-  tests/test_data_model.py  用户隔离、切分定位、编码和迁移测试
-  .env.example              配置模板
-  pyproject.toml            依赖及测试配置
-  uv.lock                   依赖锁定文件
-examples/knowledge.txt      演示资料
+    main.py              应用工厂：错误处理、日志中间件、路由装配、前端静态托管
+    config.py            环境变量配置（前缀 PK_）
+    db.py                SQLite 表结构、版本迁移、启动恢复
+    deps.py              共享依赖：配置、数据库、当前用户
+    errors.py            业务错误 AppError
+    schemas.py           请求、响应、SSE 事件与工具结果模型
+    logging_setup.py     JSON 日志、X-Request-Id 与 run_id 关联
+    api/                 HTTP 路由：auth、knowledge_bases、folders、documents、search、conversations
+    services/            业务服务：auth、access、knowledge_bases、folders、documents、ingestion、
+                         retrieval、embeddings、chat_scope、conversations、artifacts、answering
+    tools/               工具注册表、四个内置工具、参数校验、工具运行时上下文
+    agent/               Agent 循环、上下文组装、来源索引、系统提示、SSE 帧
+    llm/                 LLMClient 协议、OpenAI 兼容实现、默认工厂
+    parsers/             Parser 接口、TXT 解析、Docling 子进程与结构映射、模型预下载
+    mcp_server.py        stdio MCP Server
+    users.py             账号管理命令行
+    reindex.py           向量重建命令行
+  tests/                 自动化测试；fakes/ 为测试替身，e2e/ 为端到端与评测管线测试
+  .env.example           配置模板
+  pyproject.toml         依赖与工具配置
+  uv.lock                依赖锁定文件
 ```
 
-路由层组织请求，服务层实现解析、检索和回答，数据层负责事务。后续可在服务层上增加工具契约和 Agent 循环，无需重写上传链路。
+## 2. 启动
 
-## 启动与配置
-
-前置条件：安装 uv。首次运行需要联网安装 Python 3.11 或更高版本及依赖。
-
-在项目根目录执行：
+前置条件：安装 [uv](https://docs.astral.sh/uv/)。首次运行会安装 Python 3.11+ 及依赖，需要联网。
 
 ```bash
 uv run --directory backend uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-也可以先进入 `backend`，再执行 `uv run uvicorn app.main:app --host 127.0.0.1 --port 8000`。
+命令以 `backend` 为工作目录，默认数据保存在 `backend/data/`。只能以单个 worker 运行：解析队列与 Agent 运行状态保存在进程内。
 
-- 健康检查：<http://127.0.0.1:8000/health>
-- Swagger 接口文档：<http://127.0.0.1:8000/docs>
-- OpenAPI：<http://127.0.0.1:8000/openapi.json>
+| 地址 | 内容 |
+| --- | --- |
+| <http://127.0.0.1:8000/> | 前端（需先执行 `npm --prefix frontend run build`，或使用根目录 `./start.sh`） |
+| <http://127.0.0.1:8000/health> | 健康检查 |
+| <http://127.0.0.1:8000/docs> | Swagger 接口文档 |
+| <http://127.0.0.1:8000/openapi.json> | OpenAPI 定义 |
 
-将 `backend/.env.example` 复制为 `backend/.env`，聊天与 Embedding 分开配置。启动命令将工作目录设置为 `backend`，因此默认数据保存在 `backend/data`。
+## 3. 配置
 
-| 必填环境变量 | 用途 |
+将 `backend/.env.example` 复制为 `backend/.env`。聊天模型必须配置以下三项：
+
+| 变量 | 用途 |
 | --- | --- |
 | `PK_LLM_BASE_URL` | OpenAI 兼容服务地址，程序追加 `/chat/completions` |
 | `PK_LLM_MODEL` | 模型名称，需支持工具调用 |
-| `PK_LLM_API_KEY` | 模型密钥，只用于后端请求 |
+| `PK_LLM_API_KEY` | 模型密钥，只在后端使用 |
 
-以下配置都有默认值，一般无需设置，仅在调试或评测时通过环境变量覆盖：
+其余配置均有默认值：
 
-| 可选环境变量 | 默认值 | 用途 |
+| 变量 | 默认值 | 用途 |
 | --- | --- | --- |
-| `PK_DATA_DIR` | `data` | 数据库和原文件目录，相对于进程工作目录 |
-| `PK_DEFAULT_USER_ID` | `demo` | 请求未携带 `X-User-Id` 时使用的用户 |
-| `PK_LLM_TIMEOUT` | `45` | 模型请求超时秒数 |
-| `PK_LLM_STREAM` | `true` | 模型服务不支持流式工具调用时设为 `false` |
-| `PK_AGENT_MAX_STEPS` | `6` | Agent 最大执行步数 |
-| `PK_TOOL_TIMEOUT` | `15` | 单次工具调用超时秒数 |
-| `PK_EMBEDDING_QUERY_TIMEOUT` | `8` | 检索时查询向量化的超时秒数，需小于 `PK_TOOL_TIMEOUT`，向量服务卡住时才能降级为 BM25 |
-| `PK_CONTEXT_BUDGET_CHARS` | `24000` | 对话上下文预算（字符） |
-| `PK_RETRIEVER` | `cosine` | 检索策略，评测对照用 |
-| `PK_EMBEDDING_BASE_URL` | 空 | OpenAI 兼容 API 根地址，追加 `/embeddings` |
-| `PK_EMBEDDING_MODEL` | `bge-m3` | Embedding 模型 ID |
-| `PK_EMBEDDING_API_KEY` | 空 | 独立密钥；免认证本地服务可不填 |
-| `PK_EMBEDDING_DIMENSIONS` | `1024` | 严格验证服务返回维度，不向 API 强制传 dimensions |
-| `PK_EMBEDDING_TIMEOUT` | `45` | 每批请求超时秒数 |
-| `PK_EMBEDDING_BATCH_SIZE` | `32` | 每批最多文本数量 |
-| `PK_EMBEDDING_REVISION` | `1` | 同名模型变更权重后手动提升，并重建 |
-| `PK_RETRIEVAL_CANDIDATES` | `50` | 混合检索每路候选数量，至少为 top_k |
-| `PK_MCP_USER_ID` | `demo` | MCP Server 访问知识库时的用户 |
-| `PK_MAX_UPLOAD_BYTES` | `10485760` | 上传大小限制，默认 10 MiB |
+| `PK_DATA_DIR` | `data` | 数据库、原文件和解析产物目录，相对于进程工作目录 |
 | `PK_LOG_LEVEL` | `INFO` | 日志级别 |
-| `PK_ANSWER_MODE` | `extractive` | 仅影响调试接口 `/api/chat`：`extractive` 为摘录，`openai` 为调用模型 |
+| `PK_MAX_UPLOAD_BYTES` | `10485760` | 上传大小上限（10 MiB） |
+| `PK_SESSION_TTL_DAYS` | `30` | 登录会话有效期（天） |
+| `PK_COOKIE_SECURE` | `false` | 会话 Cookie 是否只经 HTTPS 发送 |
+| `PK_ALLOW_REGISTRATION` | `true` | 是否开放网页注册 |
+| `PK_MCP_USERNAME` | `demo` | MCP Server 以哪个已注册用户运行 |
+| `PK_LLM_TIMEOUT` | `45` | 模型请求超时（秒） |
+| `PK_LLM_STREAM` | `true` | 模型服务不支持流式工具调用时设为 `false` |
+| `PK_AGENT_MAX_STEPS` | `6` | Agent 最大执行步数（1–20） |
+| `PK_TOOL_TIMEOUT` | `15` | 单次工具调用超时（秒） |
+| `PK_CONTEXT_BUDGET_CHARS` | `24000` | 对话上下文预算（字符） |
+| `PK_RETRIEVER` | `cosine` | 检索策略：`cosine`、`bm25`、`vector`、`hybrid`；`.env.example` 推荐 `hybrid` |
+| `PK_RETRIEVAL_CANDIDATES` | `50` | 混合检索每路候选数量，至少为 top_k |
+| `PK_EMBEDDING_BASE_URL` | 空 | Embedding 服务地址，程序追加 `/embeddings`；`vector` / `hybrid` 必填 |
+| `PK_EMBEDDING_MODEL` | `bge-m3` | Embedding 模型 |
+| `PK_EMBEDDING_API_KEY` | 空 | Embedding 密钥；免认证本地服务可留空 |
+| `PK_EMBEDDING_DIMENSIONS` | `1024` | 期望维度，严格校验服务返回 |
+| `PK_EMBEDDING_TIMEOUT` | `45` | 入库时每批向量请求超时（秒） |
+| `PK_EMBEDDING_QUERY_TIMEOUT` | `8` | 检索时查询向量化超时（秒），需小于 `PK_TOOL_TIMEOUT` 才能触发 BM25 降级 |
+| `PK_EMBEDDING_BATCH_SIZE` | `32` | 每批向量化文本数 |
+| `PK_EMBEDDING_REVISION` | `1` | 同名模型更换权重时手动提升，并重建向量 |
+| `PK_PARSE_TIMEOUT` | `1800` | 单个文档解析超时（秒），超时终止解析进程 |
+| `PK_CHUNK_TOKENIZER` | `BAAI/bge-m3` | 分块计数用分词器；离线时可设为本地目录 |
+| `PK_CHUNK_MAX_TOKENS` | `512` | 分块 token 上限 |
+| `PK_DOCLING_ARTIFACTS_PATH` | 空 | Docling 模型本地目录；留空使用 Hugging Face 缓存 |
+| `PK_DOCLING_DEVICE` | `auto` | `auto` / `cpu` / `mps` / `cuda` |
+| `PK_DOCLING_THREADS` | `4` | Docling 线程数 |
+| `PK_DOCLING_OCR_ENGINE` | `rapidocr` | 增强模式 OCR 引擎：`rapidocr` / `easyocr` / `tesseract` / `ocrmac` |
+| `PK_DOCLING_FORCE_FULL_PAGE_OCR` | `true` | 增强模式是否整页 OCR |
+| `PK_ANSWER_MODE` | `extractive` | 仅影响调试接口 `/api/chat`：`extractive` 摘录，`openai` 调用模型 |
 
-本地兼容服务若不校验密钥，可填其允许的占位值。模型异常会明确返回错误，不会悄悄改成摘录回答。调用外部模型会发送问题和检索片段，请只上传公开或脱敏资料。
+模型异常会明确返回错误，不会改用摘录回答。调用外部模型与 Embedding 服务会发送问题与所选资料片段，只应上传公开或脱敏资料。
 
-### 向量与混合检索
+## 4. 解析模型准备
 
-`PK_RETRIEVER=vector` 使用 BGE-M3 稠密向量余弦；`hybrid` 使用 BM25 + 稠密向量
-RRF（k=60）。`cosine` 为原词频余弦，`bm25` 为独立关键词检索。标准 `/embeddings`
-只使用 dense 输出，不假定服务暴露 BGE-M3 的 sparse/ColBERT 功能。
-BGE-M3 默认 1024 维依据[模型官方说明](https://huggingface.co/BAAI/bge-m3)。
-
-vector/hybrid 上传时会将解析片段发给 Embedding 服务，检索时发送查询文本。
-向量归一化后以 float32 存入同一个 SQLite 的 `chunk_embeddings` 表，与片段
-原子提交、外键级联删除。当前使用精确扫描而非 ANN，时间和内存随所选范围片段数增长。
-
-旧数据迁移仅新增表，不发送历史文档。切换配置后先停止应用，然后执行
-`uv run --directory backend python -m app.reindex --user-id demo`（替换为实际用户）。
-只处理该用户 success 文档，逐文档提交；失败时该文档旧向量保留，已完成的其他文档不回滚。
-failed 文档走 retry API 重新解析；重建命令保留 chunk ID 与历史引用。
-
-配置缺失返回 `embedding_not_configured` / 503；服务失败或格式错误返回
-`embedding_error` / 502，超时 `embedding_timeout` / 504。已成功解析的旧文档缺少向量
-或签名不匹配时返回 `embedding_index_not_ready` / 409，需要重建。hybrid 不静默降级。
-重建过程中并发修改文档返回 `embedding_index_changed` / 409。错误不包含提供商响应正文。
-
-### 结构化解析（Docling）
-
-设计见 [docs/superpowers/specs/2026-11-23-docling-parsing-design.md](superpowers/specs/2026-11-23-docling-parsing-design.md)，契约见 contracts §11。
-
-- `app/parsers/`：`base.py`（`Parser` 接口与可序列化数据）、`registry.py`（按文件类型选择解析器，`app.state.parsers`）、`text.py`（TXT）、`worker.py`（解析子进程管理）、`docling_runner.py` / `docling_mapping.py`（只在子进程和测试中导入 Docling）、`prefetch.py`（模型预下载）。
-- PDF/DOCX 交给单个 spawn 子进程，一次一份；排队文档保持 `queued`。超过 `PK_PARSE_TIMEOUT` 终止子进程并标记失败，下一份文档会重新拉起子进程；子进程崩溃同样标记失败。Web 进程退出时子进程随之退出。
-- 普通模式（`standard`）：版面分析 + TableFormer ACCURATE；增强模式（`enhanced`）另开 OCR（`PK_DOCLING_OCR_ENGINE`，默认 RapidOCR 整页）。
-- HybridChunker 以 BGE-M3 分词器计数（`PK_CHUNK_TOKENIZER`、`PK_CHUNK_MAX_TOKENS`），表格序列化为 Markdown 表格。片段 `elements` 保存 Docling 元素引用、页码和归一化坐标框（左上原点，0–1），每片段最多 64 项。
-- 解析产物写入 `{PK_DATA_DIR}/artifacts/{document_id}.tmp-*`，入库提交后原子替换为 `artifacts/{document_id}/`（`document.md`、`document.json`）；启动时清理残留临时目录，删除文档/目录/知识库时一并删除。
-- 向量和 BM25 的输入为“标题路径 + 片段正文”；向量签名包含输入格式版本 `text:v2`。
-- 接口：上传表单 `parse_mode`；`POST /api/documents/{id}/reparse`；`GET /api/documents/{id}/markdown`；`GET /api/documents/{id}/file`。
-- 测试：门禁通过 `tests/conftest.py` 把 PDF/DOCX 换成离线替身解析器（pypdf/python-docx，dev 依赖）；真实 Docling 测试 `PK_RUN_DOCLING_TESTS=1 uv run --directory backend pytest tests/e2e/test_docling_real.py`（需已下载模型）。
-
-## 最小闭环演示
-
-推荐先使用 Swagger 页面按顺序操作，也可以使用以下命令。将响应中的实际 ID 替换到后续命令中。
-
-### 1. 创建知识库
+PDF/DOCX 由 Docling 解析，所需版面、表格、OCR 模型与 BGE-M3 分词器在首次解析时自动下载。离线或网络不稳定时，预先执行：
 
 ```bash
-curl -X POST http://127.0.0.1:8000/api/knowledge-bases \
-  -H 'Content-Type: application/json' \
-  -d '{"name":"演示知识库"}'
+uv run --directory backend python -m app.parsers.prefetch
 ```
 
-保存响应中的 `id` 为知识库 ID。
+模型默认保存在 `~/.cache/docling/models`，也可通过 `PK_DOCLING_ARTIFACTS_PATH` 指定目录。
 
-### 2. 上传并查看解析状态
+## 5. 命令行工具
 
-在项目根目录执行，替换 `KB_ID`：
+以下命令修改数据库，需在 Web 服务停止时运行。
+
+| 命令 | 用途 |
+| --- | --- |
+| `uv run --directory backend python -m app.users list` | 列出用户 |
+| `uv run --directory backend python -m app.users set-password <用户名>` | 设置密码（同时注销该用户全部会话）；用于没有密码的已有用户 |
+| `uv run --directory backend python -m app.users delete <用户名> --yes` | 删除用户及其全部数据，不可恢复 |
+| `uv run --directory backend python -m app.reindex --username <用户名>` | 为该用户全部成功文档补建或重建向量；切换到 `vector` / `hybrid`、更换 Embedding 服务、模型或维度后执行。逐文档提交，保留片段 ID |
+| `PK_MCP_USERNAME=<用户名> uv run --directory backend python -m app.mcp_server` | 启动 stdio MCP Server（通常由 MCP 客户端拉起），可与 Web 服务同时运行 |
+
+## 6. 接口调用示例
+
+完整接口见[接口契约 §3](contracts.md#3-http-api)。以下示例在项目根目录执行，登录后用 `-b cookies.txt` 携带会话。
 
 ```bash
-curl -X POST http://127.0.0.1:8000/api/knowledge-bases/KB_ID/documents \
+# 注册并保存会话 Cookie（已有账号改用 /api/auth/login）
+curl -c cookies.txt -X POST http://127.0.0.1:8000/api/auth/register \
+  -H 'Content-Type: application/json' -d '{"username":"alice","password":"secret123"}'
+
+# 创建知识库，记下返回的 id
+curl -b cookies.txt -X POST http://127.0.0.1:8000/api/knowledge-bases \
+  -H 'Content-Type: application/json' -d '{"name":"演示知识库"}'
+
+# 上传文档（202），轮询状态直到 success 或 failed
+curl -b cookies.txt -X POST http://127.0.0.1:8000/api/knowledge-bases/KB_ID/documents \
   -F 'file=@examples/knowledge.txt'
-```
+curl -b cookies.txt http://127.0.0.1:8000/api/documents/DOCUMENT_ID
 
-响应为 HTTP 202，包含文档 ID 和提交时状态。后台任务随后进行解析。替换 `DOCUMENT_ID`，轮询直到 `success` 或 `failed`：
-
-```bash
-curl http://127.0.0.1:8000/api/documents/DOCUMENT_ID
-```
-
-### 3. 检索
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/search \
+# 检索
+curl -b cookies.txt -X POST http://127.0.0.1:8000/api/search \
   -H 'Content-Type: application/json' \
   -d '{"query":"删除文档时如何处理索引","knowledge_base_ids":["KB_ID"],"top_k":3}'
-```
 
-每个结果包含 `chunk_id`、`document_id`、`knowledge_base_id`、`filename`、`content`、`location` 和 `score`。`location` 是结构化对象，`location.label` 是可直接展示的位置文本，例如 `第 1–3 行`。
-
-以上命令未携带 `X-User-Id`，均以默认用户 `demo` 操作。加上 `-H 'X-User-Id: alice'` 即以 alice 身份操作；用 bob 的身份检索 alice 的知识库会返回 404。
-
-### 4. 获取回答
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/chat \
+# 创建会话并提问（SSE 流式返回）
+curl -b cookies.txt -X POST http://127.0.0.1:8000/api/conversations \
+  -H 'Content-Type: application/json' -d '{}'
+curl -N -b cookies.txt -X POST http://127.0.0.1:8000/api/conversations/CONVERSATION_ID/messages \
   -H 'Content-Type: application/json' \
-  -d '{"query":"删除文档时如何处理索引","knowledge_base_ids":["KB_ID"],"top_k":3}'
+  -d '{"content":"删除文档时如何处理索引？","scope":{"mode":"selected","knowledge_base_ids":["KB_ID"]}}'
 ```
 
-响应包含 `answer`、`mode` 和 `citations`。回答的 `[1]` 对应 `citations[0]`，依此类推。`citations` 是提供给回答阶段的来源列表，可能包含模型没有引用的候选来源。真实模型模式检查引用编号存在且不越界，但尚不验证每个结论是否被原文充分支持。无结果时明确告知未检索到相关内容。
+检索结果包含 `chunk_id`、`document_id`、`knowledge_base_id`、`filename`、`content`、结构化 `location`（含展示文本 `location.label`）和 `score`。不同检索策略的分数不可相互比较，也不表示答案置信度。使用其他用户的会话访问该知识库返回 404。
 
-## 接口清单
-
-| 方法 | 路径 | 功能 |
-| --- | --- | --- |
-| GET | `/health` | 健康检查和回答模式 |
-| POST / GET | `/api/knowledge-bases` | 创建 / 列出知识库 |
-| POST / GET | `/api/knowledge-bases/{id}/documents` | 上传 / 列出文档 |
-| GET | `/api/documents/{id}` | 查询文档与解析状态 |
-| GET | `/api/documents/{id}/chunks` | 按顺序读取文档片段与来源位置 |
-| POST | `/api/documents/{id}/retry` | 重试失败的解析任务 |
-| DELETE | `/api/documents/{id}` | 删除原文件、文档和片段 |
-| POST | `/api/search` | 按一个或多个知识库检索 |
-| POST | `/api/chat` | 单轮检索问答 |
-
-业务错误结构为 `{"error":{"code":"...","message":"..."}}`。参数校验错误使用 FastAPI 默认的 HTTP 422 `detail` 结构。常见状态码：400 空文件或用户标识不合法、404 资源不存在、409 不可重试、413 文件过大、415 格式不支持、502 模型调用或引用失败、503 模型未配置、504 模型超时。
-
-## 测试
-
-在项目根目录执行：
+## 7. 测试与检查
 
 ```bash
 uv run --directory backend pytest -q
 uv run --directory backend ruff check app tests
+uv run --directory backend ruff format --check app tests
 ```
 
-测试覆盖用户隔离、TXT 上传及 GBK 编码、按行/标题小节合并切分与超长拆分、DOCX 段落和表格、PDF 文本解析、失败重试、同库去重、多库过滤、来源定位、摘录回答、删除清理、重启持久化、任务与运行中断恢复、首日数据库迁移、高版本数据库拒绝启动、级联删除、上传大小限制，以及使用模拟响应的模型适配和超时。测试使用临时数据库，不依赖真实模型密钥。真实模型联网效果需配置密钥后另行验证。
+- 测试使用临时数据目录，不读取 `.env`，不访问网络，不需要模型密钥。模型由 `tests/fakes/llm.py` 的 `ScriptedLLM` 替代；PDF/DOCX 默认由 `tests/conftest.py` 注入的离线替身解析器处理。
+- 真实 Docling 解析测试需已下载模型，按需运行：
 
-本次验证结果：Python 3.12 环境下 19 项测试通过，Ruff 检查及格式检查通过；实际启动 Uvicorn 后，以 alice 身份上传示例文档并检索成功，bob 检索同一知识库返回 404。测试依赖存在一条 Starlette 关于未来切换 HTTP 测试客户端的弃用提示，不影响当前测试结果。
+```bash
+PK_RUN_DOCLING_TESTS=1 uv run --directory backend pytest tests/e2e/test_docling_real.py
+```
 
-## 当前边界与后续接入
+- 真实模型冒烟（需先启动服务并配置 `backend/.env`）：
 
-1. 用户身份由请求头直接声明，不做认证，任何人都可以冒充其他用户。这满足本地演示的隔离验收，但默认仅监听 `127.0.0.1`，不能直接作为多人服务部署。
-2. 后台任务使用进程内任务，启动时将中断任务标为失败，需手动重试。当前只支持单进程启动，不使用多个 workers；后续可迁移到持久任务队列。
-3. 检索逐次扫描指定库的片段，适合小规模演示；已支持语义向量与混合检索，ANN 专用索引、重排和真实模型效果评测仍待后续实现。
-4. Agent 工具调用在线程中执行并有超时；超时后线程无法强制终止，会在后台跑完（只使用自己的短事务）。
-5. 文件只能在同一知识库内移动；不支持跨库移动。P1 查询分解、多文档对比尚未实现；需求仍以功能 README 为准。
-6. 上传限制在应用读取时检查，解析器暂无独立进程资源隔离；当前面向受信任的本地演示文件。
-7. 数据库使用 `PRAGMA user_version` 做版本迁移。从首日原型升级时，旧片段会被清除，文档需要点击重试重新解析，详见[数据模型设计](./data-model.md#5-版本迁移)。
+```bash
+uv run --directory backend python ../scripts/smoke.py --base-url http://127.0.0.1:8000 --repo-root "$PWD"
+```
 
-## 选型理由与替代方案
+## 8. 运行约束
 
-| 当前选择 | 理由 | 后续替代方向 |
-| --- | --- | --- |
-| FastAPI | 输入校验、接口文档和 Python 解析库便于快速联调 | 团队熟悉其他框架时可替换 HTTP 层 |
-| SQLite＋本地文件 | 无需额外服务，易于本地持久化和演示 | 多用户或并发增长后使用 PostgreSQL 与对象存储 |
-| 词频/BM25 与 BGE-M3 混合检索 | 无密钥基线与语义召回可切换，SQLite 持久化便于一致性维护 | 大规模时引入 ANN 索引、重排及评测优化 |
-| 摘录＋模型适配 | 无密钥也能验证来源链路，模型接入独立于解析和检索 | 使用模型 SDK 或增加其他提供商适配 |
-| 进程内后台任务 | 首日无需维护队列服务 | 使用持久队列与独立 worker |
-
-实现参考：[FastAPI 文件上传](https://fastapi.tiangolo.com/tutorial/request-files/)、[FastAPI 后台任务](https://fastapi.tiangolo.com/tutorial/background-tasks/)、[Chat Completions API](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create)。
+| 约束 | 说明 |
+| --- | --- |
+| 单 worker | 解析队列、解析子进程与 Agent 运行状态在进程内，不支持多 worker |
+| 启动恢复 | 启动时将排队或解析中的文档标记为失败（可重试），将进行中的运行标记为中断 |
+| 解析串行 | PDF/DOCX 一次解析一份，其余保持排队 |
+| 工具超时 | 超时的工具调用在后台线程中运行至结束，只持有自己的短事务 |
+| 向量检索规模 | 精确扫描，耗时与内存随检索范围内片段数线性增长 |
+| 文件移动 | 仅限同一知识库内；不支持旧版 `.doc` |
