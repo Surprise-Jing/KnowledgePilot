@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from app.config import Settings
 from app.main import create_app
 from app.services import documents as documents_service
+from tests.fakes.helpers import headers, login
 
 
 @pytest.fixture
@@ -19,15 +20,14 @@ def settings(tmp_path):
 @pytest.fixture
 def client(settings):
     with TestClient(create_app(settings)) as client:
+        login(client)
         yield client
 
 
-def as_user(user):
-    return {"X-User-Id": user}
-
-
 def make_kb(client, name="库", user="demo"):
-    response = client.post("/api/knowledge-bases", json={"name": name}, headers=as_user(user))
+    response = client.post(
+        "/api/knowledge-bases", json={"name": name}, headers=headers(client, user)
+    )
     assert response.status_code == 201, response.text
     return response.json()["id"]
 
@@ -36,7 +36,7 @@ def make_folder(client, kb_id, name, parent_id=None, user="demo"):
     response = client.post(
         f"/api/knowledge-bases/{kb_id}/folders",
         json={"name": name, "parent_id": parent_id},
-        headers=as_user(user),
+        headers=headers(client, user),
     )
     assert response.status_code == 201, response.text
     return response.json()["id"]
@@ -47,7 +47,7 @@ def post_file(client, kb_id, name, text, folder_id=None, user="demo"):
         f"/api/knowledge-bases/{kb_id}/documents",
         files={"file": (name, text.encode())},
         data={} if folder_id is None else {"folder_id": folder_id},
-        headers=as_user(user),
+        headers=headers(client, user),
     )
 
 
@@ -65,7 +65,9 @@ def listing(client, kb_id, **params):
 
 
 def patch(client, document_id, payload, user="demo"):
-    return client.patch(f"/api/documents/{document_id}", json=payload, headers=as_user(user))
+    return client.patch(
+        f"/api/documents/{document_id}", json=payload, headers=headers(client, user)
+    )
 
 
 def search(client, kb_id, text):
@@ -170,7 +172,7 @@ def test_list_by_folder(client, tree):
             f"/api/knowledge-bases/{kb_id}/documents", params={"folder_id": folder_id}
         )
         assert response.status_code == 404 and error_code(response) == "folder_not_found"
-    response = client.get(f"/api/knowledge-bases/{kb_id}/documents", headers=as_user("bob"))
+    response = client.get(f"/api/knowledge-bases/{kb_id}/documents", headers=headers(client, "bob"))
     assert response.status_code == 404 and error_code(response) == "knowledge_base_not_found"
 
 
@@ -249,7 +251,7 @@ def test_delete_is_idempotent(client, settings):
         )
 
     # Another user's delete is a silent no-op.
-    response = client.delete(f"/api/documents/{document['id']}", headers=as_user("bob"))
+    response = client.delete(f"/api/documents/{document['id']}", headers=headers(client, "bob"))
     assert response.status_code == 204
     assert path.exists()
     assert client.get(f"/api/documents/{document['id']}").status_code == 200

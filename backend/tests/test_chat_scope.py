@@ -10,6 +10,7 @@ from app.tools.context import ToolContext
 from app.tools.registry import execute
 from tests.fakes.helpers import (
     install_llm,
+    login,
     make_conversation,
     make_kb,
     make_settings,
@@ -22,6 +23,7 @@ from tests.fakes.llm import ScriptedLLM, text, tool_call
 @pytest.fixture
 def client(tmp_path):
     with TestClient(create_app(make_settings(tmp_path))) as client:
+        login(client)
         yield client
 
 

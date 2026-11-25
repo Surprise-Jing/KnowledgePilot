@@ -26,9 +26,7 @@ def setup_corpus(client, manifest: dict, cache: Path) -> legacy.CorpusIds:
     for doc in manifest["documents"]:
         name = doc["knowledge_base"]
         if name not in ids.knowledge_bases:
-            response = client.post(
-                "/api/knowledge-bases", headers=legacy.HEADERS, json={"name": name}
-            )
+            response = client.post("/api/knowledge-bases", json={"name": name})
             ids.knowledge_bases[name] = legacy.expect_status(response, 201)["id"]
         kb_id = ids.knowledge_bases[name]
         parent = None
@@ -38,14 +36,12 @@ def setup_corpus(client, manifest: dict, cache: Path) -> legacy.CorpusIds:
             if key not in ids.folders:
                 response = client.post(
                     f"/api/knowledge-bases/{kb_id}/folders",
-                    headers=legacy.HEADERS,
                     json={"name": folder_path[-1], "parent_id": parent},
                 )
                 ids.folders[key] = legacy.expect_status(response, 201)["id"]
             parent = ids.folders[key]
         response = client.post(
             f"/api/knowledge-bases/{kb_id}/documents",
-            headers=legacy.HEADERS,
             files={"file": (doc["filename"], dataset.source_path(doc, cache).read_bytes())},
             data={"folder_id": parent or ""},
         )
@@ -53,7 +49,7 @@ def setup_corpus(client, manifest: dict, cache: Path) -> legacy.CorpusIds:
     deadline = time.monotonic() + legacy.PARSE_TIMEOUT_SECONDS
     while True:
         statuses = [
-            legacy.expect_status(client.get(f"/api/documents/{key}", headers=legacy.HEADERS), 200)
+            legacy.expect_status(client.get(f"/api/documents/{key}"), 200)
             for key in ids.documents.values()
         ]
         if any(item["status"] == "failed" for item in statuses):
@@ -102,7 +98,6 @@ def retrieval_case(client, ids, case, evidence, documents, top_k: int) -> dict:
 def agent_case(client, ids, case, evidence, documents) -> dict:
     response = client.post(
         "/api/conversations",
-        headers=legacy.HEADERS,
         json={"title": f"finance {case['id']}"},
     )
     conversation_id = legacy.expect_status(response, 201)["id"]
@@ -143,20 +138,24 @@ def evaluate(args, manifest, evidence, cases) -> dict:
         if args.mode == "agent":
             if not settings.llm_model or not settings.llm_api_key.get_secret_value():
                 raise ValueError("Agent 评测需要配置真实模型；请提供 --env-file")
-            server_context = legacy.LiveServer(create_app(settings))
+        app = create_app(settings)
+        if args.mode == "agent":
+            server_context = legacy.LiveServer(app)
         else:
-            server_context = TestClient(create_app(settings))
+            server_context = TestClient(app)
         with server_context as host:
             if args.mode == "agent":
                 with httpx.Client(
                     base_url=host.base_url, timeout=legacy.REQUEST_TIMEOUT_SECONDS
                 ) as client:
+                    legacy.authorize(client, app.state.db)
                     ids = setup_corpus(client, manifest, args.cache)
                     rows = []
                     for case in cases:
                         print(f"[finance] {case['id']}", file=sys.stderr, flush=True)
                         rows.append(agent_case(client, ids, case, evidence, documents))
             else:
+                legacy.authorize(host, app.state.db)
                 ids = setup_corpus(host, manifest, args.cache)
                 rows = [
                     retrieval_case(host, ids, case, evidence, documents, args.top_k)

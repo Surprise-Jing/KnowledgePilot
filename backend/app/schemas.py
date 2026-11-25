@@ -76,6 +76,45 @@ class Location(BaseModel):
         )
 
 
+class Credentials(BaseModel):
+    """Register and login body. Format and strength rules live in services/auth.py so the
+    messages stay specific; the length caps here only bound the work done on bad input."""
+
+    username: str = Field(min_length=1, max_length=64)
+    password: str = Field(min_length=1, max_length=1024)
+
+    @field_validator("username")
+    @classmethod
+    def strip_username(cls, value):
+        return value.strip()
+
+
+class PasswordChange(BaseModel):
+    current_password: str = Field(min_length=1, max_length=1024)
+    new_password: str = Field(min_length=1, max_length=1024)
+
+
+class UsernameChange(BaseModel):
+    username: str = Field(min_length=1, max_length=64)
+    current_password: str = Field(min_length=1, max_length=1024)
+
+    @field_validator("username")
+    @classmethod
+    def strip_username(cls, value):
+        return value.strip()
+
+
+class PasswordConfirmation(BaseModel):
+    password: str = Field(min_length=1, max_length=1024)
+
+
+class UserOut(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    username: str
+    created_at: str
+
+
 class KnowledgeBaseCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
 

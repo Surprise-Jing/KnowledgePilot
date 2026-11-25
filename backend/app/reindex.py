@@ -1,4 +1,4 @@
-"""Run with the application stopped: python -m app.reindex --user-id demo."""
+"""Run with the application stopped: python -m app.reindex --username demo."""
 
 import argparse
 import logging
@@ -6,6 +6,7 @@ import logging
 from app.config import Settings
 from app.db import Database
 from app.errors import AppError
+from app.services.auth import require_user_by_username
 from app.services.embeddings import reindex
 
 logger = logging.getLogger(__name__)
@@ -13,13 +14,15 @@ logger = logging.getLogger(__name__)
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="停止服务后，为指定用户的成功文档重建向量索引")
-    parser.add_argument("--user-id", required=True)
+    parser.add_argument("--username", required=True)
     args = parser.parse_args()
     settings = Settings()
     db = Database(settings.data_dir / "knowledge.db")
     try:
         db.initialize()
-        count = reindex(db, settings, user_id=args.user_id)
+        with db.connect() as connection:
+            user_id = require_user_by_username(connection, args.username)["id"]
+        count = reindex(db, settings, user_id=user_id)
     except AppError as exc:
         print(f"重建失败：{exc.code}：{exc.message}")
         return 1

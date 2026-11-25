@@ -14,6 +14,7 @@ from app.errors import AppError
 from app.main import create_app
 from app.services.embeddings import embed, profile, reindex
 from app.services.retrieval import lexical_scores, reciprocal_rank_fusion
+from tests.fakes.helpers import headers, login
 
 
 @pytest.fixture
@@ -81,6 +82,7 @@ def query(client: TestClient, ids: list[str], text: str = "car", **kwargs) -> ht
 def test_semantic_scope_persistence_and_delete(settings, provider, mode):
     settings.retriever = mode
     with TestClient(create_app(settings)) as client:
+        login(client)
         a, b = kb(client, "A"), kb(client, "B")
         doc = upload(client, a, "automobile")
         other = upload(client, b, "car insurance")
@@ -91,9 +93,10 @@ def test_semantic_scope_persistence_and_delete(settings, provider, mode):
         assert response.json()[0]["location"]["kind"] == "txt_lines"
         assert {hit["document_id"] for hit in query(client, [a, b]).json()} == {doc, other}
         calls_before = len(provider)
-        assert query(client, [a], headers={"X-User-Id": "other-user"}).status_code == 404
+        assert query(client, [a], headers=headers(client, "other-user")).status_code == 404
         assert len(provider) == calls_before
     with TestClient(create_app(settings)) as client:
+        login(client)
         assert query(client, [a]).json()[0]["document_id"] == doc
         assert client.delete(f"/api/documents/{doc}").status_code == 204
         assert query(client, [a]).json() == []
@@ -104,6 +107,7 @@ def test_semantic_scope_persistence_and_delete(settings, provider, mode):
 
 def test_hybrid_uses_both_rankings(settings, provider):
     with TestClient(create_app(settings)) as client:
+        login(client)
         a = kb(client)
         semantic = upload(client, a, "automobile")
         lexical = upload(client, a, "car insurance")
@@ -121,6 +125,7 @@ def test_hybrid_uses_both_rankings(settings, provider):
 def test_legacy_index_rebuild_and_profile_change(settings, provider):
     settings.retriever = "cosine"
     with TestClient(create_app(settings)) as client:
+        login(client)
         a = kb(client)
         doc = upload(client, a, "automobile")
         assert provider == []
@@ -145,6 +150,7 @@ def test_provider_timeout_fails_upload_and_search_without_fallback(settings, mon
 
     monkeypatch.setattr(httpx, "post", timeout)
     with TestClient(create_app(settings)) as client:
+        login(client)
         a = kb(client)
         doc = upload(client, a, "automobile")
         status = client.get(f"/api/documents/{doc}").json()
@@ -205,11 +211,14 @@ def test_bm25_and_rrf_math():
 def test_v2_migration_preserves_chunks(settings, provider):
     settings.retriever = "cosine"
     with TestClient(create_app(settings)) as client:
+        login(client)
         a = kb(client)
         doc = upload(client, a, "automobile")
     with sqlite3.connect(settings.data_dir / "knowledge.db") as connection:
         # Rewind to a v2 database: drop what v3 and later migrations added.
         connection.execute("DROP TABLE chunk_embeddings")
+        connection.execute("DROP TABLE sessions")
+        connection.execute("DROP INDEX idx_users_username")
         for table, column in [
             ("tool_calls", "attempt"),
             ("tool_calls", "retry_of"),
@@ -221,10 +230,13 @@ def test_v2_migration_preserves_chunks(settings, provider):
             ("documents", "page_count"),
             ("chunks", "elements"),
             ("messages", "scope_json"),
+            ("users", "username"),
+            ("users", "password_hash"),
         ]:
             connection.execute(f"ALTER TABLE {table} DROP COLUMN {column}")
         connection.execute("PRAGMA user_version=2")
     with TestClient(create_app(settings)) as client:
+        login(client)
         assert client.get(f"/api/documents/{doc}").json()["status"] == "success"
         assert query(client, [a], "automobile").json()[0]["document_id"] == doc
         with client.app.state.db.connect() as connection:
@@ -233,6 +245,7 @@ def test_v2_migration_preserves_chunks(settings, provider):
 
 def test_rebuild_failure_keeps_existing_index(settings, provider, monkeypatch):
     with TestClient(create_app(settings)) as client:
+        login(client)
         a = kb(client)
         upload(client, a, "automobile")
         original_profile = profile(settings)
@@ -273,6 +286,7 @@ def test_missing_configuration_and_http_error(settings, monkeypatch):
 def test_retry_after_embedding_failure(settings, provider):
     settings.embedding_base_url = ""
     with TestClient(create_app(settings)) as client:
+        login(client)
         a = kb(client)
         doc = upload(client, a, "automobile")
         assert client.get(f"/api/documents/{doc}").json()["status"] == "failed"
@@ -284,6 +298,7 @@ def test_retry_after_embedding_failure(settings, provider):
 
 def test_delete_during_embedding_does_not_resurrect_document(settings, monkeypatch):
     with TestClient(create_app(settings)) as client:
+        login(client)
         a = kb(client)
 
         def delete_during_request(url, **kwargs):
@@ -322,6 +337,7 @@ def test_duplicate_provider_indexes_are_rejected(settings, monkeypatch):
 def test_query_embedding_uses_the_short_timeout(settings, provider, monkeypatch):
     """Search must time out before PK_TOOL_TIMEOUT so the tool can fall back to BM25."""
     with TestClient(create_app(settings)) as client:
+        login(client)
         a = kb(client)
         upload(client, a, "automobile")
         settings.embedding_query_timeout = 3

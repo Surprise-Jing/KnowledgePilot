@@ -26,6 +26,12 @@ export interface Location {
   label: string
 }
 
+export interface UserOut {
+  id: string
+  username: string
+  created_at: string
+}
+
 export interface HealthOut {
   status: string
   answer_mode: string

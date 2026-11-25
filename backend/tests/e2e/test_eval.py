@@ -19,6 +19,8 @@ import build_corpus
 import metrics
 import run as eval_run
 
+from tests.fakes.helpers import login
+
 CATEGORY_COUNTS = {
     "单库事实": 4,
     "多库范围": 3,
@@ -260,6 +262,7 @@ def corpus(tmp_path_factory):
         _env_file=None, data_dir=tmp / "data", retriever="cosine", frontend_dir=tmp / "none"
     )
     with TestClient(create_app(settings)) as client:
+        login(client, "eval")
         ids = eval_run.setup_corpus(client, tmp / "corpus")
         yield client, ids
 
@@ -273,25 +276,21 @@ def test_corpus_parses_with_expected_location_kinds(corpus):
         ".docx": {"docx_paragraphs", "docx_table_rows"},
     }
     for filename, document_id in ids.documents.items():
-        document = client.get(f"/api/documents/{document_id}", headers=eval_run.HEADERS).json()
+        document = client.get(f"/api/documents/{document_id}").json()
         assert document["status"] == "success", (filename, document["error"])
-        chunks = client.get(f"/api/documents/{document_id}/chunks", headers=eval_run.HEADERS).json()
+        chunks = client.get(f"/api/documents/{document_id}/chunks").json()
         kinds = {chunk["location"]["kind"] for chunk in chunks}
         assert kinds == expected[Path(filename).suffix], filename
-    pdf = client.get(
-        f"/api/documents/{ids.documents['solar_pilot_report.pdf']}/chunks", headers=eval_run.HEADERS
-    ).json()
+    pdf = client.get(f"/api/documents/{ids.documents['solar_pilot_report.pdf']}/chunks").json()
     assert [chunk["location"]["start"] for chunk in pdf] == [1, 2, 3, 4, 5, 6]
-    handbook = client.get(
-        f"/api/documents/{ids.documents['qinghe_handbook.docx']}/chunks", headers=eval_run.HEADERS
-    ).json()
+    handbook = client.get(f"/api/documents/{ids.documents['qinghe_handbook.docx']}/chunks").json()
     assert any("第二章 远程办公" in chunk["location"]["heading_path"] for chunk in handbook)
 
 
 def test_corpus_folders_are_nested(corpus):
     client, ids = corpus
     kb_id = ids.knowledge_bases["工作资料"]
-    folders = client.get(f"/api/knowledge-bases/{kb_id}/folders", headers=eval_run.HEADERS).json()
+    folders = client.get(f"/api/knowledge-bases/{kb_id}/folders").json()
     by_name = {folder["name"]: folder for folder in folders}
     assert by_name["人事"]["parent_id"] == by_name["制度"]["id"]
 
@@ -302,9 +301,7 @@ def test_corpus_folders_are_nested(corpus):
 )
 def test_relevant_locations_contain_their_anchor(corpus, case_id, spec):
     client, ids = corpus
-    chunks = client.get(
-        f"/api/documents/{ids.documents[spec['file']]}/chunks", headers=eval_run.HEADERS
-    ).json()
+    chunks = client.get(f"/api/documents/{ids.documents[spec['file']]}/chunks").json()
     matching = [c for c in chunks if metrics.location_matches(spec, spec["file"], c["location"])]
     assert matching, f"{case_id}: no chunk at {spec}"
     assert any(spec["anchor"] in chunk["content"] for chunk in matching), case_id

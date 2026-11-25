@@ -79,9 +79,7 @@ def wait_parsed(client, document_ids: dict[str, str], timeout_s: int, poll_s: fl
     deadline = time.monotonic() + timeout_s
     while True:
         statuses = {
-            key: legacy.expect_status(
-                client.get(f"/api/documents/{value}", headers=legacy.HEADERS), 200
-            )
+            key: legacy.expect_status(client.get(f"/api/documents/{value}"), 200)
             for key, value in document_ids.items()
         }
         failed = [key for key, item in statuses.items() if item["status"] == "failed"]
@@ -103,9 +101,7 @@ def _upload_all(client, suite: dataset.Suite, cache: Path, parse_timeout: dict) 
         for doc in manifest["documents"]:
             name = doc["knowledge_base"]
             if name not in ids.knowledge_bases:
-                response = client.post(
-                    "/api/knowledge-bases", headers=legacy.HEADERS, json={"name": name}
-                )
+                response = client.post("/api/knowledge-bases", json={"name": name})
                 ids.knowledge_bases[name] = legacy.expect_status(response, 201)["id"]
             kb = ids.knowledge_bases[name]
             parent = None
@@ -114,7 +110,6 @@ def _upload_all(client, suite: dataset.Suite, cache: Path, parse_timeout: dict) 
                 if key not in folders:
                     response = client.post(
                         f"/api/knowledge-bases/{kb}/folders",
-                        headers=legacy.HEADERS,
                         json={"name": key[1][-1], "parent_id": parent},
                     )
                     folders[key] = legacy.expect_status(response, 201)["id"]
@@ -122,7 +117,6 @@ def _upload_all(client, suite: dataset.Suite, cache: Path, parse_timeout: dict) 
             payload = sources.source_path(suite.documents[doc["id"]], cache).read_bytes()
             response = client.post(
                 f"/api/knowledge-bases/{kb}/documents",
-                headers=legacy.HEADERS,
                 files={"file": (doc["filename"], payload)},
                 data={"folder_id": parent or ""},
             )
@@ -145,6 +139,7 @@ def build_snapshot(
     shutil.rmtree(building, ignore_errors=True)
     building.mkdir(parents=True)
     with TestClient(create_app(settings_factory(building / "data"))) as client:
+        legacy.authorize(client, client.app.state.db)
         ids = _upload_all(client, suite, cache, parse_timeout)
     (building / "ids.json").write_text(json.dumps(asdict(ids), ensure_ascii=False), "utf-8")
     shutil.rmtree(out_dir, ignore_errors=True)
@@ -224,14 +219,14 @@ def agent_group(client, admin, ids: SuiteIds, group: dict, suite: dataset.Suite)
     cases = []
     for case in group["cases"]:
         conversation = legacy.expect_status(
-            client.post("/api/conversations", headers=legacy.HEADERS, json={"title": case["id"]}),
+            client.post("/api/conversations", json={"title": case["id"]}),
             201,
         )["id"]
         turns = []
         for question in case["turns"]:
             for action in question.get("before", []):
                 document = ids.documents[action["document"]]
-                response = admin.delete(f"/api/documents/{document}", headers=legacy.HEADERS)
+                response = admin.delete(f"/api/documents/{document}")
                 legacy.expect_status(response, 204)
             events, ttft, duration = legacy.stream_turn(
                 client,
@@ -308,6 +303,7 @@ def evaluate(args, suite, groups) -> dict:
             ids = copy_snapshot(snapshot, Path(tmp))
             settings = legacy.make_settings(args.env_file, Path(tmp), retriever=args.retriever)
             with TestClient(create_app(settings)) as client:
+                legacy.authorize(client, client.app.state.db)
                 extra = load_extra_queries(suite) if not args.groups else []
                 result["rows"] = retrieval_rows(client, ids, suite, groups, args.top_k, extra)
             result["settings"] = describe_settings(settings)
@@ -321,12 +317,14 @@ def evaluate(args, suite, groups) -> dict:
                 )
                 if not settings.llm_model:
                     raise ValueError("Agent 评测需要配置真实模型；请提供 --env-file")
+                app = create_app(settings)
                 with (
-                    legacy.LiveServer(create_app(settings)) as server,
+                    legacy.LiveServer(app) as server,
                     httpx.Client(
                         base_url=server.base_url, timeout=legacy.REQUEST_TIMEOUT_SECONDS
                     ) as client,
                 ):
+                    legacy.authorize(client, app.state.db)
                     for group in members:
                         print(f"[suite] r{repeat_index + 1} {group['id']}", file=sys.stderr)
                         row = agent_group(client, client, ids, group, suite)

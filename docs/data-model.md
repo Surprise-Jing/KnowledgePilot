@@ -32,7 +32,8 @@ erDiagram
 
 | 表 | 关键字段 | 约束与说明 |
 | --- | --- | --- |
-| `users` | `id`、`name` | `id` 由请求头 `X-User-Id` 传入，只允许字母、数字、`_` 和 `-`，最长 64 位；首次出现时自动创建 |
+| `users` | `id`、`name`、`username`、`password_hash` | 注册时生成 UUID 作为 `id`；`username` 大小写不敏感唯一；`password_hash` 为 scrypt 加盐哈希，v7 之前的老用户为空，需用 `python -m app.users set-password` 设置 |
+| `sessions` | `id`、`user_id`、`token_hash`、`created_at`、`expires_at` | 登录会话；只存令牌的 SHA-256，随用户级联删除 |
 | `knowledge_bases` | `id`、`user_id`、`name`、`created_at`、`updated_at` | `user_id` 外键；删除用户时级联删除其知识库 |
 | `folders` | `id`、`knowledge_base_id`、`parent_id`、`name` | 同一父目录下名称唯一（根目录同样适用）；不能把自己设为父目录；删除知识库时级联删除 |
 
@@ -108,5 +109,5 @@ erDiagram
 维度和手动 revision 的 SHA-256，不包含 API Key。
 
 v2 → v3 仅新增表，原文和成功状态不变，迁移过程不调用模型。旧数据需显式执行
-`python -m app.reindex --user-id <用户ID>`。向量与片段在同一个数据库中，无新增
+`python -m app.reindex --username <用户名>`。向量与片段在同一个数据库中，无新增
 `vectors/` 目录；当前执行精确余弦扫描，适用于小规模本地应用，不是 ANN。

@@ -17,6 +17,8 @@ from pypdf import PdfReader
 from suite import dataset
 from suite import run as suite_run
 
+from tests.fakes.helpers import headers, login
+
 PDF_SOURCE = "Opening value 1.00 CNY\n=== page ===\nClosing value 2.00 CNY"
 TXT_SOURCE = "标题\n第一段\n全年保持增长\n其他内容"
 DOCX_SOURCE = "# 第一章 总则\n第一条 本法适用于证券发行。"
@@ -149,9 +151,10 @@ def test_snapshot_copy_isolates_deletions(snapshot, tmp_path):
     for name, delete in (("a", True), ("b", False)):
         ids = suite_run.copy_snapshot(path, tmp_path / name)
         with TestClient(create_app(settings_for(tmp_path / name))) as client:
+            login(client, "eval")
             if delete:
                 response = client.delete(
-                    f"/api/documents/{ids.documents['rpt']}", headers={"X-User-Id": "eval"}
+                    f"/api/documents/{ids.documents['rpt']}", headers=headers(client, "eval")
                 )
                 assert response.status_code == 204
             rows = suite_run.retrieval_rows(client, ids, suite, suite.groups[:1], 10)
@@ -169,6 +172,7 @@ def test_retrieval_rows_cover_evidence_groups(snapshot, tmp_path):
     extra = [{"id": "q1", "question": "全年保持增长", "knowledge_base": "基金",
               "supporting": [{"document": "notes", "line": 3, "anchor": "全年保持增长"}]}]  # fmt: skip
     with TestClient(create_app(settings_for(tmp_path / "data"))) as client:
+        login(client, "eval")
         rows = suite_run.retrieval_rows(client, ids, suite, suite.groups, 10, extra)
     by_id = {row["id"]: row for row in rows}
     assert by_id["G01-1"]["evidence_groups"] == 1
@@ -192,6 +196,7 @@ def test_agent_group_with_scripted_llm_produces_judged_cases(snapshot, tmp_path)
         ]
     )
     with TestClient(create_app(settings_for(tmp_path / "data"))) as client:
+        login(client, "eval")
         client.app.state.llm_factory = scripted_factory(llm)
         row = suite_run.agent_group(client, client, ids, suite.groups[0], suite)
     case = row["cases"][0]

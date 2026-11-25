@@ -5,7 +5,7 @@
 ## 命令行注册
 
 ```bash
-claude mcp add --transport stdio --env PK_MCP_USER_ID=demo knowledgepilot \
+claude mcp add --transport stdio --env PK_MCP_USERNAME=demo knowledgepilot \
   -- uv run --directory <ABS_REPO>/backend python -m app.mcp_server
 ```
 

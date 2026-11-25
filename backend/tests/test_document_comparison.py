@@ -13,6 +13,7 @@ from tests.fakes.helpers import (
     headers,
     install_embeddings,
     install_llm,
+    login,
     make_conversation,
     make_kb,
     make_settings,
@@ -26,6 +27,7 @@ from tests.fakes.llm import ScriptedLLM, text, tool_call
 def corpus(tmp_path):
     settings = make_settings(tmp_path, retriever="bm25")
     with TestClient(create_app(settings)) as client:
+        login(client)
         kb = make_kb(client)
         other_kb = make_kb(client, "另一个库")
         other_user_kb = make_kb(client, "其他用户", user="bob")
@@ -152,6 +154,7 @@ def test_vector_scoped_search_ignores_unselected_unindexed_documents(tmp_path, m
     )
     install_embeddings(monkeypatch)
     with TestClient(create_app(settings)) as client:
+        login(client)
         kb = make_kb(client)
         a = upload(client, kb, "a.txt", "原文A")
         b = upload(client, kb, "b.txt", "原文B")
@@ -193,6 +196,7 @@ def test_hybrid_candidate_cutoff_preserves_a_lower_ranked_target(tmp_path, monke
     )
     install_embeddings(monkeypatch)
     with TestClient(create_app(settings)) as client:
+        login(client)
         kb = make_kb(client)
         a = upload(client, kb, "a.txt", "检索A")
         b = upload(client, kb, "b.txt", "检索B")
@@ -253,6 +257,7 @@ def test_embedding_fallback_retains_document_filter(tmp_path, monkeypatch):
 
     settings = make_settings(tmp_path, retriever="bm25")
     with TestClient(create_app(settings)) as client:
+        login(client)
         kb = make_kb(client)
         upload(client, kb, "a.txt", "检索原文A")
         b = upload(client, kb, "b.txt", "检索原文B")
@@ -283,7 +288,7 @@ def test_two_report_comparison_citations_survive_history_reload(corpus):
     citations = [payload for name, payload in events if name == "citation"]
     assert [item["marker"] for item in citations] == ["c1", "c2"]
     assert {item["document_id"] for item in citations} == {a, b}
-    messages = client.get(f"/api/conversations/{conversation}", headers=headers()).json()[
+    messages = client.get(f"/api/conversations/{conversation}", headers=headers(client)).json()[
         "messages"
     ]
     assert messages[-1]["citations"] == citations

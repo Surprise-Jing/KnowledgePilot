@@ -2,7 +2,7 @@ import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 # Schema v1. Statements run one by one inside the migration transaction
 # (executescript would commit implicitly). The table design is documented in docs/data-model.md.
@@ -249,13 +249,35 @@ def _migrate_v6(connection):
     connection.execute("ALTER TABLE messages ADD COLUMN scope_json TEXT")
 
 
+def _migrate_v7(connection):
+    """Password login (docs/contracts.md v1.11). Existing users keep their id and data; the
+    username starts as the old id and the password stays NULL until set with app.users.
+    Old ids that differ only in case cannot share a username: only the smallest keeps one."""
+    connection.execute("ALTER TABLE users ADD COLUMN username TEXT")
+    connection.execute("ALTER TABLE users ADD COLUMN password_hash TEXT")
+    connection.execute("""
+        UPDATE users SET username = id
+        WHERE id = (SELECT min(other.id) FROM users other WHERE lower(other.id) = lower(users.id))
+    """)
+    connection.execute("CREATE UNIQUE INDEX idx_users_username ON users(username COLLATE NOCASE)")
+    connection.execute("""CREATE TABLE sessions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        token_hash TEXT NOT NULL UNIQUE,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        expires_at TEXT NOT NULL
+    )""")
+    connection.execute("CREATE INDEX idx_sessions_user ON sessions(user_id)")
+
+
 MIGRATIONS = {
-    6: _migrate_v6,
     1: _migrate_v1,
     2: _migrate_v2,
     3: _migrate_v3,
     4: _migrate_v4,
     5: _migrate_v5,
+    6: _migrate_v6,
+    7: _migrate_v7,
 }
 
 

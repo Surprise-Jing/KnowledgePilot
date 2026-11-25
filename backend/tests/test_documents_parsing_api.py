@@ -12,6 +12,7 @@ from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
 from app.config import Settings
 from app.main import create_app
+from tests.fakes.helpers import headers, login
 
 
 def pdf_bytes(text="Knowledge retrieval"):
@@ -43,6 +44,7 @@ def settings(tmp_path):
 @pytest.fixture
 def client(settings):
     with TestClient(create_app(settings)) as client:
+        login(client)
         yield client
 
 
@@ -137,7 +139,7 @@ def test_original_file_inline(client, kb_id):
     assert response.headers["content-type"] == "application/pdf"
     assert response.headers["content-disposition"].startswith("inline")
     assert response.content == data
-    other = client.get(f"/api/documents/{document_id}/file", headers={"X-User-Id": "other"})
+    other = client.get(f"/api/documents/{document_id}/file", headers=headers(client, "other"))
     assert other.status_code == 404
 
 

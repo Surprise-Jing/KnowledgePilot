@@ -27,7 +27,7 @@ DEFAULT_BACKEND = Path(__file__).resolve().parents[3] / "backend"
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="KnowledgePilot MCP 调用示例")
     parser.add_argument("--query", required=True, help="search_chunks 的检索语句")
-    parser.add_argument("--user", default=None, help="用户标识（PK_MCP_USER_ID），默认 demo")
+    parser.add_argument("--user", default=None, help="已注册的用户名（PK_MCP_USERNAME），默认 demo")
     parser.add_argument("--top-k", type=int, default=3, help="返回片段数，1–10，默认 3")
     parser.add_argument(
         "--document-id", default=None, help="要阅读的文档 ID；默认取第一个检索结果所在文档"
@@ -52,7 +52,7 @@ def server_parameters(args: argparse.Namespace) -> StdioServerParameters:
     env = {key: value for key, value in os.environ.items() if key.startswith("PK_")}
     env["PYTHONPATH"] = str(backend)
     if args.user:
-        env["PK_MCP_USER_ID"] = args.user
+        env["PK_MCP_USERNAME"] = args.user
     if args.data_dir:
         env["PK_DATA_DIR"] = str(args.data_dir.resolve())
     return StdioServerParameters(

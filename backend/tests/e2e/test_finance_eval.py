@@ -9,6 +9,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.fakes.helpers import headers, login
+
 EVAL_DIR = Path(__file__).resolve().parents[3] / "eval"
 sys.path.insert(0, str(EVAL_DIR))
 
@@ -266,13 +268,14 @@ def test_finance_runner_upload_search_and_sse_with_injected_test_model(tmp_path)
         _env_file=None, data_dir=tmp_path, retriever="cosine", frontend_dir=tmp_path / "none"
     )
     with TestClient(create_app(settings)) as client:
+        login(client, "eval")
         ids = setup_corpus(client, MANIFEST, dataset.CACHE)
         retrieval = retrieval_case(client, ids, CASES[0], EVIDENCE, DOCUMENTS, 10)
         assert retrieval["evidence_groups"] == len(required_groups(CASES[0]))
         assert retrieval["covered_groups"] > 0
         document_id = ids.documents[DOCUMENTS["s50_2025q1"]["filename"]]
         chunks = client.get(
-            f"/api/documents/{document_id}/chunks", headers={"X-User-Id": "eval"}
+            f"/api/documents/{document_id}/chunks", headers=headers(client, "eval")
         ).json()
         evidence = EVIDENCE["s50_2025q1.performance_return"]
         ordinal = next(

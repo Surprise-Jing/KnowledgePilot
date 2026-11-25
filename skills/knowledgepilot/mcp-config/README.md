@@ -6,7 +6,7 @@
 | --- | --- |
 | `<ABS_REPO>` | 本仓库的绝对路径 |
 | `<ABS_PATH_TO_UV>` | `uv` 的绝对路径（`which uv` 查看）；图形界面应用通常拿不到 shell 的 `PATH` |
-| `demo` | `PK_MCP_USER_ID`，以哪个用户身份访问知识库 |
+| `demo` | `PK_MCP_USERNAME`，以哪个用户身份访问知识库 |
 
 Server 以 `backend/` 为工作目录启动，会读取 `backend/.env`（与 Web 应用相同，检索策略与 Embedding 配置都从那里来），不要把密钥写进这些客户端配置。只想用关键词检索、不配置任何服务时，在 `env` 中加 `"PK_RETRIEVER": "bm25"`。
 
@@ -22,7 +22,7 @@ Server 以 `backend/` 为工作目录启动，会读取 `backend/.env`（与 Web
 
 ```bash
 npx @modelcontextprotocol/inspector \
-  -e PK_MCP_USER_ID=demo \
+  -e PK_MCP_USERNAME=demo \
   uv run --directory <ABS_REPO>/backend python -m app.mcp_server
 ```
 

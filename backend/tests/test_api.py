@@ -10,6 +10,7 @@ from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
 from app.config import Settings
 from app.main import create_app
+from tests.fakes.helpers import login
 
 
 @pytest.fixture
@@ -20,6 +21,7 @@ def settings(tmp_path):
 @pytest.fixture
 def client(settings):
     with TestClient(create_app(settings)) as client:
+        login(client)
         yield client
 
 
@@ -113,12 +115,14 @@ def test_docx_and_pdf(client):
 
 def test_persistence_and_interrupted_job(settings):
     with TestClient(create_app(settings)) as client:
+        login(client)
         a = kb(client)
         document_id = upload(client, a)
         broken = upload(client, a, "broken.pdf", b"broken")
         with client.app.state.db.connect() as connection:
             connection.execute("UPDATE documents SET status='parsing' WHERE id=?", (broken,))
     with TestClient(create_app(settings)) as client:
+        login(client)
         assert client.post("/api/search", json=query(a)).json()[0]["document_id"] == document_id
         status = client.get(f"/api/documents/{broken}").json()
         assert status["status"] == "failed" and "中断" in status["error"]
@@ -129,6 +133,7 @@ def test_model_adapter_and_failures(settings, monkeypatch):
     settings.llm_model = "test-model"
     settings.llm_api_key = SecretStr("test-key")
     with TestClient(create_app(settings)) as client:
+        login(client)
         a = kb(client)
         upload(client, a)
 
@@ -155,6 +160,7 @@ def test_model_adapter_and_failures(settings, monkeypatch):
 def test_size_limit(settings):
     settings.max_upload_bytes = 4
     with TestClient(create_app(settings)) as client:
+        login(client)
         a = kb(client)
         response = client.post(
             f"/api/knowledge-bases/{a}/documents", files={"file": ("a.txt", b"12345")}

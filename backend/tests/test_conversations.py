@@ -12,6 +12,7 @@ from tests.fakes.helpers import (
     ask,
     headers,
     install_llm,
+    login,
     make_conversation,
     make_kb,
     make_settings,
@@ -29,6 +30,7 @@ def settings(tmp_path):
 @pytest.fixture
 def client(settings):
     with TestClient(create_app(settings)) as client:
+        login(client)
         yield client
 
 
@@ -66,15 +68,21 @@ def test_list_orders_by_recent_activity(client):
 
 def test_conversations_are_private(client):
     mine = make_conversation(client, user="alice")
-    assert client.get("/api/conversations", headers=headers("bob")).json() == []
+    assert client.get("/api/conversations", headers=headers(client, "bob")).json() == []
     error_of(
-        client.get(f"/api/conversations/{mine}", headers=headers("bob")),
+        client.get(f"/api/conversations/{mine}", headers=headers(client, "bob")),
         404,
         "conversation_not_found",
     )
     # Deleting someone else's conversation is a no-op that still answers 204.
-    assert client.delete(f"/api/conversations/{mine}", headers=headers("bob")).status_code == 204
-    assert client.get(f"/api/conversations/{mine}", headers=headers("alice")).status_code == 200
+    assert (
+        client.delete(f"/api/conversations/{mine}", headers=headers(client, "bob")).status_code
+        == 204
+    )
+    assert (
+        client.get(f"/api/conversations/{mine}", headers=headers(client, "alice")).status_code
+        == 200
+    )
     kb = make_kb(client, user="bob")
     install_llm(client, ScriptedLLM([]))
     error_of(ask(client, mine, "问题", [kb], user="bob"), 404, "conversation_not_found")
@@ -103,6 +111,7 @@ def test_pre_stream_errors_are_json(client):
 def test_model_not_configured_is_a_json_error(tmp_path):
     settings = make_settings(tmp_path, llm_model="")
     with TestClient(create_app(settings)) as client:
+        login(client)
         assert client.app.state.llm_factory is None
         kb = make_kb(client)
         conversation = make_conversation(client)
@@ -275,7 +284,7 @@ def test_rename_conversation_preserves_messages_and_checks_owner(client):
     after = client.get(f"/api/conversations/{conversation}").json()
     assert after["messages"] == before["messages"]
     denied = client.patch(
-        f"/api/conversations/{conversation}", json={"title": "越权"}, headers=headers("bob")
+        f"/api/conversations/{conversation}", json={"title": "越权"}, headers=headers(client, "bob")
     )
     error_of(denied, 404, "conversation_not_found")
     for title in ["   ", "x" * 101]:

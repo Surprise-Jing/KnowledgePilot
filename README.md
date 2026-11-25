@@ -13,7 +13,7 @@ P0 主流程已完成，P1 已实现 MCP＋Skill、工具失败降级、评测�
 ### 已实现
 
 **知识库、目录与文件**
-- 通过请求头 `X-User-Id` 区分用户（缺省为 `demo`，前端可切换），所有数据按用户隔离，访问他人数据返回“不存在”。本地演示用，不做认证。
+- 用户名 + 密码注册登录，会话保存在 HttpOnly Cookie 中；所有数据按用户隔离，访问他人数据返回“不存在”。账号管理（为老用户设置密码、删除用户）用 `uv run --directory backend python -m app.users`，见 [docs/backend.md](docs/backend.md#账号与登录)。
 - 知识库创建、列表、重命名、删除（同时清理原文件）。
 - 任意层级目录：创建、重命名、移动（防止移动成环）、删除（非空目录需确认递归删除）。
 - 文件上传到指定目录、按目录列出、重命名、在同一知识库内移动、删除；删除操作幂等。
@@ -45,7 +45,7 @@ P0 主流程已完成，P1 已实现 MCP＋Skill、工具失败降级、评测�
 - 会话、消息、调用轨迹、引用快照持久化。
 
 **前端**（Vite + React + shadcn/ui）
-- 用户切换、知识库与目录树、文件管理与解析状态、对话（多选知识库、流式回答、停止）、引用面板（查看原文）、工具轨迹面板。
+- 登录/注册与账号菜单、知识库与目录树、文件管理与解析状态、对话（多选知识库、流式回答、停止）、引用面板（查看原文）、工具轨迹面板。
 - 回答中的连续引用聚合为可展开的来源组；引用面板将同文档相邻位置分组，保留各条原文快照和独立定位，历史回答同样可用。
 
 **多文档对比与引用聚合**（P1）
@@ -64,8 +64,8 @@ P0 主流程已完成，P1 已实现 MCP＋Skill、工具失败降级、评测�
 
 **MCP＋Skill**（P1）
 - 自带 stdio MCP Server（服务名 `knowledgepilot`），与应用内 Agent 共用同一工具注册表，参数、错误码、权限和降级完全一致。
-- 启动：`PK_MCP_USER_ID=demo uv run --directory backend python -m app.mcp_server`（通常由 MCP 客户端自动拉起）。
-- Claude Code：`claude mcp add --transport stdio --env PK_MCP_USER_ID=demo knowledgepilot -- uv run --directory <仓库绝对路径>/backend python -m app.mcp_server`。
+- 启动：`PK_MCP_USERNAME=demo uv run --directory backend python -m app.mcp_server`（通常由 MCP 客户端自动拉起）。
+- Claude Code：`claude mcp add --transport stdio --env PK_MCP_USERNAME=demo knowledgepilot -- uv run --directory <仓库绝对路径>/backend python -m app.mcp_server`。
 - 不需要 AI 客户端的调用示例：`uv run --directory backend python ../skills/knowledgepilot/scripts/demo_client.py --query "删除文档时如何清理索引"`。
 - Skill 包与更多客户端配置见 [skills/knowledgepilot/](skills/knowledgepilot/)。MCP Server 启动时只做数据库迁移，可与 Web 应用同时运行。
 
@@ -141,7 +141,7 @@ PK_EMBEDDING_DIMENSIONS=1024
 已有文档切换到 vector/hybrid 后需补建向量；先停止应用，再为每个用户执行：
 
 ```bash
-uv run --directory backend python -m app.reindex --user-id demo
+uv run --directory backend python -m app.reindex --username demo
 ```
 
 更换 Embedding 服务、模型或维度后也需重建；同名模型更新权重时提升

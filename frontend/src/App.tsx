@@ -1,4 +1,4 @@
-import { BrainCircuitIcon, FilesIcon, LibraryIcon, MenuIcon, MessagesSquareIcon, PanelRightIcon, XIcon } from 'lucide-react'
+import { BrainCircuitIcon, CircleOffIcon, FilesIcon, LibraryIcon, MenuIcon, MessagesSquareIcon, PanelRightIcon, XIcon } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 
 import { listFolders } from '@/api/folders'
@@ -9,12 +9,16 @@ import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Toaster } from '@/components/ui/sonner'
+import { Spinner } from '@/components/ui/spinner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { UserSwitcher } from '@/components/user-switcher'
+import { UserMenu } from '@/components/user-menu'
 import { ChatSources } from '@/features/chat/ChatSources'
 import { ChatScopeProvider } from '@/features/chat/ChatScopeProvider'
 import { ChatView } from '@/features/chat/ChatView'
+import { AuthPage } from '@/features/auth/AuthPage'
+import { AuthProvider } from '@/features/auth/AuthProvider'
+import { useAuth } from '@/features/auth/auth-context'
 import { DocumentViewer } from '@/features/citations/DocumentViewer'
 import { InspectorPanel } from '@/features/citations/InspectorPanel'
 import { InspectorProvider } from '@/features/citations/InspectorProvider'
@@ -23,41 +27,54 @@ import { FilesView } from '@/features/files/FilesView'
 import { KnowledgeSidebar } from '@/features/knowledge/KnowledgeSidebar'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { useResource } from '@/hooks/use-resource'
-import { getCurrentUser, setCurrentUser } from '@/lib/user'
 
 export default function App() {
-  const [userId, setUserId] = useState(getCurrentUser)
-  const switchUser = (next: string) => {
-    if (next === userId) return
-    setCurrentUser(next)
-    setUserId(next)
-  }
   return (
     <TooltipProvider>
-      <ErrorProvider>
-        {(banner) => (
-          // Keyed by user: switching users drops all state and reloads every list (isolation demo).
-          <InspectorProvider key={userId}>
-            <ChatScopeProvider><Workspace userId={userId} onSwitchUser={switchUser} banner={banner} /></ChatScopeProvider>
-          </InspectorProvider>
-        )}
-      </ErrorProvider>
+      <AuthProvider>
+        <ErrorProvider>{(banner) => <AuthGate banner={banner} />}</ErrorProvider>
+      </AuthProvider>
       <Toaster position="top-center" />
     </TooltipProvider>
   )
 }
 
+function AuthGate({ banner }: { banner: ReactNode }) {
+  const { state, retry } = useAuth()
+  if (state.status === 'loading') {
+    return (
+      <div className="flex h-svh items-center justify-center bg-background text-muted-foreground">
+        <Spinner className="size-6" aria-label="正在加载" />
+      </div>
+    )
+  }
+  if (state.status === 'error') {
+    return (
+      <div className="flex h-svh items-center justify-center bg-background p-4">
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon"><CircleOffIcon /></EmptyMedia>
+            <EmptyTitle>无法连接服务</EmptyTitle>
+            <EmptyDescription>{state.error.message}</EmptyDescription>
+          </EmptyHeader>
+          <Button onClick={retry}>重试</Button>
+        </Empty>
+      </div>
+    )
+  }
+  if (state.status === 'anonymous') return <AuthPage expired={state.expired} />
+  const { user } = state
+  return (
+    // Keyed by user: signing in as someone else drops all state and reloads every list.
+    <InspectorProvider key={user.id}>
+      <ChatScopeProvider><Workspace username={user.username} banner={banner} /></ChatScopeProvider>
+    </InspectorProvider>
+  )
+}
+
 type CenterView = 'files' | 'chat'
 
-function Workspace({
-  userId,
-  onSwitchUser,
-  banner,
-}: {
-  userId: string
-  onSwitchUser: (userId: string) => void
-  banner: ReactNode
-}) {
+function Workspace({ username, banner }: { username: string; banner: ReactNode }) {
   const isWide = useMediaQuery('(min-width: 1280px)')
   const isMedium = useMediaQuery('(min-width: 768px)')
   const { panelOpen, setPanelOpen } = useInspector()
@@ -111,7 +128,7 @@ function Workspace({
         </div>
         <div className="ml-auto flex items-center gap-2">
           <HealthBadge />
-          <UserSwitcher userId={userId} onChange={onSwitchUser} />
+          <UserMenu username={username} />
           {view === 'chat' && (
             <Button
               size="icon-sm"

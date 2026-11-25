@@ -6,6 +6,7 @@ from pathlib import Path
 import httpx
 
 from app.config import Settings
+from app.services import auth
 from tests.fakes.llm import ScriptedLLM, scripted_factory
 
 
@@ -63,12 +64,40 @@ def install_embeddings(monkeypatch) -> FakeEmbeddings:
     return fake
 
 
-def headers(user: str = "demo") -> dict:
-    return {"X-User-Id": user}
+def _session_token(client, user: str) -> str:
+    """A real session for `user` (created without a password if new), cached per app. Going
+    through the session table keeps every test on the production authentication path while
+    skipping the deliberately slow password hash."""
+    state = client.app.state
+    if not hasattr(state, "test_sessions"):
+        state.test_sessions = {}
+    tokens = state.test_sessions
+    if user not in tokens:
+        with client.app.state.db.connect() as connection:
+            connection.execute(
+                "INSERT OR IGNORE INTO users(id, name, username) VALUES (?, ?, ?)",
+                (user, user, user),
+            )
+            tokens[user] = auth.create_session(connection, user, ttl_days=1)
+    return tokens[user]
+
+
+def login(client, user: str = "demo"):
+    """Make `user` the client's default identity (its session cookie). Call after entering
+    the TestClient context, which runs the migrations."""
+    client.cookies.set(auth.SESSION_COOKIE, _session_token(client, user))
+    return client
+
+
+def headers(client, user: str = "demo") -> dict:
+    """Per-request identity; an explicit Cookie header takes precedence over the client's."""
+    return {"Cookie": f"{auth.SESSION_COOKIE}={_session_token(client, user)}"}
 
 
 def make_kb(client, name: str = "库", user: str = "demo") -> str:
-    response = client.post("/api/knowledge-bases", json={"name": name}, headers=headers(user))
+    response = client.post(
+        "/api/knowledge-bases", json={"name": name}, headers=headers(client, user)
+    )
     assert response.status_code == 201, response.text
     return response.json()["id"]
 
@@ -77,19 +106,21 @@ def upload(client, kb_id: str, name: str, text: str, user: str = "demo") -> str:
     response = client.post(
         f"/api/knowledge-bases/{kb_id}/documents",
         files={"file": (name, text.encode())},
-        headers=headers(user),
+        headers=headers(client, user),
     )
     assert response.status_code == 202, response.text
     document_id = response.json()["id"]
     # TestClient runs background tasks before returning, so parsing has finished.
-    status = client.get(f"/api/documents/{document_id}", headers=headers(user)).json()["status"]
+    status = client.get(f"/api/documents/{document_id}", headers=headers(client, user)).json()[
+        "status"
+    ]
     assert status == "success"
     return document_id
 
 
 def make_conversation(client, user: str = "demo", title: str | None = None) -> str:
     body = {} if title is None else {"title": title}
-    response = client.post("/api/conversations", json=body, headers=headers(user))
+    response = client.post("/api/conversations", json=body, headers=headers(client, user))
     assert response.status_code == 201, response.text
     return response.json()["id"]
 
@@ -122,5 +153,5 @@ def ask(client, conversation_id: str, content: str, kb_ids: list[str], user: str
     return client.post(
         f"/api/conversations/{conversation_id}/messages",
         json={"content": content, "knowledge_base_ids": kb_ids},
-        headers=headers(user),
+        headers=headers(client, user),
     )

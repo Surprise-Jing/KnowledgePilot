@@ -11,6 +11,7 @@ from app.config import Settings
 from app.logging_setup import JsonFormatter, request_id_var
 from app.main import create_app
 from app.schemas import FolderUpdate
+from tests.fakes.helpers import login
 
 
 @pytest.fixture
@@ -23,6 +24,7 @@ def settings(tmp_path):
 @pytest.fixture
 def client(settings):
     with TestClient(create_app(settings), raise_server_exceptions=False) as client:
+        login(client)
         yield client
 
 
@@ -105,6 +107,7 @@ def test_frontend_build_is_served_without_shadowing_api(tmp_path):
     (dist / "index.html").write_text("<!doctype html><title>KP</title>", encoding="utf-8")
     settings = Settings(_env_file=None, data_dir=tmp_path / "data", frontend_dir=dist)
     with TestClient(create_app(settings)) as client:
+        login(client)
         assert "<title>KP</title>" in client.get("/").text
         assert client.get("/health").json()["status"] == "ok"
         assert client.get("/api/knowledge-bases").status_code == 200
@@ -113,6 +116,7 @@ def test_frontend_build_is_served_without_shadowing_api(tmp_path):
 def test_missing_frontend_build_means_api_only(tmp_path):
     settings = Settings(_env_file=None, data_dir=tmp_path, frontend_dir=tmp_path / "none")
     with TestClient(create_app(settings)) as client:
+        login(client)
         assert client.get("/").status_code == 404
         assert client.get("/health").status_code == 200
 

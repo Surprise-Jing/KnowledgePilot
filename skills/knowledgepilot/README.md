@@ -21,7 +21,7 @@ uv sync --directory backend          # 安装后端依赖（含官方 mcp SDK）
 ## 2. 启动 MCP Server（stdio）
 
 ```bash
-PK_MCP_USER_ID=demo uv run --directory backend python -m app.mcp_server
+PK_MCP_USERNAME=demo uv run --directory backend python -m app.mcp_server
 ```
 
 通常不需要手动启动：MCP 客户端会按配置自动拉起。手动启动后它会等待 stdin 上的 JSON-RPC 消息，`Ctrl-C` 退出。
@@ -31,7 +31,7 @@ PK_MCP_USER_ID=demo uv run --directory backend python -m app.mcp_server
 见 [mcp-config/README.md](mcp-config/README.md)。Claude Code 最简方式：
 
 ```bash
-claude mcp add --transport stdio --env PK_MCP_USER_ID=demo knowledgepilot \
+claude mcp add --transport stdio --env PK_MCP_USERNAME=demo knowledgepilot \
   -- uv run --directory <ABS_REPO>/backend python -m app.mcp_server
 mkdir -p ~/.claude/skills && ln -s <ABS_REPO>/skills/knowledgepilot ~/.claude/skills/knowledgepilot
 ```
@@ -54,7 +54,7 @@ uv run --directory backend python ../skills/knowledgepilot/scripts/demo_client.p
 | 参数 | 说明 |
 | --- | --- |
 | `--query` | 必填，检索语句 |
-| `--user` | 用户标识，覆盖 `PK_MCP_USER_ID`（默认 `demo`） |
+| `--user` | 用户标识，覆盖 `PK_MCP_USERNAME`（默认 `demo`） |
 | `--top-k` | 检索片段数，默认 3 |
 | `--document-id` | 指定要阅读的文档，默认取第一个命中 |
 | `--data-dir` | 数据目录，覆盖 `PK_DATA_DIR`（默认 `backend/data`） |

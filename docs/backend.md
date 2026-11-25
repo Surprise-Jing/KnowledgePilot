@@ -4,7 +4,7 @@
 
 后端已实现知识库创建和列表、文档上传、异步解析、片段持久化、按库检索、单轮回答及来源返回，供后续前端和 Agent 接入。在首日最小闭环的基础上，数据模型已升级到 v1：按用户隔离数据，位置改为结构化字段，并为目录、会话和调用轨迹预留了表。这不代表全部 P0/P1 已完成。表结构见[数据模型设计](./data-model.md)。
 
-- 请求通过 `X-User-Id` 请求头标识用户，缺省时使用 `PK_DEFAULT_USER_ID`（默认 `demo`）。所有知识库、文档和检索操作只能访问自己的数据，访问他人数据返回 404。这是本地演示用的身份传递方式，不做身份认证。
+- 用户通过 `/api/auth/register`、`/api/auth/login` 登录，会话令牌放在 HttpOnly Cookie `kp_session` 中（数据库只存其 SHA-256）。除 `/health` 与登录相关接口外，所有 `/api/*` 需要有效会话，否则返回 401 `unauthenticated`。所有知识库、文档和检索操作只能访问自己的数据，访问他人数据返回 404。
 - 文件支持 TXT（UTF-8 或 GBK）、文本型 PDF、DOCX（段落和表格）。暂不支持旧版 `.doc`、OCR、图片和嵌套表格内容提取。
 - 解析状态为 `queued → parsing → success / failed`，失败可重试。
 - 同一知识库内按 SHA-256 去重，重复上传返回已有记录；失败记录需要显式重试。
@@ -71,7 +71,10 @@ uv run --directory backend uvicorn app.main:app --host 127.0.0.1 --port 8000
 | 可选环境变量 | 默认值 | 用途 |
 | --- | --- | --- |
 | `PK_DATA_DIR` | `data` | 数据库和原文件目录，相对于进程工作目录 |
-| `PK_DEFAULT_USER_ID` | `demo` | 请求未携带 `X-User-Id` 时使用的用户 |
+| `PK_SESSION_TTL_DAYS` | `30` | 登录会话有效期（天） |
+| `PK_COOKIE_SECURE` | `false` | 会话 Cookie 是否只经 HTTPS 发送；部署在 HTTPS 之后时设为 `true` |
+| `PK_ALLOW_REGISTRATION` | `true` | 是否开放网页注册 |
+| `PK_MCP_USERNAME` | `demo` | MCP Server 以哪个已注册用户的身份运行 |
 | `PK_LLM_TIMEOUT` | `45` | 模型请求超时秒数 |
 | `PK_LLM_STREAM` | `true` | 模型服务不支持流式工具调用时设为 `false` |
 | `PK_AGENT_MAX_STEPS` | `6` | Agent 最大执行步数 |
@@ -87,7 +90,7 @@ uv run --directory backend uvicorn app.main:app --host 127.0.0.1 --port 8000
 | `PK_EMBEDDING_BATCH_SIZE` | `32` | 每批最多文本数量 |
 | `PK_EMBEDDING_REVISION` | `1` | 同名模型变更权重后手动提升，并重建 |
 | `PK_RETRIEVAL_CANDIDATES` | `50` | 混合检索每路候选数量，至少为 top_k |
-| `PK_MCP_USER_ID` | `demo` | MCP Server 访问知识库时的用户 |
+| `PK_MCP_USERNAME` | `demo` | MCP Server 访问知识库时的用户 |
 | `PK_MAX_UPLOAD_BYTES` | `10485760` | 上传大小限制，默认 10 MiB |
 | `PK_LOG_LEVEL` | `INFO` | 日志级别 |
 | `PK_ANSWER_MODE` | `extractive` | 仅影响调试接口 `/api/chat`：`extractive` 为摘录，`openai` 为调用模型 |
@@ -106,7 +109,7 @@ vector/hybrid 上传时会将解析片段发给 Embedding 服务，检索时发�
 原子提交、外键级联删除。当前使用精确扫描而非 ANN，时间和内存随所选范围片段数增长。
 
 旧数据迁移仅新增表，不发送历史文档。切换配置后先停止应用，然后执行
-`uv run --directory backend python -m app.reindex --user-id demo`（替换为实际用户）。
+`uv run --directory backend python -m app.reindex --username demo`（替换为实际用户）。
 只处理该用户 success 文档，逐文档提交；失败时该文档旧向量保留，已完成的其他文档不回滚。
 failed 文档走 retry API 重新解析；重建命令保留 chunk ID 与历史引用。
 
@@ -128,9 +131,32 @@ failed 文档走 retry API 重新解析；重建命令保留 chunk ID 与历史�
 - 接口：上传表单 `parse_mode`；`POST /api/documents/{id}/reparse`；`GET /api/documents/{id}/markdown`；`GET /api/documents/{id}/file`。
 - 测试：门禁通过 `tests/conftest.py` 把 PDF/DOCX 换成离线替身解析器（pypdf/python-docx，dev 依赖）；真实 Docling 测试 `PK_RUN_DOCLING_TESTS=1 uv run --directory backend pytest tests/e2e/test_docling_real.py`（需已下载模型）。
 
+## 账号与登录
+
+先注册（或登录）并把会话 Cookie 保存到文件，之后的 curl 命令加 `-b cookies.txt`：
+
+```bash
+curl -c cookies.txt -X POST http://127.0.0.1:8000/api/auth/register \
+  -H 'Content-Type: application/json' -d '{"username":"alice","password":"secret123"}'
+curl -b cookies.txt http://127.0.0.1:8000/api/auth/me
+```
+
+- 用户名 3–32 位字母、数字、`_`、`-`，大小写不敏感唯一；密码 8–128 位，需同时包含字母和数字，用标准库 scrypt 加盐哈希保存。
+- 同一用户名 15 分钟内登录失败 5 次后返回 429 `too_many_attempts`（进程内计数，重启清零）；修改用户名/密码、注销账号时输错当前密码也计入。
+- 登录后可在右上角账号菜单中修改用户名、修改密码、退出登录和注销账号。
+- 数据库升级到 v7 之前已存在的用户保留原数据，但没有密码，需要先设置。账号管理命令需在服务停止时运行：
+
+```bash
+uv run --directory backend python -m app.users list
+uv run --directory backend python -m app.users set-password demo
+uv run --directory backend python -m app.users delete alice --yes
+```
+
+`set-password` 会注销该用户已有的全部会话；`delete` 删除用户及其知识库、文档文件和会话，不可恢复。
+
 ## 最小闭环演示
 
-推荐先使用 Swagger 页面按顺序操作，也可以使用以下命令。将响应中的实际 ID 替换到后续命令中。
+推荐先使用 Swagger 页面按顺序操作，也可以使用以下命令。将响应中的实际 ID 替换到后续命令中。以下命令需先按上一节登录，并给每条 curl 加 `-b cookies.txt`。
 
 ### 1. 创建知识库
 
@@ -167,7 +193,7 @@ curl -X POST http://127.0.0.1:8000/api/search \
 
 每个结果包含 `chunk_id`、`document_id`、`knowledge_base_id`、`filename`、`content`、`location` 和 `score`。`location` 是结构化对象，`location.label` 是可直接展示的位置文本，例如 `第 1–3 行`。
 
-以上命令未携带 `X-User-Id`，均以默认用户 `demo` 操作。加上 `-H 'X-User-Id: alice'` 即以 alice 身份操作；用 bob 的身份检索 alice 的知识库会返回 404。
+以上命令需要先登录并带上会话 Cookie，见下文“账号与登录”。用 bob 的会话检索 alice 的知识库会返回 404。
 
 ### 4. 获取回答
 
@@ -184,6 +210,10 @@ curl -X POST http://127.0.0.1:8000/api/chat \
 | 方法 | 路径 | 功能 |
 | --- | --- | --- |
 | GET | `/health` | 健康检查和回答模式 |
+| POST | `/api/auth/register` / `/api/auth/login` / `/api/auth/logout` | 注册 / 登录 / 退出（会话 Cookie） |
+| GET | `/api/auth/me` | 当前登录用户 |
+| PATCH / DELETE | `/api/auth/me` | 修改用户名 / 注销账号（需当前密码） |
+| POST | `/api/auth/password` | 修改密码（需当前密码，其他会话随之失效） |
 | POST / GET | `/api/knowledge-bases` | 创建 / 列出知识库 |
 | POST / GET | `/api/knowledge-bases/{id}/documents` | 上传 / 列出文档 |
 | GET | `/api/documents/{id}` | 查询文档与解析状态 |
@@ -193,7 +223,7 @@ curl -X POST http://127.0.0.1:8000/api/chat \
 | POST | `/api/search` | 按一个或多个知识库检索 |
 | POST | `/api/chat` | 单轮检索问答 |
 
-业务错误结构为 `{"error":{"code":"...","message":"..."}}`。参数校验错误使用 FastAPI 默认的 HTTP 422 `detail` 结构。常见状态码：400 空文件或用户标识不合法、404 资源不存在、409 不可重试、413 文件过大、415 格式不支持、502 模型调用或引用失败、503 模型未配置、504 模型超时。
+业务错误结构为 `{"error":{"code":"...","message":"..."}}`。参数校验错误使用 FastAPI 默认的 HTTP 422 `detail` 结构。常见状态码：400 空文件或用户名/密码不合规、401 未登录或用户名密码错误、404 资源不存在、409 不可重试、413 文件过大、415 格式不支持、502 模型调用或引用失败、503 模型未配置、504 模型超时。
 
 ## 测试
 

@@ -7,27 +7,29 @@ from fastapi.testclient import TestClient
 
 from app.config import Settings
 from app.main import create_app
+from tests.fakes.helpers import headers, login
 
 
 @pytest.fixture
 def client(tmp_path):
     with TestClient(create_app(Settings(_env_file=None, data_dir=tmp_path))) as client:
+        login(client)
         yield client
 
 
-def as_user(user):
-    return {"X-User-Id": user}
-
-
 def make_kb(client, name="库", user="demo"):
-    response = client.post("/api/knowledge-bases", json={"name": name}, headers=as_user(user))
+    response = client.post(
+        "/api/knowledge-bases", json={"name": name}, headers=headers(client, user)
+    )
     assert response.status_code == 201, response.text
     return response.json()["id"]
 
 
 def create_folder(client, kb_id, name, parent_id=None, user="demo"):
     payload = {"name": name} if parent_id is None else {"name": name, "parent_id": parent_id}
-    return client.post(f"/api/knowledge-bases/{kb_id}/folders", json=payload, headers=as_user(user))
+    return client.post(
+        f"/api/knowledge-bases/{kb_id}/folders", json=payload, headers=headers(client, user)
+    )
 
 
 def make_folder(client, kb_id, name, parent_id=None, user="demo"):
@@ -37,13 +39,13 @@ def make_folder(client, kb_id, name, parent_id=None, user="demo"):
 
 
 def folders(client, kb_id, user="demo"):
-    response = client.get(f"/api/knowledge-bases/{kb_id}/folders", headers=as_user(user))
+    response = client.get(f"/api/knowledge-bases/{kb_id}/folders", headers=headers(client, user))
     assert response.status_code == 200, response.text
     return response.json()
 
 
 def patch(client, folder_id, payload, user="demo"):
-    return client.patch(f"/api/folders/{folder_id}", json=payload, headers=as_user(user))
+    return client.patch(f"/api/folders/{folder_id}", json=payload, headers=headers(client, user))
 
 
 def upload(client, kb_id, name, text, folder_id=None):
@@ -118,7 +120,7 @@ def test_create_validates_names_and_parents(client, tree):
 
 def test_other_users_cannot_see_or_use_folders(client, tree):
     kb_id, ids = tree
-    response = client.get(f"/api/knowledge-bases/{kb_id}/folders", headers=as_user("bob"))
+    response = client.get(f"/api/knowledge-bases/{kb_id}/folders", headers=headers(client, "bob"))
     assert response.status_code == 404 and error_code(response) == "knowledge_base_not_found"
     response = create_folder(client, kb_id, "入侵", user="bob")
     assert response.status_code == 404 and error_code(response) == "knowledge_base_not_found"
@@ -243,7 +245,9 @@ def test_recursive_delete_removes_subtree_and_files(client, tree):
 def test_delete_is_idempotent_and_ignores_foreign_folders(client, tree):
     kb_id, ids = tree
     assert (
-        client.delete(f"/api/folders/{ids['a']}?recursive=true", headers=as_user("bob")).status_code
+        client.delete(
+            f"/api/folders/{ids['a']}?recursive=true", headers=headers(client, "bob")
+        ).status_code
         == 204
     )
     assert len(folders(client, kb_id)) == 5

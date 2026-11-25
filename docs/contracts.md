@@ -1,12 +1,12 @@
-# KnowledgePilot 共享契约 v1.10
+# KnowledgePilot 共享契约 v1.12
 
 > **只有主 Agent（Tech Lead）可以修改本文件。** Subagent 发现契约不合理或缺失时，停止相关部分，在返回报告的“是否修改公共接口”中写明建议，由主 Agent 决定并更新本文件与变更记录。
 >
-> 对应代码：请求/响应模型 `backend/app/schemas.py`，错误类型 `backend/app/errors.py`，配置 `backend/app/config.py`，数据库 `backend/app/db.py`（schema v6）。代码与本文冲突时以本文为准，并报告主 Agent。
+> 对应代码：请求/响应模型 `backend/app/schemas.py`，错误类型 `backend/app/errors.py`，配置 `backend/app/config.py`，数据库 `backend/app/db.py`（schema v7）。代码与本文冲突时以本文为准，并报告主 Agent。
 
 ## 1. 通用约定
 
-- **身份**：请求头 `X-User-Id`（`[A-Za-z0-9_-]{1,64}`），缺省用 `PK_DEFAULT_USER_ID`。仅用于本地演示，不做认证。
+- **身份**：用户名 + 密码登录后的会话（HttpOnly Cookie `kp_session`，见 §15）。除 `/health`、`/api/auth/register|login|logout` 与前端静态文件外，所有 `/api/*` 需要有效会话，否则 401 `unauthenticated`。不再接受 `X-User-Id`。
 - **权限**：所有资源按知识库的 `user_id` 校验。他人资源一律表现为“不存在”（404 / `*_not_found`），不泄露是否存在。
 - **ID**：UUID 字符串。**时间**：SQLite `CURRENT_TIMESTAMP` 文本（UTC，`YYYY-MM-DD HH:MM:SS`）。
 - **请求追踪**：每个响应带 `X-Request-Id`（请求可自带，否则生成）。日志为 JSON 行，含 `request_id`、`run_id`。日志不得输出密钥和文档全文。
@@ -26,7 +26,15 @@
 | code | HTTP | 场景 | retryable |
 | --- | --- | --- | --- |
 | `invalid_argument` | 422 | 请求体/参数校验失败；工具参数非法 | 否 |
-| `invalid_user_id` | 400 | `X-User-Id` 格式不合法 | 否 |
+| `unauthenticated` | 401 | 没有会话、会话无效或已过期 | 否 |
+| `invalid_credentials` | 401 | 用户名或密码错误（不区分哪一项） | 否 |
+| `invalid_username` | 400 | 用户名不符合 `[A-Za-z0-9_-]{3,32}` | 否 |
+| `weak_password` | 400 | 密码不足 8 位、超过 128 位或未同时包含字母和数字 | 否 |
+| `username_taken` | 409 | 用户名已被占用（大小写不敏感） | 否 |
+| `registration_closed` | 403 | `PK_ALLOW_REGISTRATION=false` 时注册 | 否 |
+| `too_many_attempts` | 429 | 同一用户名 15 分钟内登录失败 5 次 | 是 |
+| `wrong_password` | 403 | 修改用户名/密码或注销账号时当前密码错误（计入登录失败限流） | 否 |
+| `user_not_found` | —（本地工具） | MCP / 管理命令指定的用户名不存在 | 否 |
 | `empty_file` | 400 | 上传空文件 | 否 |
 | `knowledge_base_not_found` | 404 | 知识库不存在或不属于当前用户 | 否 |
 | `folder_not_found` | 404 | 目录不存在、不属于当前用户或不在同一知识库 | 否 |
@@ -242,7 +250,7 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 ## 6. MCP（Round 2，E 负责）
 
 - 官方 Python SDK `mcp`，stdio 传输，服务名 `knowledgepilot`。启动：`uv run --directory backend python -m app.mcp_server`。
-- 用户身份 `PK_MCP_USER_ID`；`allowed_kb_ids` 为该用户全部知识库；数据目录同 `PK_DATA_DIR`。
+- 用户身份 `PK_MCP_USERNAME`（已注册的用户名，不存在则启动失败，MCP 不创建用户）；`allowed_kb_ids` 为该用户全部知识库；数据目录同 `PK_DATA_DIR`。
 - 暴露 5.2 中全部工具，名称、参数 Schema、错误码与应用内完全一致（直接复用注册表）。错误以 `isError: true` 返回 `ToolError` JSON。
 - Skill 包：`skills/knowledgepilot/SKILL.md`（适用场景、工具说明、调用示例、MCP 客户端配置示例）。
 - 每次 `call_tool` 新建 `ToolContext`：`settings` 为应用配置，`allowed_kb_ids` 为调用时该用户的全部知识库，`run_id=None`，`markers` 在一个 MCP 会话内复用（同一片段在会话内标记稳定）。
@@ -253,7 +261,7 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 
 - 开发：Vite 开发服务器 5173，代理 `/api`、`/health` 到 `http://127.0.0.1:8000`，无需 CORS。
 - 发布：`npm run build` 输出 `frontend/dist`，由 FastAPI 在 `/` 托管（主 Agent 集成时接入）。
-- 所有请求带 `X-User-Id`（前端用户切换器，存 `localStorage`），错误按第 2 节的 `error.code` 区分“用户可修正”与“系统错误”展示。
+- 未登录显示登录/注册页；请求以 `credentials: 'same-origin'` 携带会话 Cookie，任一请求返回 `unauthenticated` 即回到登录页（§15）。错误按第 2 节的 `error.code` 区分“用户可修正”与“系统错误”展示。
 - `frontend/src/api/types.ts` 必须与 `schemas.py` 一致；契约变更由主 Agent 同步通知 C。
 
 ## 8. 变更记录
@@ -268,7 +276,11 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 | v1.5 | 2026-11-23 | 明确内部异常、未完成工具调用、max_steps 的 run 记录方式（采纳 B1 报告） |
 | v1.6 | 2026-11-23 | 工具失败降级（§10）；schema v4 轨迹字段；SSE `tool_call.attempt/retry_of`、`tool_result.fallback`、`done.degraded`；MCP 细化（§6） |
 | v1.7 | 2026-11-23 | 结构化解析（§11）：PDF/DOCX 改用 Docling，`Location.elements`、`DocumentOut.parse_mode/parser/page_count`；上传 `parse_mode`；新接口 reparse / markdown / file；错误码 `document_busy`、`markdown_not_available`；schema v5 |
-| v1.10 | 2026-11-24 | 会话重命名接口；前端资料有效性检查、会话管理与运行状态显示（§14） |\n| v1.9 | 2026-11-24 | 自动检索与知识库/目录/文档范围；scope 快照、服务端强制边界与 schema v6（§13） |\n| v1.8 | 2026-11-23 | 多文档对比（§12）：检索支持 document_ids、按文档轮流取结果、保留跨文档相同内容来源；连续引用展开全部来源、相邻位置分组。无新增迁移 |
+| v1.12 | 2026-11-25 | 账号管理（§15）：修改用户名、修改密码、注销账号；错误码 `wrong_password`。无新增迁移 |
+| v1.11 | 2026-11-24 | 用户注册登录（§15）：会话 Cookie 取代 `X-User-Id`，删除 `PK_DEFAULT_USER_ID`，`PK_MCP_USER_ID` 改为 `PK_MCP_USERNAME`；新增认证错误码；schema v7（`users.username/password_hash`、`sessions`） |
+| v1.10 | 2026-11-24 | 会话重命名接口；前端资料有效性检查、会话管理与运行状态显示（§14） |
+| v1.9 | 2026-11-24 | 自动检索与知识库/目录/文档范围；scope 快照、服务端强制边界与 schema v6（§13） |
+| v1.8 | 2026-11-23 | 多文档对比（§12）：检索支持 document_ids、按文档轮流取结果、保留跨文档相同内容来源；连续引用展开全部来源、相邻位置分组。无新增迁移 |
 
 ## 9. 检索策略与向量持久化
 
@@ -281,7 +293,7 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 - schema v3 新增 `chunk_embeddings`；真实向量存于同一个 `knowledge.db`，使用小端 float32 BLOB 和精确扫描，不是 ANN 索引或独立向量数据库服务。片段外键级联清理向量。
 - vector/hybrid 模式的入库只有在全部向量生成并与片段原子提交后才标 success；失败标 failed 并可重试，不回退假向量或词频结果。
 - 向量签名包含服务地址、模型、维度和 `PK_EMBEDDING_REVISION`，不含密钥；同名模型更换权重时手动提升 revision。配置签名不匹配或旧数据没有向量时返回 409，不隐式调用模型重建历史数据。
-- 停止应用后执行 `uv run --directory backend python -m app.reindex --user-id demo`，为该用户所有 success 文档补建/重建向量；逐文档事务，失败保留该文档旧向量，已完成文档不会回滚。模型故障不自动降级。检索服务层 `search` 本身同样不降级、只报错；唯一的降级是 §10.2 中工具层显式、可见的 BM25 替代。重建不改片段 ID，保留引用映射。
+- 停止应用后执行 `uv run --directory backend python -m app.reindex --username demo`，为该用户所有 success 文档补建/重建向量；逐文档事务，失败保留该文档旧向量，已完成文档不会回滚。模型故障不自动降级。检索服务层 `search` 本身同样不降级、只报错；唯一的降级是 §10.2 中工具层显式、可见的 BM25 替代。重建不改片段 ID，保留引用映射。
 
 
 ## 10. 工具失败降级（P1，B2 负责）
@@ -361,3 +373,18 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 - PATCH /api/conversations/{id}，请求 ConversationUpdate {title: string(1–100)}，去除首尾空白且不可全空；返回 ConversationOut。
 - 归属校验与读取会话一致，越权/不存在返回 conversation_not_found；只更新标题和 updated_at，不修改消息、引用或范围快照。
 - 前端资料状态刷新/发送前检查仅提供更及时的反馈，最终权限与检索边界仍由服务端校验；失效选择不得自动丢弃或扩大范围。
+
+## 15. 用户注册与登录（v1.11）
+
+- 接口：`POST /api/auth/register`（201）、`POST /api/auth/login`（200），请求体 `Credentials {username, password}`，返回 `UserOut {id, username, created_at}` 并设置会话 Cookie；`POST /api/auth/logout` 删除当前会话、清 Cookie，幂等 204；`GET /api/auth/me` 返回 `UserOut`，未登录 401。注册即登录；同一浏览器再次登录会替换旧会话。
+- Cookie：`kp_session`，`HttpOnly`、`SameSite=Lax`、`Path=/`、`Max-Age = PK_SESSION_TTL_DAYS` 天，`Secure` 由 `PK_COOKIE_SECURE` 控制。令牌不出现在响应体中。
+- 存储：`sessions` 只存令牌 SHA-256，固定到期（不滑动）；登录时清理该用户的过期会话。密码用标准库 scrypt（N=2^14, r=8, p=1, 16 字节盐）保存为 `scrypt$N$r$p$salt$hash`，用户 API 永不返回。
+- 规则：用户名 `[A-Za-z0-9_-]{3,32}`，按原样保存，大小写不敏感唯一；密码 8–128 位且同时含字母和数字。用户不存在、未设密码和密码错误统一返回 `invalid_credentials`，并执行同样的哈希计算。登录限流见 §2 `too_many_attempts`（进程内计数）。
+- 注册开关 `PK_ALLOW_REGISTRATION`（默认开）。新用户 `id` 为 UUID；v7 迁移保留老用户 `id` 与数据，`username` 取原 `id`（仅大小写不同的多个 ID 只有最小者获得用户名），`password_hash` 为空、不能登录，需用 `python -m app.users set-password <用户名>` 设置。
+- 服务层：`services/auth.py`（注册、认证、会话、设置密码、删除用户）。`deps.current_user` 读 Cookie 并返回 `user_id: str`，下游路由、服务、工具与 Agent 的接口不变。
+- 本地工具不经过 HTTP：MCP 用 `PK_MCP_USERNAME`，向量重建用 `python -m app.reindex --username`，账号管理用 `python -m app.users list | set-password | delete`（需在服务停止时运行）。
+- 账号管理（v1.12，均需登录）：
+  - `PATCH /api/auth/me`，`UsernameChange {username, current_password}` → `UserOut`。`id` 不变，所拥有的资源不变；可只改大小写；重名 `username_taken`。
+  - `POST /api/auth/password`，`PasswordChange {current_password, new_password}` → 204。新密码不得与当前相同（`weak_password`）；成功后撤销该用户除当前会话外的全部会话。
+  - `DELETE /api/auth/me`，`PasswordConfirmation {password}` → 204 并清 Cookie；删除用户及其全部知识库、文档文件、会话与登录会话，不可恢复。
+  - 修改用户名、修改密码、注销账号都要再次校验当前密码，错误为 403 `wrong_password`（不是 401，前端不会因此退出登录），失败次数与登录共用 §2 `too_many_attempts` 限流。

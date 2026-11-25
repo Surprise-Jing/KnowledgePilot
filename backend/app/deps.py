@@ -4,12 +4,12 @@ create_app(settings) in tests gets an isolated instance."""
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import Depends, Header, Request
+from fastapi import Cookie, Depends, Request
 
 from app.config import Settings
 from app.db import Database
 from app.parsers.registry import ParserRegistry
-from app.services.access import ensure_user
+from app.services import auth
 
 
 def get_settings(request: Request) -> Settings:
@@ -32,15 +32,19 @@ def get_parsers(request: Request) -> ParserRegistry:
     return request.app.state.parsers
 
 
+def get_login_throttle(request: Request) -> auth.LoginThrottle:
+    return request.app.state.login_throttle
+
+
 def current_user(
     request: Request,
-    x_user_id: Annotated[
-        str | None, Header(description="用户标识；缺省时使用 PK_DEFAULT_USER_ID")
+    session: Annotated[
+        str | None, Cookie(alias=auth.SESSION_COOKIE, description="登录会话（HttpOnly Cookie）")
     ] = None,
 ) -> str:
-    settings = get_settings(request)
+    """The logged-in user's id; 401 `unauthenticated` without a live session."""
     with get_db(request).connect() as connection:
-        return ensure_user(connection, x_user_id or settings.default_user_id)
+        return auth.resolve_session(connection, session)
 
 
 AppSettings = Annotated[Settings, Depends(get_settings)]
@@ -49,3 +53,4 @@ UploadDir = Annotated[Path, Depends(get_upload_dir)]
 Parsers = Annotated[ParserRegistry, Depends(get_parsers)]
 ArtifactsRoot = Annotated[Path, Depends(get_artifacts_root)]
 User = Annotated[str, Depends(current_user)]
+LoginThrottleDep = Annotated[auth.LoginThrottle, Depends(get_login_throttle)]

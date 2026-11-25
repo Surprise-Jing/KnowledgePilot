@@ -5,7 +5,13 @@ export type ErrorKind = 'user' | 'system'
 /** Errors the user can fix by changing input; shown in place or as a toast (brief §6.1). */
 const USER_FIXABLE = new Set([
   'invalid_argument',
-  'invalid_user_id',
+  'invalid_username',
+  'weak_password',
+  'username_taken',
+  'invalid_credentials',
+  'registration_closed',
+  'too_many_attempts',
+  'wrong_password',
   'name_conflict',
   'folder_cycle',
   'folder_not_empty',
