@@ -134,7 +134,4 @@ Agent 结果保存完整回答、引用快照、调用摘要、延迟、Token �
 实际 CLI 评测使用产品的 Docling 解析器，不注入参考解析器。证据匹配允许 Docling 表格增加
 Markdown 竖线分隔符，但仍要求文件、页码和完整事实行匹配，不更改金标准数值。
 
-多文档对比与引用聚合的两道真实模型冒烟记录见
-[P1 交付报告](../../docs/reviews/2026-11-24-multidoc-citations.md)，不等同于全量 24 题评测通过。
-
-本轮结果与限制见 `BASELINE.md`；全部题目及参考要点见 `CASES.md`。
+检索基线与限制见 `BASELINE.md`；全部题目及参考要点见 `CASES.md`。

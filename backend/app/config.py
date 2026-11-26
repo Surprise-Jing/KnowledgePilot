@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     agent_max_steps: int = Field(default=6, ge=1, le=20)
     tool_timeout: float = Field(default=15, gt=0)
     context_budget_chars: int = Field(default=24000, ge=2000)
-    # Retrieval strategy, switchable for evaluation (docs/tasks.md Round 2).
+    # Retrieval strategy, switchable for evaluation (docs/contracts.md §9).
     retriever: Literal["cosine", "bm25", "vector", "hybrid"] = "cosine"
     embedding_base_url: str = ""
     embedding_model: str = "bge-m3"

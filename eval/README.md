@@ -1,20 +1,19 @@
 # 评测（eval/）
 
-本目录有三套评测，**最终提交与答辩使用的是 `eval/suite/`（评测集 v2）**。另外两套是开发过程中的产物：一套已并入 v2，一套只作为 pytest 回归用例保留。
+本目录有三套评测。**综合评测集 `eval/suite/` 是主评测集**；金融复杂任务集的题目已全部并入综合评测集，回归评测集作为 pytest 回归用例使用。
 
-| 目录 | 名称 | 定位 | 是否计入最终评测报告 |
+| 目录 | 名称 | 定位 | 是否计入评测报告 |
 | --- | --- | --- | --- |
-| `suite/` | **评测集 v2：20 组真实资料评测** | **最终评测集**：8 个真实公开资料知识库，20 组 75 题，覆盖 9 个考察维度 | **是** |
-| `finance/` | 易方达真实披露复杂任务 v1（24 题） | P1 阶段的人工标注评测，24 题已原样迁入 v2 的 G01–G04；保留其自身的基线记录和测试 | 否（由 v2 的 G01–G04 代替） |
-| `cases.jsonl`、`corpus/`、`run.py`、`metrics.py`、`build_corpus.py` | D2 虚构语料回归集（20 题） | 自行撰写的虚构资料，用来验证 P0 功能链路；作为 pytest 回归用例 | 否 |
+| `suite/` | **综合评测集：20 组真实资料评测** | **主评测集**：8 个真实公开资料知识库，20 组 75 题，覆盖 9 个考察维度 | **是** |
+| `finance/` | 金融复杂任务集（24 题） | 易方达官方季报的人工标注评测，24 题已原样并入综合评测集的 G01–G04；保留其自身的检索基线和测试 | 否（由 G01–G04 代替） |
+| `cases.jsonl`、`corpus/`、`run.py`、`metrics.py`、`build_corpus.py` | 回归评测集（20 题） | 自行撰写的虚构资料，用来验证 P0 功能链路；作为 pytest 回归用例 | 否 |
 
-设计与过程文档：
+相关文档：
 
-- 设计：[docs/superpowers/specs/2026-11-24-eval-suite-v2-design.md](../docs/superpowers/specs/2026-11-24-eval-suite-v2-design.md)
-- 实施计划：[docs/superpowers/plans/2026-11-24-eval-suite-v2.md](../docs/superpowers/plans/2026-11-24-eval-suite-v2.md)
+- 评测设计：[系统设计文档 §10](../docs/design.md#10-评测设计)
 - 考察维度统计：[docs/eval-suite-dimensions.md](../docs/eval-suite-dimensions.md)
 - 逐题审阅清单：[suite/REVIEW.md](suite/REVIEW.md)
-- 评测报告：[docs/eval-report.md](../docs/eval-report.md)（目前仍是 D2 基线，v2 跑完后重写）
+- 评测报告：[docs/eval-report.md](../docs/eval-report.md)
 
 ---
 
@@ -194,14 +193,14 @@ uv run --directory backend pytest tests/e2e -q -k suite
 - KB6 合并后，TXT 片段常含 2～3 个条目，检索难度高于逐条目版本；合并前后的检索数字不可比较。
 - D5（8 题）、D9（5 题）题量较少；带追问轮的指代题只有 7 道，且都是两轮。
 - 模型评审在 Claude Code 会话内完成，可以用同一说明和评审包复核，但不能一条命令自动复跑。
-- 运行器经真实 HTTP 接口入库和提问，身份认证方式跟随产品接口；产品改为登录会话认证后，三套评测的运行器都以先登录、再用会话身份请求的方式访问接口。
+- 运行器经真实 HTTP 接口入库和提问：先注册或登录，再以会话身份请求接口。
 
 ---
 
-## 2. `finance/`：易方达真实披露复杂任务 v1
+## 2. `finance/`：金融复杂任务集
 
-两只 ETF、四份季报、24 题、137 个要点、142 条事实锚点，按“查询分解 / 多文档对比 / 引用聚合 / 口径与边界”四类人工标注。v2 通过 `suite.dataset.import_finance` 原样迁入 G01–G04，题目、要点、数值和锚点都不变。本目录保留它自己的检索基线（`BASELINE.md`、`retrieval-baseline.json`）和测试（`backend/tests/e2e/test_finance_eval.py`），说明见 [finance/README.md](finance/README.md)。
+两只 ETF、四份季报、24 题、137 个要点、142 条事实锚点，按“查询分解 / 多文档对比 / 引用聚合 / 口径与边界”四类人工标注。综合评测集通过 `suite.dataset.import_finance` 原样导入为 G01–G04，题目、要点、数值和锚点都不变。本目录保留它自己的检索基线（`BASELINE.md`、`retrieval-baseline.json`）和测试（`backend/tests/e2e/test_finance_eval.py`），说明见 [finance/README.md](finance/README.md)。
 
-## 3. D2 虚构语料回归集
+## 3. 回归评测集
 
-`corpus/` 中 5 份自行撰写的虚构资料（CC0）、`cases.jsonl` 20 题，由 `build_corpus.py` 生成 DOCX/PDF，`run.py` + `metrics.py` 运行。用来验证 P0 功能链路（单库、多库、多轮指代、工具选择、引用定位、无结果、异常）。这套题已经全部通过、区分不出好坏，语料只有 21 个片段，因此**不计入最终评测报告**，只作为 `backend/tests/e2e/test_eval.py` 的回归用例。语料说明见 [corpus/README.md](corpus/README.md)，历史基线见 `docs/eval-report.md` 当前版本。
+`corpus/` 中 5 份自行撰写的虚构资料（CC0）、`cases.jsonl` 20 题，由 `build_corpus.py` 生成 DOCX/PDF，`run.py` + `metrics.py` 运行。用来验证 P0 功能链路（单库、多库、多轮指代、工具选择、引用定位、无结果、异常）。语料只有 21 个片段，区分度有限，因此**不计入综合评测结论**，作为 `backend/tests/e2e/test_eval.py` 的回归用例。语料说明见 [corpus/README.md](corpus/README.md)，运行结果见 [docs/eval-report.md](../docs/eval-report.md)。
