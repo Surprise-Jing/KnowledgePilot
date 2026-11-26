@@ -294,3 +294,31 @@ def test_two_report_comparison_citations_survive_history_reload(corpus):
     assert messages[-1]["citations"] == citations
     assert json.loads(llm.messages(1)[-1]["content"])["data"]["document_coverage"]
     assert "文档×维度" in llm.messages(0)[0]["content"]
+
+
+def test_scope_document_list_filters_without_balancing(tmp_path):
+    # Selecting a whole library expands the chat scope into every document. That list must only
+    # restrict the search; balancing one hit per document is for an explicit `document_ids`,
+    # otherwise the first documents in scope order win whatever the query says.
+    settings = make_settings(tmp_path, retriever="bm25")
+    with TestClient(create_app(settings)) as client:
+        login(client)
+        kb = make_kb(client)
+        weak = [upload(client, kb, f"杂项{i}.txt", f"苹果和香蕉的第{i}种吃法。") for i in range(4)]
+        strong = upload(client, kb, "导演.txt", "苹果 苹果 David Yates 是一名电影导演。")
+        ctx = ToolContext(
+            db=client.app.state.db,
+            settings=settings,
+            user_id="demo",
+            allowed_kb_ids=[kb],
+            allowed_document_ids=[*weak, strong],
+        )
+        result = execute(ctx, "search_chunks", {"query": "David Yates 苹果", "top_k": 2})
+        assert result.ok
+        assert result.data["hits"][0]["document_id"] == strong
+        assert "document_coverage" not in result.data
+        # An explicit list still takes one hit from each named document, in the given order.
+        explicit = execute(
+            ctx, "search_chunks", {"query": "David Yates 苹果", "document_ids": [weak[0], strong]}
+        )
+        assert [hit["document_id"] for hit in explicit.data["hits"]] == [weak[0], strong]

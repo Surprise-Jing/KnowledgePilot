@@ -102,6 +102,10 @@ def search(
         ids = validate_scope(connection)
         placeholders = ",".join("?" for _ in ids)
         document_ids = list(dict.fromkeys(request.document_ids or allowed_document_ids or []))
+        # Only documents the caller named are balanced one hit each. A scope list (a whole
+        # selected library expands to every document) just filters: balancing it would rank
+        # by scope order, since each document's own best chunk ties at the same fused score.
+        balanced_ids = list(dict.fromkeys(request.document_ids or []))
         document_filter = (
             f" AND d.id IN ({','.join('?' for _ in document_ids)})" if document_ids else ""
         )
@@ -150,11 +154,11 @@ def search(
     if settings.retriever == "hybrid":
         limit = max(request.top_k, settings.retrieval_candidates)
         lexical_order, dense_order = ranked(lexical), ranked(dense)
-        if len(document_ids) > 1:
+        if len(balanced_ids) > 1:
             # The candidate cutoff must be per document too; balancing only the final hits
             # cannot recover a source already excluded from both global candidate lists.
             fused = {}
-            for document_id in document_ids:
+            for document_id in balanced_ids:
                 fused.update(
                     reciprocal_rank_fusion(
                         [
@@ -171,10 +175,10 @@ def search(
     hits = []
     seen = set()
     order = ranked(scores)
-    if len(document_ids) > 1:
+    if len(balanced_ids) > 1:
         # Reserve one relevant result for each requested source before adding depth. The
         # total top_k limit still applies, and a document with no match contributes nothing.
-        by_document = {document_id: [] for document_id in document_ids}
+        by_document = {document_id: [] for document_id in balanced_ids}
         for index in order:
             row = rows[index]
             key = (row["document_id"], row["content"])
