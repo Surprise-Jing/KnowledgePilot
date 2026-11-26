@@ -12,6 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.agent import loop
+from app.agent.prompts import FINAL_EVIDENCE_HEADER, FINAL_STEP_PROMPT
 from app.errors import AppError
 from app.main import create_app
 from app.tools import builtin
@@ -241,7 +242,42 @@ def test_out_of_scope_tool_call(client, kb):
     assert only(events, "tool_result")[0]["error"]["code"] == "out_of_scope"
 
 
+def test_last_step_offers_no_tools_and_answers(tmp_path):
+    settings = make_settings(tmp_path, agent_max_steps=2)
+    with TestClient(create_app(settings)) as client:
+        login(client)
+        kb = make_kb(client)
+        llm = install_llm(
+            client,
+            ScriptedLLM(
+                [
+                    [tool_call("search_chunks", {"query": "a"})],
+                    text("资料不足，只能确认部分内容。"),
+                ]
+            ),
+        )
+        conversation = make_conversation(client)
+        events = read_sse(ask(client, conversation, "问题", [kb]))
+        assert llm.calls[0]["tools"] and llm.calls[1]["tools"] == []
+        assert FINAL_STEP_PROMPT in llm.contents(1, "system")[0]
+        assert FINAL_STEP_PROMPT not in llm.contents(0, "system")[0]
+        # The search result reaches the last step as text, not as a tool round trip.
+        final = llm.messages(1)
+        assert [m["role"] for m in final] == ["system", "user"]
+        assert FINAL_EVIDENCE_HEADER in final[-1]["content"]
+        assert '"ok": true' in final[-1]["content"]
+        assert "error" not in names(events)
+        done = events[-1][1]
+        assert done["stop_reason"] == "answered" and done["step_count"] == 2
+        message = client.get(f"/api/conversations/{conversation}").json()["messages"][-1]
+        assert (
+            message["status"] == "completed"
+            and message["content"] == "资料不足，只能确认部分内容。"
+        )
+
+
 def test_max_steps(tmp_path):
+    # A model that requests tools on the toolless last step still ends with max_steps_reached.
     settings = make_settings(tmp_path, agent_max_steps=2)
     with TestClient(create_app(settings)) as client:
         login(client)
@@ -267,8 +303,23 @@ def test_max_steps(tmp_path):
         # Text produced so far is kept and the message counts as completed.
         assert message["status"] == "completed" and message["content"] == "先查 [c1]"
         run = client.get(f"/api/runs/{done['run_id']}").json()
-        assert run["stop_reason"] == "max_steps" and len(run["tool_calls"]) == 2
+        # The tool requested on the last step is not executed.
+        assert run["stop_reason"] == "max_steps" and len(run["tool_calls"]) == 1
         assert run["dropped_citations"] == ["c1"]
+
+
+def test_single_step_budget_keeps_tools(tmp_path):
+    # With one step there is nothing to answer from yet, so that step keeps its tools.
+    settings = make_settings(tmp_path, agent_max_steps=1)
+    with TestClient(create_app(settings)) as client:
+        login(client)
+        kb = make_kb(client)
+        llm = install_llm(client, ScriptedLLM([[tool_call("search_chunks", {"query": "a"})]]))
+        conversation = make_conversation(client)
+        events = read_sse(ask(client, conversation, "问题", [kb]))
+        assert llm.calls[0]["tools"]
+        assert FINAL_STEP_PROMPT not in llm.contents(0, "system")[0]
+        assert events[-1][1]["stop_reason"] == "max_steps"
 
 
 @pytest.mark.parametrize(

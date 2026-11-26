@@ -8,7 +8,13 @@ import logging
 import httpx
 import pytest
 
-from app.agent.context import TurnItem, build_messages, compact_tool_results, strip_markers
+from app.agent.context import (
+    TurnItem,
+    build_messages,
+    compact_tool_results,
+    final_messages,
+    strip_markers,
+)
 from app.agent.prompts import SYSTEM_PROMPT, focus_message
 from app.errors import AppError
 from app.llm.base import TextDelta, ToolCallRequest, ToolCallsRequested, UsageReport
@@ -372,6 +378,59 @@ def test_compaction_stops_once_under_limit():
     turns = [tool_item(1, 400, "一"), tool_item(2, 400, "二"), tool_item(3, 400, "三")]
     compact_tool_results(turns, limit=1000)
     assert [item.compacted for item in turns] == [True, False, False]
+
+
+def _run_with_calls(sizes):
+    turns = []
+    for step, size in enumerate(sizes, start=1):
+        call = {"id": f"t{step}", "type": "function", "function": {"name": "f", "arguments": "{}"}}
+        turns.append(
+            TurnItem(
+                message={"role": "assistant", "content": None, "tool_calls": [call]}, step=step
+            )
+        )
+        turns.append(tool_item(step, size, f"第{step}次"))
+    return turns
+
+
+def test_final_messages_restore_compacted_results_as_text():
+    turns = _run_with_calls([600, 600, 600])
+    build_messages(system=["s"], history=[], question="q", turns=turns, budget=2000)
+    assert [item.compacted for item in turns if item.message["role"] == "tool"] == [
+        True,
+        True,
+        False,
+    ]
+    messages = final_messages(
+        system=["s"], history=[], question="q", turns=turns, budget=4000, evidence_header="资料："
+    )
+    # No tool round trips: the evidence is text in the one user message.
+    assert [m["role"] for m in messages] == ["system", "user"]
+    assert not any("tool_calls" in m for m in messages)
+    content = messages[-1]["content"]
+    assert content.startswith("q\n\n资料：\n") and content.count("字" * 600) == 3
+    # The run's own turns stay compacted for any later step.
+    assert sum(item.compacted for item in turns) == 2
+
+
+def test_final_messages_compact_only_to_the_whole_budget():
+    turns = _run_with_calls([600, 600, 600])
+    messages = final_messages(
+        system=["s"], history=[], question="q", turns=turns, budget=1500, evidence_header="资料："
+    )
+    content = messages[-1]["content"]
+    # 1800 characters of results against a 1500 budget: only the oldest is compacted.
+    assert content.count("字" * 600) == 2 and "第1次" in content
+    assert not any(item.compacted for item in turns)
+
+
+def test_final_messages_keep_history_for_follow_ups():
+    history = [{"role": "user", "content": "上一问"}, {"role": "assistant", "content": "上一答"}]
+    turns = _run_with_calls([300])
+    messages = final_messages(
+        system=["s"], history=history, question="q", turns=turns, budget=4000, evidence_header="h"
+    )
+    assert [m["content"] for m in messages[1:3]] == ["上一问", "上一答"]
 
 
 def test_session_focus_message():

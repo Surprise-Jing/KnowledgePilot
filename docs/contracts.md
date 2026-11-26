@@ -233,7 +233,7 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 2. 调用模型；文本增量实时发 `token`。
 3. 模型请求工具：对每个调用发 `tool_call`，执行，发 `tool_result`，把结果作为 `role: tool` 消息加入上下文；`step += 1`，回到 2。工具错误同样回传给模型，由模型决定换参数、换工具或说明无法完成。
 4. 模型不再请求工具：结束，`stop_reason = answered`。
-5. `step` 超过 `PK_AGENT_MAX_STEPS` 时不再调用模型：发 `error {code: max_steps_reached}`，`stop_reason = max_steps`，已输出文本保留，消息状态 `completed`。
+5. `PK_AGENT_MAX_STEPS > 1` 时，最后一步（`step == PK_AGENT_MAX_STEPS`）不提供工具，并在系统消息末尾要求模型只根据已取得的资料作答、资料不足处明确说明；本 run 的工具结果不再作为工具往返发送，而是以文本附在当前问题之后（见 §5.5）；模型据此作答即按第 4 条以 `answered` 结束。最后一步模型仍请求工具（不执行），或 `step` 超过 `PK_AGENT_MAX_STEPS` 时，不再调用模型：发 `error {code: max_steps_reached}`，`stop_reason = max_steps`，已输出文本保留，消息状态 `completed`。
 6. 模型异常：`error {model_error | model_timeout}`，`stop_reason = model_error | timeout`，消息 `failed`。
 7. 回答结束后解析 `[cN]`：只接受本 run 内工具实际返回过的标记，按首次出现顺序发 `citation` 并持久化；其余写入 `runs.dropped_citations`（不发事件、正文保持原样，前端把无对应引用的标记显示为普通文本）。
 8. 未预期的内部异常：发 `error {code: internal_error}`，run 记为 `status=failed`、`stop_reason=interrupted`，原因写入 `runs.error`。
@@ -248,6 +248,7 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 - **会话焦点**：最近 3 次 run 引用过的文档 `(document_id, filename)`、其中已被删除的文档（仅文件名与位置，标明不可重新读取）和最近一次的检索范围，以系统消息提供，用于解析“这份文档”“刚才提到的方法”。
 - 历史消息：只取 `completed` 的 user / assistant 文本，从新到旧加入直到预算用完；历史中的 `[cN]` 标记删除（标记只在所属 run 内有效）。超出预算的最早消息直接丢弃，不做摘要。
 - 本 run 内工具结果累计超过预算的一半时，较早的工具结果替换为 `summary` 与有界来源短摘录（§12）；最新一轮结果保持完整。
+- 最后一步（不提供工具）：已压缩的工具结果恢复为原始内容，与其余结果一起按取得顺序附在当前问题之后；只有超出“预算 − 固定部分 − 至多四分之一预算的历史”时才再次从最早的结果开始压缩，且至少保留预算的一半给工具结果。这样强制作答依据的是证据原文而不是短摘录，模型也不会因看到自己的工具调用而继续请求工具。
 
 ## 6. MCP
 
@@ -336,6 +337,7 @@ LLMEvent = TextDelta(text) | ToolCallsRequested(calls: tuple[ToolCallRequest(id,
 - 文档限定在召回、排序、索引完整性检查和 top_k 截取之前生效。发送 Embedding 请求前及返回后均验证归属与知识库范围；他人/不存在的文档返回 `document_not_found`，用户自己的范围外文档返回 `out_of_scope`（HTTP 403）；范围错误不降级。
 - 指定多份文档时，每份文档内部保持相关度排序，再按输入文档顺序轮流取一个片段，直到 top_k 或候选耗尽。没有匹配的文档不填充结果。top_k 是总上限，小于文档数时不保证覆盖全部文档。
 - hybrid 两路召回的候选上限分别作用于每份指定文档，然后逐文档 RRF 融合，避免文档在结果平衡前被全局候选截断排除。未指定多份文档时使用全局候选。
+- “指定多份文档”只指请求里的 `document_ids`。提问范围解析出的 `allowed_document_ids`（选择整库时为库内全部文档）只过滤，不轮流取片段，按全局相关度排序。
 - 工具额外返回每份目标文档的 `hit_count`，0 仅表示本次返回未覆盖，不能解释为原文没有相关内容；模型可单独检索、改写或读取原文，仍不足则明确缺失。
 - 相同文本在不同文档中保留不同来源、位置与标记；同一 run 内同一片段复用原标记。模型自主选择工具顺序，对比回答采用统一维度、分别引用、说明口径及缺失，不设固定规划器。
 - 回答中连续有效 `[c1][c3]` 渲染为可展开的来源组，组内按首次出现顺序去重；未知标记、正文及 Markdown 结构边界隔开不同来源组。展开后可逐项定位原文。该分组仅表达引用关联，不宣称语义已验证。

@@ -2,11 +2,12 @@
 
 Fixed part: system messages, the current question and this run's tool round trips. History
 fills what is left, newest first. When this run's tool results exceed half of the budget,
-older results are replaced by their one-line summary."""
+older results are replaced by their one-line summary. The last step, which offers no tools,
+gets this run's results back as plain text (`final_messages`)."""
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from app.agent.evidence import compact_sources
 
@@ -28,6 +29,8 @@ class TurnItem:
     # Which model step produced it; results of the latest step are never compacted.
     step: int = 0
     compacted: bool = False
+    # The message as the tool returned it, kept when compaction replaces `message`.
+    full: dict | None = None
 
 
 def _chars(message: dict) -> int:
@@ -60,6 +63,7 @@ def compact_tool_results(turns: list[TurnItem], limit: int) -> None:
         }
         if sources:
             compacted["sources"] = sources
+        item.full = item.full or item.message
         item.message = {
             **item.message,
             "content": json.dumps(
@@ -71,17 +75,11 @@ def compact_tool_results(turns: list[TurnItem], limit: int) -> None:
         total -= before - _chars(item.message)
 
 
-def build_messages(
-    *,
-    system: list[str],
-    history: list[dict],
-    question: str,
-    turns: list[TurnItem],
-    budget: int,
+def _assemble(
+    system: list[str], history: list[dict], question: str, tail: list[dict], budget: int
 ) -> list[dict]:
-    compact_tool_results(turns, budget // 2)
     fixed = sum(len(text) for text in system) + len(question)
-    fixed += sum(_chars(item.message) for item in turns)
+    fixed += sum(_chars(message) for message in tail)
     remaining = budget - fixed
     kept: list[dict] = []
     for message in reversed(history):
@@ -98,5 +96,47 @@ def build_messages(
         *({"role": "system", "content": text} for text in system),
         *kept,
         {"role": "user", "content": question},
-        *(item.message for item in turns),
+        *tail,
     ]
+
+
+def build_messages(
+    *,
+    system: list[str],
+    history: list[dict],
+    question: str,
+    turns: list[TurnItem],
+    budget: int,
+) -> list[dict]:
+    compact_tool_results(turns, budget // 2)
+    return _assemble(system, history, question, [item.message for item in turns], budget)
+
+
+def final_messages(
+    *,
+    system: list[str],
+    history: list[dict],
+    question: str,
+    turns: list[TurnItem],
+    budget: int,
+    evidence_header: str,
+) -> list[dict]:
+    """Messages for the last step, which offers no tools.
+
+    This run's tool results go into the user message as text instead of tool round trips: a
+    model shown its own tool calls tends to continue the pattern and request another tool even
+    when none is offered. Results compacted for earlier steps are restored from `full` and
+    compacted again only as far as the whole budget requires, so the answer is written from the
+    evidence itself rather than from short excerpts. `turns` is not modified."""
+    results = [
+        replace(item, message=item.full or item.message, compacted=False)
+        for item in turns
+        if item.message.get("role") == "tool"
+    ]
+    fixed = sum(len(text) for text in system) + len(question) + len(evidence_header)
+    # Keep up to a quarter of the budget for history: follow-up questions depend on it.
+    history_reserve = min(sum(len(m["content"]) for m in history), budget // 4)
+    compact_tool_results(results, max(budget // 2, budget - fixed - history_reserve))
+    evidence = "\n\n".join(item.message["content"] for item in results)
+    content = f"{question}\n\n{evidence_header}\n{evidence}" if evidence else question
+    return _assemble(system, history, content, [], budget)

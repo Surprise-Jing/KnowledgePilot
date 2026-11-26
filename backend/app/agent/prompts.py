@@ -29,6 +29,21 @@ SYSTEM_PROMPT = """你是 KnowledgePilot 个人知识库助手，通过工具查
 工具使用建议：一般先用 search_chunks 检索；需要某份文档的完整上下文或用户指定了文档时用 read_document；需要了解有哪些文件或按目录浏览时用 list_files。回答使用中文，简洁、有条理。"""
 
 
+# Sent with the last allowed step, which offers no tools: without it a run that spends every
+# step on tools ends with no answer at all.
+FINAL_STEP_PROMPT = (
+    "本轮已是最后一步，不能再调用工具。请只根据前面工具返回的资料直接作答，并照常标注引用；"
+    "资料不足以回答的部分明确说明未找到依据，不要猜测。"
+)
+
+# Heads this run's tool results on the last step, where they are sent as text in the user
+# message (agent/context.final_messages) rather than as tool messages.
+FINAL_EVIDENCE_HEADER = (
+    "以下是回答这个问题时已经通过工具取得的全部资料（JSON，按取得顺序）。"
+    "片段的 marker 就是引用标记，回答中写成 [c1] 这样的形式："
+)
+
+
 def scope_message(knowledge_bases: list[tuple[str, str]]) -> str:
     lines = ["本次提问可以使用的知识库（工具只能访问这些知识库）："]
     lines += [f"- 「{name}」 id={kb_id}" for kb_id, name in knowledge_bases]
