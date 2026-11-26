@@ -12,7 +12,7 @@ from app.config import Settings
 from app.db import SCHEMA_VERSION
 from app.errors import AppError
 from app.main import create_app
-from app.services.embeddings import embed, profile, reindex
+from app.services.embeddings import embed, embedding_text, profile, reindex
 from app.services.retrieval import lexical_scores, reciprocal_rank_fusion
 from tests.fakes.helpers import headers, login
 
@@ -170,6 +170,11 @@ def test_embedding_batches_reorders_and_normalizes(settings, provider):
     assert provider == [["car", "car insurance"], ["banana"]]
     assert vectors[0] == [1, 0, 0] and vectors[2] == [0, 0, 1]
     assert sum(v * v for v in vectors[1]) == pytest.approx(1)
+
+
+def test_embedding_text_drops_byte_order_marks():
+    # Web-copied text can carry U+FEFF mid-paragraph; some gateways reject it outright.
+    assert embedding_text(["标题﻿"], "St. Peter﻿'s Basilica") == "标题\nSt. Peter's Basilica"
 
 
 @pytest.mark.parametrize(

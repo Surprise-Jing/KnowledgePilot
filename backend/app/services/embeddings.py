@@ -17,8 +17,10 @@ EMBEDDING_TEXT_VERSION = "text:v2"
 
 def embedding_text(heading_path: Sequence[str], content: str) -> str:
     """Headings give a chunk its context (a table under "合并资产负债表"); same layout as
-    Docling's HybridChunker.contextualize()."""
-    return "\n".join([*heading_path, content])
+    Docling's HybridChunker.contextualize(). U+FEFF is dropped: it carries no meaning, and some
+    gateways reject any request containing it (an HTML page instead of vectors). Only the model
+    input changes, so EMBEDDING_TEXT_VERSION and stored chunk text stay as they are."""
+    return "\n".join([*heading_path, content]).replace("﻿", "")
 
 
 def profile(settings: Settings) -> str:
