@@ -1,0 +1,167 @@
+{
+ "sec19.registration": {
+  "id": "sec19.registration",
+  "document": "securities_law_2019",
+  "locator": {
+   "kind": "docx"
+  },
+  "label": "公开发行注册",
+  "value": "注册",
+  "unit": null,
+  "anchor": "依法报经国务院证券监督管理机构或者国务院授权的部门注册。未经依法注册"
+ },
+ "sec14.approval": {
+  "id": "sec14.approval",
+  "document": "securities_law_2014",
+  "locator": {
+   "kind": "docx"
+  },
+  "label": "公开发行核准",
+  "value": "核准",
+  "unit": null,
+  "anchor": "依法报经国务院证券监督管理机构或者国务院授权的部门核准；未经依法核准"
+ },
+ "sec19.fraud_fine": {
+  "id": "sec19.fraud_fine",
+  "document": "securities_law_2019",
+  "locator": {
+   "kind": "docx"
+  },
+  "label": "欺诈发行罚款（已发行）",
+  "value": "百分之十以上一倍以下",
+  "unit": null,
+  "anchor": "已经发行证券的，处以非法所募资金金额百分之十以上一倍以下的罚款"
+ },
+ "sec14.fraud_fine": {
+  "id": "sec14.fraud_fine",
+  "document": "securities_law_2014",
+  "locator": {
+   "kind": "docx"
+  },
+  "label": "欺诈发行罚款（已发行）",
+  "value": "百分之一以上百分之五以下",
+  "unit": null,
+  "anchor": "已经发行证券的，处以非法所募资金金额百分之一以上百分之五以下的罚款"
+ },
+ "sec19.ch_disclosure": {
+  "id": "sec19.ch_disclosure",
+  "document": "securities_law_2019",
+  "locator": {
+   "kind": "docx"
+  },
+  "label": "第五章",
+  "value": "信息披露",
+  "unit": null,
+  "anchor": "第五章　信息披露"
+ },
+ "sec19.ch_investor": {
+  "id": "sec19.ch_investor",
+  "document": "securities_law_2019",
+  "locator": {
+   "kind": "docx"
+  },
+  "label": "第六章",
+  "value": "投资者保护",
+  "unit": null,
+  "anchor": "第六章　投资者保护"
+ },
+ "sec19.effective": {
+  "id": "sec19.effective",
+  "document": "securities_law_2019",
+  "locator": {
+   "kind": "docx"
+  },
+  "label": "施行日期",
+  "value": "2020-03-01",
+  "unit": null,
+  "anchor": "本法自2020年3月1日起施行"
+ },
+ "sec14.effective": {
+  "id": "sec14.effective",
+  "document": "securities_law_2014",
+  "locator": {
+   "kind": "docx"
+  },
+  "label": "施行日期",
+  "value": "2006-01-01",
+  "unit": null,
+  "anchor": "本法自2006年1月1日起施行"
+ },
+ "sec19.clearing_records": {
+  "id": "sec19.clearing_records",
+  "document": "securities_law_2019",
+  "locator": {
+   "kind": "docx"
+  },
+  "label": "登记结算机构保存期限",
+  "value": "二十年",
+  "unit": null,
+  "anchor": "证券登记结算机构应当妥善保存登记、存管和结算的原始凭证及有关文件和资料。其保存期限不得少于二十年"
+ },
+ "fund.custodian": {
+  "id": "fund.custodian",
+  "document": "securities_fund_law_2015",
+  "locator": {
+   "kind": "docx"
+  },
+  "label": "托管人资格",
+  "value": "商业银行或者其他金融机构",
+  "unit": null,
+  "anchor": "基金托管人由依法设立的商业银行或者其他金融机构担任"
+ },
+ "fund.meeting": {
+  "id": "fund.meeting",
+  "document": "securities_fund_law_2015",
+  "locator": {
+   "kind": "docx"
+  },
+  "label": "持有人大会召集",
+  "value": "基金管理人；托管人",
+  "unit": null,
+  "anchor": "基金管理人未按规定召集或者不能召集的，由基金托管人召集"
+ },
+ "fund.registry_records": {
+  "id": "fund.registry_records",
+  "document": "securities_fund_law_2015",
+  "locator": {
+   "kind": "docx"
+  },
+  "label": "登记数据保存期限",
+  "value": "二十年",
+  "unit": null,
+  "anchor": "其保存期限自基金账户销户之日起不得少于二十年"
+ },
+ "aml.records": {
+  "id": "aml.records",
+  "document": "aml_law_2024",
+  "locator": {
+   "kind": "docx"
+  },
+  "label": "客户身份资料保存期限",
+  "value": "十年",
+  "unit": null,
+  "anchor": "客户身份资料在业务关系结束后、客户交易信息在交易结束后，应当至少保存十年"
+ },
+ "fut.service_records": {
+  "id": "fut.service_records",
+  "document": "futures_law_2022",
+  "locator": {
+   "kind": "docx"
+  },
+  "label": "期货服务机构保存期限",
+  "value": "十年",
+  "unit": null,
+  "anchor": "期货服务机构的信息和资料的保存期限不得少于十年"
+ },
+ "fut.venue_records": {
+  "id": "fut.venue_records",
+  "document": "futures_law_2022",
+  "locator": {
+   "kind": "docx"
+  },
+  "label": "期货交易场所等保存期限",
+  "value": "二十年",
+  "unit": null,
+  "anchor": "非期货经营机构结算参与人的信息和资料的保存期限不得少于二十年"
+ }
+}

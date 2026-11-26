@@ -20,10 +20,10 @@ KnowledgePilot 是个人知识管理助手：用户在 Web 界面建知识库、
 
 1. 安装 Python 3.11+ 与 [uv](https://docs.astral.sh/uv/)，克隆仓库后在仓库根目录执行一次 `uv sync --directory backend`。
 2. 有数据：先用 Web 应用（`./start.sh`，打开 http://127.0.0.1:8000）建知识库并上传文档，等文档状态变为“解析成功”。MCP Server 与 Web 应用读同一个数据目录（默认 `backend/data`，可用 `PK_DATA_DIR` 指定），两者可以同时运行。Server 启动时只执行数据库迁移，不做中断恢复，不会影响 Web 端正在进行的解析或回答。
-3. 用户身份：MCP 没有 HTTP 头，用环境变量 `PK_MCP_USER_ID` 指定以哪个用户的身份访问（默认 `demo`，与 Web 端默认用户一致）。只能访问该用户的知识库。
+3. 用户身份：MCP 不经过网页登录，用环境变量 `PK_MCP_USERNAME` 指定以哪个**已注册**用户的身份访问（默认 `demo`）。用户不存在时 Server 启动失败；只能访问该用户的知识库。
 4. 检索策略：Server 启动目录为 `backend/`，会读取 `backend/.env`（与 Web 应用相同）。
    - `PK_RETRIEVER=cosine` 或 `bm25`：不需要 `backend/.env`，也不需要任何模型或密钥。
-   - `PK_RETRIEVER=vector` 或 `hybrid`（`.env.example` 的默认值）：需要 `PK_EMBEDDING_BASE_URL`、`PK_EMBEDDING_MODEL`（以及服务要求的 `PK_EMBEDDING_API_KEY`），并且已建立向量索引（`uv run --directory backend python -m app.reindex --user-id <用户>`，需在 Web 服务停止时运行）。
+   - `PK_RETRIEVER=vector` 或 `hybrid`（`.env.example` 的默认值）：需要 `PK_EMBEDDING_BASE_URL`、`PK_EMBEDDING_MODEL`（以及服务要求的 `PK_EMBEDDING_API_KEY`），并且已建立向量索引（`uv run --directory backend python -m app.reindex --username <用户>`，需在 Web 服务停止时运行）。
    - 本 Server 不调用聊天模型，`PK_LLM_*` 不需要。
 5. 在 MCP 客户端注册 Server，见 [mcp-config/](mcp-config/)。
 
@@ -33,7 +33,7 @@ MCP 工具与应用内 Agent 工具**一一对应、完全相同**：Server 直�
 
 | 项目 | 应用内 Agent | MCP |
 | --- | --- | --- |
-| 可访问的知识库（`allowed_kb_ids`） | 本次提问选择的知识库 | `PK_MCP_USER_ID` 在**调用时**拥有的全部知识库 |
+| 可访问的知识库（`allowed_kb_ids`） | 本次提问选择的知识库 | `PK_MCP_USERNAME` 在**调用时**拥有的全部知识库 |
 | 引用标记（`c1`、`c2`…）的有效范围 | 一次提问（run） | 一个 MCP 会话（Server 进程）；同一片段在会话内标记不变 |
 
 Agent 层的自动重试与模型重试不适用于 MCP，由客户端自行决定是否重试（看 `retryable`）。
@@ -146,7 +146,7 @@ Agent 层的自动重试与模型重试不适用于 MCP，由客户端自行决�
 ## 限制
 
 - 只读：不能创建知识库、上传、删除或重新解析文档。
-- 用户身份由 `PK_MCP_USER_ID` 在启动时固定，一个 Server 进程只服务一个用户；可访问范围是该用户的全部知识库，无法像 Web 端那样只选部分（可用 `knowledge_base_ids` 自行限定检索范围）。
+- 用户身份由 `PK_MCP_USERNAME` 在启动时固定，一个 Server 进程只服务一个用户；可访问范围是该用户的全部知识库，无法像 Web 端那样只选部分（可用 `knowledge_base_ids` 自行限定检索范围）。
 - 引用标记只在一个 MCP 会话内有效，重启 Server 后从 `c1` 重新编号；不要跨会话复用标记。
 - 单次结果不做 8000 字符截断（应用内 Agent 会截断），`read_document` 用 `max_chars` 控制长度。
 - 只支持 stdio 传输；不提供 HTTP/SSE 传输与 MCP resources/prompts。

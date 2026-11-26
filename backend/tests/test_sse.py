@@ -12,6 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.agent import loop
+from app.agent.prompts import FINAL_EVIDENCE_HEADER, FINAL_STEP_PROMPT
 from app.errors import AppError
 from app.main import create_app
 from app.tools import builtin
@@ -21,6 +22,7 @@ from tests.fakes.helpers import (
     hybrid_settings,
     install_embeddings,
     install_llm,
+    login,
     make_conversation,
     make_kb,
     make_settings,
@@ -38,6 +40,7 @@ def settings(tmp_path):
 @pytest.fixture
 def client(settings):
     with TestClient(create_app(settings)) as client:
+        login(client)
         yield client
 
 
@@ -239,9 +242,45 @@ def test_out_of_scope_tool_call(client, kb):
     assert only(events, "tool_result")[0]["error"]["code"] == "out_of_scope"
 
 
-def test_max_steps(tmp_path):
+def test_last_step_offers_no_tools_and_answers(tmp_path):
     settings = make_settings(tmp_path, agent_max_steps=2)
     with TestClient(create_app(settings)) as client:
+        login(client)
+        kb = make_kb(client)
+        llm = install_llm(
+            client,
+            ScriptedLLM(
+                [
+                    [tool_call("search_chunks", {"query": "a"})],
+                    text("资料不足，只能确认部分内容。"),
+                ]
+            ),
+        )
+        conversation = make_conversation(client)
+        events = read_sse(ask(client, conversation, "问题", [kb]))
+        assert llm.calls[0]["tools"] and llm.calls[1]["tools"] == []
+        assert FINAL_STEP_PROMPT in llm.contents(1, "system")[0]
+        assert FINAL_STEP_PROMPT not in llm.contents(0, "system")[0]
+        # The search result reaches the last step as text, not as a tool round trip.
+        final = llm.messages(1)
+        assert [m["role"] for m in final] == ["system", "user"]
+        assert FINAL_EVIDENCE_HEADER in final[-1]["content"]
+        assert '"ok": true' in final[-1]["content"]
+        assert "error" not in names(events)
+        done = events[-1][1]
+        assert done["stop_reason"] == "answered" and done["step_count"] == 2
+        message = client.get(f"/api/conversations/{conversation}").json()["messages"][-1]
+        assert (
+            message["status"] == "completed"
+            and message["content"] == "资料不足，只能确认部分内容。"
+        )
+
+
+def test_max_steps(tmp_path):
+    # A model that requests tools on the toolless last step still ends with max_steps_reached.
+    settings = make_settings(tmp_path, agent_max_steps=2)
+    with TestClient(create_app(settings)) as client:
+        login(client)
         kb = make_kb(client)
         llm = install_llm(
             client,
@@ -264,8 +303,23 @@ def test_max_steps(tmp_path):
         # Text produced so far is kept and the message counts as completed.
         assert message["status"] == "completed" and message["content"] == "先查 [c1]"
         run = client.get(f"/api/runs/{done['run_id']}").json()
-        assert run["stop_reason"] == "max_steps" and len(run["tool_calls"]) == 2
+        # The tool requested on the last step is not executed.
+        assert run["stop_reason"] == "max_steps" and len(run["tool_calls"]) == 1
         assert run["dropped_citations"] == ["c1"]
+
+
+def test_single_step_budget_keeps_tools(tmp_path):
+    # With one step there is nothing to answer from yet, so that step keeps its tools.
+    settings = make_settings(tmp_path, agent_max_steps=1)
+    with TestClient(create_app(settings)) as client:
+        login(client)
+        kb = make_kb(client)
+        llm = install_llm(client, ScriptedLLM([[tool_call("search_chunks", {"query": "a"})]]))
+        conversation = make_conversation(client)
+        events = read_sse(ask(client, conversation, "问题", [kb]))
+        assert llm.calls[0]["tools"]
+        assert FINAL_STEP_PROMPT not in llm.contents(0, "system")[0]
+        assert events[-1][1]["stop_reason"] == "max_steps"
 
 
 @pytest.mark.parametrize(
@@ -331,6 +385,7 @@ def test_tool_timeout_is_fed_back(tmp_path, monkeypatch):
 
     monkeypatch.setattr(builtin, "search", slow)
     with TestClient(create_app(make_settings(tmp_path, tool_timeout=0.05))) as client:
+        login(client)
         kb = make_kb(client)
         llm = install_llm(
             client, ScriptedLLM([[tool_call("search_chunks", {"query": "x"})], text("超时了。")])
@@ -396,10 +451,10 @@ def test_deleted_document_is_marked_in_follow_up_focus(client, kb):
     conversation = make_conversation(client)
     read_sse(ask(client, conversation, "删除文档会怎样？", [kb]))
     document_id = client.get(
-        f"/api/knowledge-bases/{kb}/documents", headers={"X-User-Id": "demo"}
+        f"/api/knowledge-bases/{kb}/documents", headers=headers(client, "demo")
     ).json()[0]["id"]
     assert (
-        client.delete(f"/api/documents/{document_id}", headers={"X-User-Id": "demo"}).status_code
+        client.delete(f"/api/documents/{document_id}", headers=headers(client, "demo")).status_code
         == 204
     )
 
@@ -467,7 +522,7 @@ def test_trace_is_persisted_and_private(client, kb):
             "SELECT result_json FROM tool_calls WHERE id=?", (calls[0]["id"],)
         ).fetchone()["result_json"]
     assert json.loads(stored)["data"]["hits"][0]["marker"] == "c1"
-    response = client.get(f"/api/runs/{run_id}", headers=headers("bob"))
+    response = client.get(f"/api/runs/{run_id}", headers=headers(client, "bob"))
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "run_not_found"
     assert client.get("/api/runs/missing").status_code == 404
@@ -476,6 +531,7 @@ def test_trace_is_persisted_and_private(client, kb):
 def test_old_tool_results_are_compacted_when_over_half_budget(tmp_path):
     settings = make_settings(tmp_path, context_budget_chars=2000)
     with TestClient(create_app(settings)) as client:
+        login(client)
         kb = make_kb(client)
         upload(
             client,
@@ -550,7 +606,10 @@ def test_client_disconnect_marks_run_interrupted(client, kb):
             "raw_path": f"/api/conversations/{conversation}/messages".encode(),
             "query_string": b"",
             "root_path": "",
-            "headers": [(b"content-type", b"application/json"), (b"x-user-id", b"demo")],
+            "headers": [
+                (b"content-type", b"application/json"),
+                (b"cookie", headers(client)["Cookie"].encode()),
+            ],
             "client": ("127.0.0.1", 1234),
             "server": ("testserver", 80),
             "state": {},
@@ -605,7 +664,10 @@ def test_closing_the_stream_early_interrupts_the_run(client, kb):
             "raw_path": f"/api/conversations/{conversation}/messages".encode(),
             "query_string": b"",
             "root_path": "",
-            "headers": [(b"content-type", b"application/json")],
+            "headers": [
+                (b"content-type", b"application/json"),
+                (b"cookie", headers(client)["Cookie"].encode()),
+            ],
             "client": ("127.0.0.1", 1234),
             "server": ("testserver", 80),
             "state": {},
@@ -899,6 +961,7 @@ def test_failed_document_falls_back_without_retry(client, kb, monkeypatch):
 def test_search_falls_back_to_bm25_in_a_full_run(tmp_path, monkeypatch):
     provider = install_embeddings(monkeypatch)
     with TestClient(create_app(hybrid_settings(tmp_path))) as client:
+        login(client)
         kb = make_kb(client, "向量库")
         upload(client, kb, "guide.txt", "删除文档时同步清理索引。")
         assert provider.calls == 1

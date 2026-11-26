@@ -7,16 +7,20 @@ from app.config import Settings
 from app.errors import AppError
 from app.main import create_app
 from app.services.documents import list_files, read_document_range
+from tests.fakes.helpers import headers, login
 
 
 @pytest.fixture
 def client(tmp_path):
     with TestClient(create_app(Settings(_env_file=None, data_dir=tmp_path))) as client:
+        login(client)
         yield client
 
 
 def make_kb(client, user="demo"):
-    response = client.post("/api/knowledge-bases", json={"name": "库"}, headers={"X-User-Id": user})
+    response = client.post(
+        "/api/knowledge-bases", json={"name": "库"}, headers=headers(client, user)
+    )
     return response.json()["id"]
 
 
@@ -24,7 +28,7 @@ def upload(client, kb_id, name, text, user="demo"):
     response = client.post(
         f"/api/knowledge-bases/{kb_id}/documents",
         files={"file": (name, text.encode())},
-        headers={"X-User-Id": user},
+        headers=headers(client, user),
     )
     assert response.status_code == 202, response.text
     return response.json()["id"]

@@ -1,11 +1,14 @@
-import { FileSearchIcon } from 'lucide-react'
-import { useEffect, useRef } from 'react'
-import { cn } from '@/lib/utils'
+import { FileSearchIcon, FileTextIcon, HourglassIcon, RotateCwIcon } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
-import { getDocumentChunks } from '@/api/documents'
+import type { ApiError } from '@/api/client'
+import { getDocumentChunks, getDocumentMarkdown } from '@/api/documents'
 import { ErrorAlert } from '@/components/error-feedback'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import {
   Sheet,
@@ -15,23 +18,143 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { markdownComponents } from '@/lib/markdown-components'
 import { useResource } from '@/hooks/use-resource'
+import { findCitedChunk } from '@/lib/citations'
+import { cn } from '@/lib/utils'
 
-import { type DocumentTarget, useInspector } from './inspector-context'
+import { type DocumentTarget, isPdfTarget, useInspector } from './inspector-context'
+import { isPdfMissing, usePdf } from './pdf-document'
+import { PdfViewer } from './PdfViewer'
 
-/** Side drawer showing a document's parsed chunks in order (brief §6.3 “查看原文”, §6.5). */
+type ViewerTab = 'pdf' | 'chunks' | 'markdown'
+
+/**
+ * Side drawer for one document (brief §6.3 “查看原文”, §6.5). PDFs open on the original page
+ * with the cited evidence highlighted; every type can show the parsed chunks and the Markdown.
+ */
 export function DocumentViewer() {
   const { document, closeDocument } = useInspector()
+  const pdf = document !== null && isPdfTarget(document)
   return (
     <Sheet open={document !== null} onOpenChange={(open) => !open && closeDocument()}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 sm:max-w-xl">
+      <SheetContent
+        side="right"
+        className={cn(
+          // Same `data-[side=right]` variant as the Sheet's defaults so these replace them.
+          'flex flex-col gap-0 data-[side=right]:w-full',
+          // The PDF needs room for a readable page; chunks read fine in a narrower drawer.
+          pdf
+            ? 'data-[side=right]:sm:max-w-2xl data-[side=right]:lg:max-w-3xl data-[side=right]:xl:max-w-4xl'
+            : 'data-[side=right]:sm:max-w-xl',
+        )}
+      >
         <SheetHeader>
-          <SheetTitle className="truncate pr-6">{document?.filename ?? '原文'}</SheetTitle>
-          <SheetDescription>按顺序展示解析出的全部片段及其位置。</SheetDescription>
+          <SheetTitle className="truncate pr-6" title={document?.filename}>
+            {document?.filename ?? '原文'}
+          </SheetTitle>
+          <SheetDescription>
+            {document?.location?.label
+              ? `引用位置：${document.location.label}`
+              : pdf
+                ? '查看原始 PDF，也可切换到解析片段或 Markdown 预览。'
+                : '按顺序展示解析出的全部片段及其位置。'}
+          </SheetDescription>
         </SheetHeader>
-        {document && <ChunkList key={`${document.documentId}:${document.chunkId}`} target={document} />}
+        {document && (
+          <ViewerBody
+            key={`${document.documentId}:${document.chunkId ?? ''}:${document.location?.start ?? ''}`}
+            target={document}
+            pdf={pdf}
+          />
+        )}
       </SheetContent>
     </Sheet>
+  )
+}
+
+function ViewerBody({ target, pdf }: { target: DocumentTarget; pdf: boolean }) {
+  const [tab, setTab] = useState<ViewerTab>(pdf ? 'pdf' : 'chunks')
+  const [attempt, setAttempt] = useState(0)
+  // Loaded here, not in the tab, so switching tabs keeps the opened PDF.
+  const pdfState = usePdf(pdf ? target.documentId : null, attempt)
+  const missing = isPdfMissing(pdfState)
+  // A missing original falls back to the parsed chunks (which survive without the upload).
+  const shown: ViewerTab = missing && tab === 'pdf' ? 'chunks' : tab
+
+  return (
+    <Tabs
+      value={shown}
+      onValueChange={(value) => setTab(value as ViewerTab)}
+      className="flex min-h-0 flex-1 flex-col gap-0"
+    >
+      <div className="border-b px-4 pb-2">
+        <TabsList>
+          {pdf && (
+            <TabsTrigger value="pdf" disabled={missing} title={missing ? '原文件不存在' : undefined}>
+              原文 PDF
+            </TabsTrigger>
+          )}
+          <TabsTrigger value="chunks">解析片段</TabsTrigger>
+          <TabsTrigger value="markdown">Markdown 预览</TabsTrigger>
+        </TabsList>
+      </div>
+      {pdf && (
+        <TabsContent value="pdf" className="flex min-h-0 flex-1 flex-col">
+          <PdfViewer
+            state={pdfState}
+            location={target.location ?? null}
+            onRetry={() => setAttempt((n) => n + 1)}
+          />
+        </TabsContent>
+      )}
+      <TabsContent value="chunks" className="flex min-h-0 flex-1 flex-col">
+        {missing && (
+          <Alert className="mx-4 mt-4 w-auto">
+            <FileTextIcon />
+            <AlertTitle>原文件不存在</AlertTitle>
+            <AlertDescription>已改为显示解析出的片段。</AlertDescription>
+          </Alert>
+        )}
+        <ChunkList target={target} />
+      </TabsContent>
+      <TabsContent value="markdown" className="flex min-h-0 flex-1 flex-col">
+        <MarkdownPreview documentId={target.documentId} />
+      </TabsContent>
+    </Tabs>
+  )
+}
+
+/** `document_not_ready` while a reparse runs: not a failure, just come back later. */
+function isParsing(error: ApiError): boolean {
+  return (error.code === 'document_not_ready' && error.retryable) || error.code === 'document_busy'
+}
+
+function ParsingNotice({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="p-4">
+      <Alert>
+        <HourglassIcon />
+        <AlertTitle>正在解析，稍后再看</AlertTitle>
+        <AlertDescription>文档正在重新解析，完成后才能查看片段和 Markdown。</AlertDescription>
+        <AlertAction>
+          <Button size="xs" variant="outline" onClick={onRetry}>
+            <RotateCwIcon data-icon="inline-start" />
+            刷新
+          </Button>
+        </AlertAction>
+      </Alert>
+    </div>
+  )
+}
+
+function LoadError({ error, onRetry }: { error: ApiError; onRetry: () => void }) {
+  if (isParsing(error)) return <ParsingNotice onRetry={onRetry} />
+  return (
+    <div className="p-4">
+      <ErrorAlert error={error} onRetry={onRetry} forceRetry />
+    </div>
   )
 }
 
@@ -40,11 +163,14 @@ function ChunkList({ target }: { target: DocumentTarget }) {
     getDocumentChunks(target.documentId),
   )
   const itemRefs = useRef(new Map<string, HTMLElement>())
+  const match = chunks.data ? findCitedChunk(chunks.data, target.chunkId, target.location) : null
+  const matchId = match?.id ?? null
 
   useEffect(() => {
-    if (!chunks.data || !target.chunkId) return
-    itemRefs.current.get(target.chunkId)?.scrollIntoView({ block: 'center' })
-  }, [chunks.data, target.chunkId])
+    if (matchId) itemRefs.current.get(matchId)?.scrollIntoView({ block: 'center' })
+  }, [matchId])
+
+  const reload = () => void chunks.reload()
 
   if (chunks.loading && !chunks.data) {
     return (
@@ -55,13 +181,7 @@ function ChunkList({ target }: { target: DocumentTarget }) {
       </div>
     )
   }
-  if (chunks.error) {
-    return (
-      <div className="p-4">
-        <ErrorAlert error={chunks.error} onRetry={() => void chunks.reload()} forceRetry />
-      </div>
-    )
-  }
+  if (chunks.error) return <LoadError error={chunks.error} onRetry={reload} />
   const list = chunks.data ?? []
   if (list.length === 0) {
     return (
@@ -76,7 +196,8 @@ function ChunkList({ target }: { target: DocumentTarget }) {
       </Empty>
     )
   }
-  const missingTarget = Boolean(target.chunkId) && !list.some((c) => c.id === target.chunkId)
+  // Cited something, but neither the id nor the position matches any current chunk.
+  const missingTarget = Boolean(target.chunkId || target.location) && !match
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
@@ -86,7 +207,7 @@ function ChunkList({ target }: { target: DocumentTarget }) {
         </Alert>
       )}
       {list.map((chunk) => {
-        const highlighted = chunk.id === target.chunkId
+        const highlighted = chunk.id === matchId
         return (
           <section
             key={chunk.id}
@@ -105,11 +226,52 @@ function ChunkList({ target }: { target: DocumentTarget }) {
               <Badge variant="outline">#{chunk.ordinal + 1}</Badge>
               <span className="text-xs text-muted-foreground">{chunk.location.label}</span>
               {highlighted && <Badge>引用位置</Badge>}
+              {highlighted && match?.by === 'location' && (
+                <span className="text-xs text-muted-foreground">文档已重新解析，按位置匹配</span>
+              )}
             </div>
-            <p className="leading-relaxed whitespace-pre-wrap">{chunk.content}</p>
+            <div className="min-w-0 break-words leading-relaxed"><Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{chunk.content}</Markdown></div>
           </section>
         )
       })}
     </div>
+  )
+}
+
+/** Docling marks pictures with `<!-- image -->`; raw HTML is not rendered, so drop comments. */
+function stripHtmlComments(markdown: string): string {
+  return markdown.replace(/<!--[\s\S]*?-->/g, '')
+}
+
+/** The parsed Markdown artifact (contracts §11), rendered without raw HTML. */
+function MarkdownPreview({ documentId }: { documentId: string }) {
+  const markdown = useResource(`markdown:${documentId}`, () => getDocumentMarkdown(documentId))
+  const reload = () => void markdown.reload()
+
+  if (markdown.loading && markdown.data === undefined) {
+    return (
+      <div className="flex flex-col gap-3 p-4" aria-busy="true">
+        <Skeleton className="h-6 w-1/2" />
+        <Skeleton className="h-40 w-full" />
+      </div>
+    )
+  }
+  if (markdown.error) return <LoadError error={markdown.error} onRetry={reload} />
+  if (!markdown.data?.trim()) {
+    return (
+      <Empty>
+        <EmptyHeader>
+          <EmptyTitle>Markdown 为空</EmptyTitle>
+          <EmptyDescription>解析结果没有可显示的文本。</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    )
+  }
+  return (
+    <article className="min-h-0 flex-1 overflow-y-auto p-4 text-sm leading-relaxed" aria-label="Markdown 预览">
+      <Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+        {stripHtmlComments(markdown.data)}
+      </Markdown>
+    </article>
   )
 }

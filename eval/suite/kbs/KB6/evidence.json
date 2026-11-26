@@ -1,0 +1,146 @@
+{
+ "kb6.5ab28019554299722f9b4d51.1": {
+  "id": "kb6.5ab28019554299722f9b4d51.1",
+  "document": "kb6_film_018",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 18
+  },
+  "label": "支撑句（Son of al Qaeda）",
+  "value": "Son of al Qaeda is a documentary about Abdurahman Khadr, a y",
+  "unit": null,
+  "anchor": "Son of al Qaeda is a documentary about Abdurahman Khadr, a y"
+ },
+ "kb6.5ab28019554299722f9b4d51.2": {
+  "id": "kb6.5ab28019554299722f9b4d51.2",
+  "document": "kb6_person_038",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 8
+  },
+  "label": "支撑句（Omar Khadr）",
+  "value": "Khadr sued the Canadian government for infringing his rights",
+  "unit": null,
+  "anchor": "Khadr sued the Canadian government for infringing his rights"
+ },
+ "kb6.5ac3165c5542995ef918c10a.1": {
+  "id": "kb6.5ac3165c5542995ef918c10a.1",
+  "document": "kb6_other_001",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 21
+  },
+  "label": "支撑句（18th Independent Spirit Awards）",
+  "value": "The 2002 Independent Spirit Awards, honoring the best in ind",
+  "unit": null,
+  "anchor": "The 2002 Independent Spirit Awards, honoring the best in ind"
+ },
+ "kb6.5ac3165c5542995ef918c10a.2": {
+  "id": "kb6.5ac3165c5542995ef918c10a.2",
+  "document": "kb6_other_001",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 22
+  },
+  "label": "支撑句（18th Independent Spirit Awards）",
+  "value": "It was hosted by John Waters.",
+  "unit": null,
+  "anchor": "It was hosted by John Waters."
+ },
+ "kb6.5ac3165c5542995ef918c10a.3": {
+  "id": "kb6.5ac3165c5542995ef918c10a.3",
+  "document": "kb6_person_026",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 10
+  },
+  "label": "支撑句（John Waters）",
+  "value": "John Samuel Waters Jr. (born April 22, 1946) is an American ",
+  "unit": null,
+  "anchor": "John Samuel Waters Jr. (born April 22, 1946) is an American "
+ },
+ "kb6.5a88d745554299206df2b378.1": {
+  "id": "kb6.5a88d745554299206df2b378.1",
+  "document": "kb6_person_010",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 32
+  },
+  "label": "支撑句（David Yates）",
+  "value": "David Yates (born (1963--)08 1963 ) is an English filmmaker ",
+  "unit": null,
+  "anchor": "David Yates (born (1963--)08 1963 ) is an English filmmaker "
+ },
+ "kb6.5a88d745554299206df2b378.2": {
+  "id": "kb6.5a88d745554299206df2b378.2",
+  "document": "kb6_person_039",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 26
+  },
+  "label": "支撑句（Pietro Germi）",
+  "value": "Pietro Germi (] ; 14 September 1914 – 5 December 1974) was a",
+  "unit": null,
+  "anchor": "Pietro Germi (] ; 14 September 1914 – 5 December 1974) was a"
+ },
+ "kb6.3hop1__389955_132457_51423.1": {
+  "id": "kb6.3hop1__389955_132457_51423.1",
+  "document": "kb6_music_009",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 14
+  },
+  "label": "支撑句（I'm Alive and on Fire）",
+  "value": "I'm Alive and on Fire is a 2001 album by Canadian rock band ",
+  "unit": null,
+  "anchor": "I'm Alive and on Fire is a 2001 album by Canadian rock band "
+ },
+ "kb6.3hop1__389955_132457_51423.2": {
+  "id": "kb6.3hop1__389955_132457_51423.2",
+  "document": "kb6_place_013",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 18
+  },
+  "label": "支撑句（Casa Loma）",
+  "value": "Casa Loma (Spanish for ``Hill House '') is a Gothic Revival ",
+  "unit": null,
+  "anchor": "Casa Loma (Spanish for ``Hill House '') is a Gothic Revival "
+ },
+ "kb6.3hop1__389955_132457_51423.3": {
+  "id": "kb6.3hop1__389955_132457_51423.3",
+  "document": "kb6_music_005",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 10
+  },
+  "label": "支撑句（Danko Jones）",
+  "value": "Danko Jones is a Canadian rock trio from Toronto, Ontario. T",
+  "unit": null,
+  "anchor": "Danko Jones is a Canadian rock trio from Toronto, Ontario. T"
+ },
+ "kb6.2hop__36269_63853.1": {
+  "id": "kb6.2hop__36269_63853.1",
+  "document": "kb6_place_049",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 4
+  },
+  "label": "支撑句（Namibia）",
+  "value": "The dry lands of Namibia were inhabited since early times by",
+  "unit": null,
+  "anchor": "The dry lands of Namibia were inhabited since early times by"
+ },
+ "kb6.2hop__36269_63853.2": {
+  "id": "kb6.2hop__36269_63853.2",
+  "document": "kb6_place_052",
+  "locator": {
+   "kind": "txt_lines",
+   "line": 7
+  },
+  "label": "支撑句（Orange River）",
+  "value": "Orange Gariep, Oranje, Senqu River Sunset over the Orange Ri",
+  "unit": null,
+  "anchor": "Orange Gariep, Oranje, Senqu River Sunset over the Orange Ri"
+ }
+}

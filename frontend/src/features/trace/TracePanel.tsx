@@ -9,6 +9,8 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { CopyButton } from '@/components/copy-button'
+import { ElapsedTime } from '@/components/elapsed-time'
 import { ErrorAlert } from '@/components/error-feedback'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -126,6 +128,7 @@ export function TracePanel() {
       {run.error && !live?.running && (
         <ErrorAlert error={run.error} onRetry={() => void run.reload()} forceRetry />
       )}
+      {runId && <div className="rounded-xl border border-primary/10 bg-accent/40 p-3 text-xs"><p className="mb-1 break-all font-mono">运行标识：{runId}</p><CopyButton text={runId} label="复制运行标识" /></div>}
       <TraceSteps trace={trace} />
       <Separator />
       <TraceSummary trace={trace} />
@@ -315,6 +318,7 @@ function TraceSummary({ trace }: { trace: TraceView }) {
           </Badge>
         )}
       </dd>
+      <dt className="text-muted-foreground">总耗时</dt><dd><ElapsedTime start={trace.startedAt} end={trace.finishedAt} running={trace.running} /></dd>
       <dt className="text-muted-foreground">步数</dt>
       <dd>{trace.stepCount ?? (trace.running ? '…' : '—')}</dd>
       <dt className="text-muted-foreground">Token 用量</dt>

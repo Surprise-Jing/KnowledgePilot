@@ -6,7 +6,7 @@ import { type ApiError, isAbortError, toApiError } from '@/api/client'
 import { ErrorReportContext } from '@/components/error-context'
 import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { classifyError } from '@/lib/errors'
+import { classifyError, errorHint } from '@/lib/errors'
 
 interface Banner {
   error: ApiError
@@ -20,7 +20,10 @@ export function ErrorProvider({ children }: { children: (banner: ReactNode) => R
     if (isAbortError(raw)) return
     const error = toApiError(raw)
     if (classifyError(error.code) === 'user') {
-      toast.error(error.message)
+      // Retryable user errors (e.g. document_busy) get a retry action on the toast itself.
+      const action =
+        retry && error.retryable ? { label: '重试', onClick: () => void retry() } : undefined
+      toast.error(error.message, { description: errorHint(error.code), action })
       return
     }
     setBanner({ error, retry })
@@ -67,6 +70,7 @@ export function ErrorAlert({
       <AlertTitle>{kind === 'system' ? '系统错误' : '操作未完成'}</AlertTitle>
       <AlertDescription>
         <p>{error.message}</p>
+        {errorHint(error.code) && <p>{errorHint(error.code)}</p>}
         <p className="text-xs opacity-70">错误码：{error.code}</p>
       </AlertDescription>
       {(canRetry || onDismiss) && (

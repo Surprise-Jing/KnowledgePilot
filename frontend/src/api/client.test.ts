@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { setCurrentUser } from '@/lib/user'
+import { onSessionExpired } from '@/lib/session'
 
 import { ApiError, request } from './client'
 
@@ -14,8 +14,7 @@ function mockFetch(response: Response | Error) {
 }
 
 describe('request', () => {
-  it('sends X-User-Id and JSON bodies', async () => {
-    setCurrentUser('alice')
+  it('sends JSON bodies with the session cookie and no user header', async () => {
     const fetchMock = mockFetch(Response.json({ id: 'kb-1' }, { status: 201 }))
     const result = await request<{ id: string }>('/api/knowledge-bases', {
       method: 'POST',
@@ -25,9 +24,26 @@ describe('request', () => {
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe('/api/knowledge-bases')
     const headers = init?.headers as Record<string, string>
-    expect(headers['X-User-Id']).toBe('alice')
+    expect(headers).not.toHaveProperty('X-User-Id')
+    expect(init?.credentials).toBe('same-origin')
     expect(headers['Content-Type']).toBe('application/json')
     expect(init?.body).toBe(JSON.stringify({ name: '产品' }))
+  })
+
+  it('announces an expired session on 401 unauthenticated only', async () => {
+    const expired = vi.fn()
+    const stop = onSessionExpired(expired)
+    const unauthenticated = { error: { code: 'unauthenticated', message: '请先登录', retryable: false, details: [] } }
+    mockFetch(Response.json(unauthenticated, { status: 401 }))
+    await expect(request('/api/knowledge-bases')).rejects.toMatchObject({ code: 'unauthenticated' })
+    expect(expired).toHaveBeenCalledTimes(1)
+    const wrongPassword = { error: { code: 'invalid_credentials', message: '用户名或密码错误', retryable: false, details: [] } }
+    mockFetch(Response.json(wrongPassword, { status: 401 }))
+    await expect(request('/api/auth/login', { method: 'POST', json: {} })).rejects.toMatchObject({
+      code: 'invalid_credentials',
+    })
+    expect(expired).toHaveBeenCalledTimes(1)
+    stop()
   })
 
   it('parses the backend error body into ApiError', async () => {

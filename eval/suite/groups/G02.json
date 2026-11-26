@@ -1,0 +1,674 @@
+{
+ "id": "G02",
+ "title": "双基金对比与多源引用聚合",
+ "knowledge_bases": [
+  "易方达上证50ETF",
+  "易方达沪深300ETF"
+ ],
+ "split": "dev",
+ "dimensions": [
+  "D1",
+  "D3",
+  "D8"
+ ],
+ "compare": true,
+ "demo_candidate": true,
+ "overrides": {},
+ "changelog": [],
+ "cases": [
+  {
+   "id": "CMP01",
+   "origin": "finance-v1",
+   "source_ref": "eval/finance/cases.jsonl#CMP01",
+   "knowledge_bases": [
+    "易方达上证50ETF",
+    "易方达沪深300ETF"
+   ],
+   "documents": [
+    "s50_2025q1",
+    "c300_2025q1"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "2025年一季度两只ETF哪只季度收益更高，差多少个百分点？再比较各自超越基准的幅度，并解释这两个排名是否相同。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "s50_2025q1.return",
+     "label": "季度净值增长率",
+     "evidence_groups": [
+      [
+       "s50_2025q1.return",
+       "s50_2025q1.performance_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-0.55",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q1.active_return",
+     "label": "季度净值增长率减基准收益率",
+     "evidence_groups": [
+      [
+       "s50_2025q1.active_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "0.16",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "c300_2025q1.return",
+     "label": "季度净值增长率",
+     "evidence_groups": [
+      [
+       "c300_2025q1.return",
+       "c300_2025q1.performance_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-1.01",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "c300_2025q1.active_return",
+     "label": "季度净值增长率减基准收益率",
+     "evidence_groups": [
+      [
+       "c300_2025q1.active_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "0.20",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "cmp1_gap",
+     "label": "510100减510310季度收益差",
+     "evidence_groups": [
+      [
+       "s50_2025q1.return",
+       "s50_2025q1.performance_return"
+      ],
+      [
+       "c300_2025q1.return",
+       "c300_2025q1.performance_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "0.46",
+       "unit": "percentage_point",
+       "tolerance": "0.005"
+      }
+     ]
+    }
+   ],
+   "calculations": [
+    {
+     "id": "cmp1_gap",
+     "label": "510100减510310季度收益差",
+     "operation": "subtract",
+     "operands": [
+      "s50_2025q1.return",
+      "c300_2025q1.return"
+     ],
+     "expected": "0.46",
+     "unit": "percentage_point",
+     "decimal_places": 2
+    }
+   ],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "2025年一季度510100收益较高，差0.46个百分点；510310超额0.20个百分点高于510100的0.16，排名相反。",
+   "semantic_rubric": [
+    "更高收益与更高超额分别比较",
+    "差值用百分点",
+    "两只基金基准不同，不能据此认定管理能力高低",
+    "结论、基金、报告期、单位关联正确；关键词共现不能替代语义核查",
+    "关键结论的引用紧邻对应结论，且原文真正支持结论"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "沿用 eval/finance 人工标注"
+   },
+   "finance_category": "多文档对比",
+   "finance_split": "dev"
+  },
+  {
+   "id": "CMP02",
+   "origin": "finance-v1",
+   "source_ref": "eval/finance/cases.jsonl#CMP02",
+   "knowledge_bases": [
+    "易方达上证50ETF",
+    "易方达沪深300ETF"
+   ],
+   "documents": [
+    "s50_2024q4",
+    "c300_2024q4"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "2024年四季度两只ETF哪只季度收益更高，差多少个百分点？再比较各自超越基准的幅度，并解释这两个排名是否相同。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "s50_2024q4.return",
+     "label": "季度净值增长率",
+     "evidence_groups": [
+      [
+       "s50_2024q4.return",
+       "s50_2024q4.performance_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-2.40",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "s50_2024q4.active_return",
+     "label": "季度净值增长率减基准收益率",
+     "evidence_groups": [
+      [
+       "s50_2024q4.active_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "0.16",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "c300_2024q4.return",
+     "label": "季度净值增长率",
+     "evidence_groups": [
+      [
+       "c300_2024q4.return",
+       "c300_2024q4.performance_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-1.84",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "c300_2024q4.active_return",
+     "label": "季度净值增长率减基准收益率",
+     "evidence_groups": [
+      [
+       "c300_2024q4.active_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "0.22",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "cmp2_gap",
+     "label": "510100减510310季度收益差",
+     "evidence_groups": [
+      [
+       "s50_2024q4.return",
+       "s50_2024q4.performance_return"
+      ],
+      [
+       "c300_2024q4.return",
+       "c300_2024q4.performance_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-0.56",
+       "unit": "percentage_point",
+       "tolerance": "0.005"
+      }
+     ]
+    }
+   ],
+   "calculations": [
+    {
+     "id": "cmp2_gap",
+     "label": "510100减510310季度收益差",
+     "operation": "subtract",
+     "operands": [
+      "s50_2024q4.return",
+      "c300_2024q4.return"
+     ],
+     "expected": "-0.56",
+     "unit": "percentage_point",
+     "decimal_places": 2
+    }
+   ],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "2024年四季度510310收益较高，510100减510310为-0.56个百分点；510310超额0.22也高于510100的0.16，排名相同。",
+   "semantic_rubric": [
+    "更高收益与更高超额分别比较",
+    "差值用百分点",
+    "两只基金基准不同，不能据此认定管理能力高低",
+    "结论、基金、报告期、单位关联正确；关键词共现不能替代语义核查",
+    "关键结论的引用紧邻对应结论，且原文真正支持结论"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "沿用 eval/finance 人工标注"
+   },
+   "finance_category": "多文档对比",
+   "finance_split": "dev"
+  },
+  {
+   "id": "CMP04",
+   "origin": "finance-v1",
+   "source_ref": "eval/finance/cases.jsonl#CMP04",
+   "knowledge_bases": [
+    "易方达上证50ETF",
+    "易方达沪深300ETF"
+   ],
+   "documents": [
+    "s50_2025q1",
+    "c300_2025q1"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "2025年3月末，510100与510310对制造业的配置占基金资产净值比例分别多少？谁更高，相差多少个百分点？请分别引用两份季报。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "s50_2025q1.manufacturing",
+     "label": "制造业占基金净值比例",
+     "evidence_groups": [
+      [
+       "s50_2025q1.manufacturing"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "35.66",
+       "unit": "percent_of_NAV",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "c300_2025q1.manufacturing",
+     "label": "制造业占基金净值比例",
+     "evidence_groups": [
+      [
+       "c300_2025q1.manufacturing"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "52.61",
+       "unit": "percent_of_NAV",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "cmp4_gap",
+     "label": "510100减510310的权重差",
+     "evidence_groups": [
+      [
+       "s50_2025q1.manufacturing"
+      ],
+      [
+       "c300_2025q1.manufacturing"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-16.95",
+       "unit": "percentage_point",
+       "tolerance": "0.005"
+      }
+     ]
+    }
+   ],
+   "calculations": [
+    {
+     "id": "cmp4_gap",
+     "label": "510100减510310的权重差",
+     "operation": "subtract",
+     "operands": [
+      "s50_2025q1.manufacturing",
+      "c300_2025q1.manufacturing"
+     ],
+     "expected": "-16.95",
+     "unit": "percentage_point",
+     "decimal_places": 2
+    }
+   ],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "510100为35.66%，510310为52.61%；510100减510310为-16.95个百分点。",
+   "semantic_rubric": [
+    "比较相同日期与相同分母",
+    "不能用持仓公允价值绝对金额比较权重",
+    "负差值表示510310更高",
+    "结论、基金、报告期、单位关联正确；关键词共现不能替代语义核查",
+    "关键结论的引用紧邻对应结论，且原文真正支持结论"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "沿用 eval/finance 人工标注"
+   },
+   "finance_category": "多文档对比",
+   "finance_split": "dev"
+  },
+  {
+   "id": "CMP05",
+   "origin": "finance-v1",
+   "source_ref": "eval/finance/cases.jsonl#CMP05",
+   "knowledge_bases": [
+    "易方达上证50ETF",
+    "易方达沪深300ETF"
+   ],
+   "documents": [
+    "s50_2025q1",
+    "c300_2025q1"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "2025年3月末，510100与510310对贵州茅台的配置占基金资产净值比例分别多少？谁更高，相差多少个百分点？请分别引用两份季报。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "s50_2025q1.maotai_weight",
+     "label": "贵州茅台占净值比例",
+     "evidence_groups": [
+      [
+       "s50_2025q1.maotai_weight"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "12.37",
+       "unit": "percent_of_NAV",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "c300_2025q1.maotai_weight",
+     "label": "贵州茅台占净值比例",
+     "evidence_groups": [
+      [
+       "c300_2025q1.maotai_weight"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "4.79",
+       "unit": "percent_of_NAV",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "cmp5_gap",
+     "label": "510100减510310的权重差",
+     "evidence_groups": [
+      [
+       "s50_2025q1.maotai_weight"
+      ],
+      [
+       "c300_2025q1.maotai_weight"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "7.58",
+       "unit": "percentage_point",
+       "tolerance": "0.005"
+      }
+     ]
+    }
+   ],
+   "calculations": [
+    {
+     "id": "cmp5_gap",
+     "label": "510100减510310的权重差",
+     "operation": "subtract",
+     "operands": [
+      "s50_2025q1.maotai_weight",
+      "c300_2025q1.maotai_weight"
+     ],
+     "expected": "7.58",
+     "unit": "percentage_point",
+     "decimal_places": 2
+    }
+   ],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "510100为12.37%，510310为4.79%；510100减510310为7.58个百分点。",
+   "semantic_rubric": [
+    "比较相同日期与相同分母",
+    "不能用持仓公允价值绝对金额比较权重",
+    "负差值表示510310更高",
+    "结论、基金、报告期、单位关联正确；关键词共现不能替代语义核查",
+    "关键结论的引用紧邻对应结论，且原文真正支持结论"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "沿用 eval/finance 人工标注"
+   },
+   "finance_category": "多文档对比",
+   "finance_split": "dev"
+  },
+  {
+   "id": "AG01",
+   "origin": "finance-v1",
+   "source_ref": "eval/finance/cases.jsonl#AG01",
+   "knowledge_bases": [
+    "易方达上证50ETF",
+    "易方达沪深300ETF"
+   ],
+   "documents": [
+    "s50_2024q4",
+    "s50_2025q1",
+    "c300_2024q4",
+    "c300_2025q1"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "四份季报是否都披露主要采用完全复制法？请用一条综合结论回答，并为这条结论保留四份报告各自的来源。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "replication_all",
+     "label": "四份报告共同支持完全复制法",
+     "evidence_groups": [
+      [
+       "s50_2024q4.replication"
+      ],
+      [
+       "s50_2025q1.replication"
+      ],
+      [
+       "c300_2024q4.replication"
+      ],
+      [
+       "c300_2025q1.replication"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "完全复制"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "四份报告均披露主要采用完全复制法。",
+   "semantic_rubric": [
+    "一个共同结论关联四份来源",
+    "同样文本不能按内容去重后丢失报告身份",
+    "不把主要采用写成任何情况下都完全复制",
+    "结论、基金、报告期、单位关联正确；关键词共现不能替代语义核查",
+    "关键结论的引用紧邻对应结论，且原文真正支持结论"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "沿用 eval/finance 人工标注"
+   },
+   "finance_category": "引用聚合",
+   "finance_split": "dev"
+  },
+  {
+   "id": "AG02",
+   "origin": "finance-v1",
+   "source_ref": "eval/finance/cases.jsonl#AG02",
+   "knowledge_bases": [
+    "易方达上证50ETF",
+    "易方达沪深300ETF"
+   ],
+   "documents": [
+    "s50_2024q4",
+    "s50_2025q1",
+    "c300_2024q4",
+    "c300_2025q1"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "这四份季度报告里的财务资料是否已经审计？请合并成一条结论，同时列出四份来源，避免把年报审计状态套用到季报。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "audit_all",
+     "label": "四份报告均未经审计",
+     "evidence_groups": [
+      [
+       "s50_2024q4.unaudited"
+      ],
+      [
+       "s50_2025q1.unaudited"
+      ],
+      [
+       "c300_2024q4.unaudited"
+      ],
+      [
+       "c300_2025q1.unaudited"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "未经审计"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "四份季报均明确写明本报告中财务资料未经审计。",
+   "semantic_rubric": [
+    "四份来源齐全",
+    "未经审计不等于财务资料虚假",
+    "不得引用数据集外年报作为本题依据",
+    "结论、基金、报告期、单位关联正确；关键词共现不能替代语义核查",
+    "关键结论的引用紧邻对应结论，且原文真正支持结论"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "沿用 eval/finance 人工标注"
+   },
+   "finance_category": "引用聚合",
+   "finance_split": "dev"
+  }
+ ]
+}

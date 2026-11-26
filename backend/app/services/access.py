@@ -3,20 +3,7 @@
 Every lookup is scoped by user. A resource owned by someone else is reported as missing,
 so callers cannot probe which ids exist."""
 
-import re
-
 from app.errors import AppError
-
-USER_ID_PATTERN = re.compile(r"[A-Za-z0-9_-]{1,64}")
-
-
-def ensure_user(connection, user_id: str) -> str:
-    if not USER_ID_PATTERN.fullmatch(user_id):
-        raise AppError(
-            400, "invalid_user_id", "用户标识只能包含字母、数字、下划线和连字符，最长 64 位"
-        )
-    connection.execute("INSERT OR IGNORE INTO users(id, name) VALUES (?, ?)", (user_id, user_id))
-    return user_id
 
 
 def require_knowledge_base(connection, user_id: str, kb_id: str) -> dict:

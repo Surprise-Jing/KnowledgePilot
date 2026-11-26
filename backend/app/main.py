@@ -9,13 +9,14 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api import conversations, documents, folders, knowledge_bases, search
+from app.api import auth, conversations, documents, folders, knowledge_bases, search
 from app.config import Settings
 from app.db import Database
 from app.errors import AppError
 from app.logging_setup import RequestContextMiddleware, configure_logging
 from app.parsers import registry
 from app.services import artifacts
+from app.services.auth import LoginThrottle
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +53,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # None selects the default OpenAI-compatible client; tests inject a scripted one
     # (docs/contracts.md §5.3).
     app.state.llm_factory = None
+    app.state.login_throttle = LoginThrottle()
     app.add_middleware(RequestContextMiddleware)
 
     @app.exception_handler(AppError)
@@ -77,7 +79,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def health():
         return {"status": "ok", "answer_mode": settings.answer_mode}
 
-    for module in (knowledge_bases, folders, documents, search, conversations):
+    for module in (auth, knowledge_bases, folders, documents, search, conversations):
         app.include_router(module.router)
 
     # Mounted last so API routes take precedence. Missing build: API-only mode (dev uses Vite).

@@ -70,3 +70,4 @@ class ToolContext:
     allowed_kb_ids: list[str]
     run_id: str | None = None
     markers: MarkerAllocator = field(default_factory=MarkerAllocator)
+    allowed_document_ids: list[str] | None = None

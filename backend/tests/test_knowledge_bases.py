@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from app.config import Settings
 from app.main import create_app
+from tests.fakes.helpers import headers, login
 
 
 @pytest.fixture
@@ -18,15 +19,14 @@ def settings(tmp_path):
 @pytest.fixture
 def client(settings):
     with TestClient(create_app(settings)) as client:
+        login(client)
         yield client
 
 
-def as_user(user):
-    return {"X-User-Id": user}
-
-
 def make_kb(client, name="库", user="demo"):
-    response = client.post("/api/knowledge-bases", json={"name": name}, headers=as_user(user))
+    response = client.post(
+        "/api/knowledge-bases", json={"name": name}, headers=headers(client, user)
+    )
     assert response.status_code == 201, response.text
     return response.json()["id"]
 
@@ -35,7 +35,7 @@ def make_folder(client, kb_id, name, parent_id=None, user="demo"):
     response = client.post(
         f"/api/knowledge-bases/{kb_id}/folders",
         json={"name": name, "parent_id": parent_id},
-        headers=as_user(user),
+        headers=headers(client, user),
     )
     assert response.status_code == 201, response.text
     return response.json()["id"]
@@ -47,7 +47,7 @@ def upload(client, kb_id, name, text, folder_id=None, user="demo"):
         f"/api/knowledge-bases/{kb_id}/documents",
         files={"file": (name, text.encode())},
         data=data,
-        headers=as_user(user),
+        headers=headers(client, user),
     )
     assert response.status_code == 202, response.text
     return response.json()
@@ -80,17 +80,17 @@ def test_rename_updates_name_and_timestamp(client):
 def test_rename_rejects_foreign_missing_and_invalid(client):
     kb_id = make_kb(client, "爱丽丝的库", user="alice")
     response = client.patch(
-        f"/api/knowledge-bases/{kb_id}", json={"name": "改名"}, headers=as_user("bob")
+        f"/api/knowledge-bases/{kb_id}", json={"name": "改名"}, headers=headers(client, "bob")
     )
     assert response.status_code == 404 and error_code(response) == "knowledge_base_not_found"
     missing = client.patch("/api/knowledge-bases/missing", json={"name": "改名"})
     assert missing.status_code == 404 and error_code(missing) == "knowledge_base_not_found"
     for payload in ({}, {"name": "   "}, {"name": ""}, {"name": None}):
         response = client.patch(
-            f"/api/knowledge-bases/{kb_id}", json=payload, headers=as_user("alice")
+            f"/api/knowledge-bases/{kb_id}", json=payload, headers=headers(client, "alice")
         )
         assert response.status_code == 422 and error_code(response) == "invalid_argument", payload
-    owner_view = client.get("/api/knowledge-bases", headers=as_user("alice")).json()
+    owner_view = client.get("/api/knowledge-bases", headers=headers(client, "alice")).json()
     assert owner_view[0]["name"] == "爱丽丝的库"
 
 
@@ -138,19 +138,24 @@ def test_delete_is_idempotent_and_ignores_foreign_knowledge_bases(client):
     document = upload(client, kb_id, "a.txt", "爱丽丝的私有资料", user="alice")
     path = stored_path(client, document["id"])
 
-    assert client.delete(f"/api/knowledge-bases/{kb_id}", headers=as_user("bob")).status_code == 204
-    owner_view = client.get("/api/knowledge-bases", headers=as_user("alice")).json()
+    assert (
+        client.delete(f"/api/knowledge-bases/{kb_id}", headers=headers(client, "bob")).status_code
+        == 204
+    )
+    owner_view = client.get("/api/knowledge-bases", headers=headers(client, "alice")).json()
     assert [item["id"] for item in owner_view] == [kb_id]
-    assert client.get(f"/api/documents/{document['id']}", headers=as_user("alice")).json()[
+    assert client.get(f"/api/documents/{document['id']}", headers=headers(client, "alice")).json()[
         "status"
     ] == ("success")
     assert path.exists()
 
     assert (
-        client.delete(f"/api/knowledge-bases/{kb_id}", headers=as_user("alice")).status_code == 204
+        client.delete(f"/api/knowledge-bases/{kb_id}", headers=headers(client, "alice")).status_code
+        == 204
     )
     assert (
-        client.delete(f"/api/knowledge-bases/{kb_id}", headers=as_user("alice")).status_code == 204
+        client.delete(f"/api/knowledge-bases/{kb_id}", headers=headers(client, "alice")).status_code
+        == 204
     )
     assert client.delete("/api/knowledge-bases/never-existed").status_code == 204
     assert not path.exists()

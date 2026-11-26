@@ -9,6 +9,7 @@ from app.config import Settings
 from app.db import SCHEMA_VERSION, UPGRADE_ERROR
 from app.main import create_app
 from app.parsers.text import MAX_CHUNK_CHARS, SPLIT_OVERLAP
+from tests.fakes.helpers import headers, login
 
 
 @pytest.fixture
@@ -19,15 +20,14 @@ def settings(tmp_path):
 @pytest.fixture
 def client(settings):
     with TestClient(create_app(settings)) as client:
+        login(client)
         yield client
 
 
-def as_user(user_id):
-    return {"X-User-Id": user_id}
-
-
 def kb(client, user="demo", name="测试库"):
-    response = client.post("/api/knowledge-bases", json={"name": name}, headers=as_user(user))
+    response = client.post(
+        "/api/knowledge-bases", json={"name": name}, headers=headers(client, user)
+    )
     assert response.status_code == 201, response.text
     return response.json()["id"]
 
@@ -36,14 +36,14 @@ def upload(client, kb_id, name, data, user="demo"):
     response = client.post(
         f"/api/knowledge-bases/{kb_id}/documents",
         files={"file": (name, data)},
-        headers=as_user(user),
+        headers=headers(client, user),
     )
     assert response.status_code == 202, response.text
     return response.json()
 
 
 def chunks(client, document_id, user="demo"):
-    response = client.get(f"/api/documents/{document_id}/chunks", headers=as_user(user))
+    response = client.get(f"/api/documents/{document_id}/chunks", headers=headers(client, user))
     assert response.status_code == 200, response.text
     return response.json()
 
@@ -54,7 +54,8 @@ def test_users_cannot_see_each_others_data(client):
     bob_kb = kb(client, "bob")
 
     assert [
-        item["id"] for item in client.get("/api/knowledge-bases", headers=as_user("bob")).json()
+        item["id"]
+        for item in client.get("/api/knowledge-bases", headers=headers(client, "bob")).json()
     ] == [bob_kb]
     for method, url in [
         ("get", f"/api/knowledge-bases/{alice_kb}/documents"),
@@ -63,30 +64,42 @@ def test_users_cannot_see_each_others_data(client):
         ("post", f"/api/documents/{document['id']}/retry"),
         ("patch", f"/api/documents/{document['id']}"),
     ]:
-        response = client.request(method, url, headers=as_user("bob"), json={"filename": "x.txt"})
+        response = client.request(
+            method, url, headers=headers(client, "bob"), json={"filename": "x.txt"}
+        )
         assert response.status_code == 404, (method, url)
     # Deletes are idempotent (docs/contracts.md §1): a foreign document answers 204 like a
     # missing one, and nothing happens to it.
     assert (
-        client.delete(f"/api/documents/{document['id']}", headers=as_user("bob")).status_code == 204
+        client.delete(
+            f"/api/documents/{document['id']}", headers=headers(client, "bob")
+        ).status_code
+        == 204
     )
     search = {"query": "私有笔记", "knowledge_base_ids": [alice_kb]}
-    assert client.post("/api/search", json=search, headers=as_user("bob")).status_code == 404
+    assert (
+        client.post("/api/search", json=search, headers=headers(client, "bob")).status_code == 404
+    )
     # Mixing an owned and a foreign knowledge base is rejected rather than silently filtered.
     search["knowledge_base_ids"] = [bob_kb, alice_kb]
-    assert client.post("/api/search", json=search, headers=as_user("bob")).status_code == 404
+    assert (
+        client.post("/api/search", json=search, headers=headers(client, "bob")).status_code == 404
+    )
     # The owner still sees the document, so the 404s above came from the ownership check.
     assert (
-        client.get(f"/api/documents/{document['id']}", headers=as_user("alice")).status_code == 200
+        client.get(f"/api/documents/{document['id']}", headers=headers(client, "alice")).status_code
+        == 200
     )
 
 
-def test_missing_header_uses_default_user_and_invalid_header_is_rejected(client):
+def test_requests_without_a_session_are_rejected_and_user_header_is_ignored(client):
     kb_id = kb(client, "demo")
     assert [item["id"] for item in client.get("/api/knowledge-bases").json()] == [kb_id]
-    response = client.get("/api/knowledge-bases", headers=as_user("not valid!"))
-    assert response.status_code == 400
-    assert response.json()["error"]["code"] == "invalid_user_id"
+    client.cookies.clear()
+    for extra in ({}, {"X-User-Id": "demo"}):
+        response = client.get("/api/knowledge-bases", headers=extra)
+        assert response.status_code == 401
+        assert response.json()["error"]["code"] == "unauthenticated"
 
 
 def test_document_metadata(client):
@@ -217,8 +230,9 @@ def test_day_one_database_is_migrated(settings):
     connection.close()
 
     with TestClient(create_app(settings)) as client:
+        login(client)
         assert [item["name"] for item in client.get("/api/knowledge-bases").json()] == ["旧知识库"]
-        assert client.get("/api/knowledge-bases", headers=as_user("someone")).json() == []
+        assert client.get("/api/knowledge-bases", headers=headers(client, "someone")).json() == []
         documents = {d["id"]: d for d in client.get("/api/knowledge-bases/kb-1/documents").json()}
         assert documents["doc-1"]["status"] == "failed"
         assert documents["doc-1"]["error"] == UPGRADE_ERROR
@@ -320,7 +334,7 @@ def test_migrate_v4_to_v5_adds_columns(settings):
     Database(path).migrate()
     connection = sqlite3.connect(path)
     connection.row_factory = sqlite3.Row
-    assert connection.execute("PRAGMA user_version").fetchone()[0] == 5
+    assert connection.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
     document = connection.execute("SELECT * FROM documents WHERE id='d'").fetchone()
     assert document["parse_mode"] == "standard"
     assert document["parser"] is None

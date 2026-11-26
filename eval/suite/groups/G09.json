@@ -1,0 +1,220 @@
+{
+ "id": "G09",
+ "title": "证券法2014版与2019版对比",
+ "knowledge_bases": [
+  "金融法律法规"
+ ],
+ "split": "test",
+ "dimensions": [
+  "D1",
+  "D3",
+  "D8"
+ ],
+ "compare": false,
+ "demo_candidate": false,
+ "overrides": {},
+ "changelog": [
+  {
+   "date": "2026-11-24",
+   "change": "用户审阅：3 道题标为 approved"
+  }
+ ],
+ "cases": [
+  {
+   "id": "G09-1",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "securities_law_2014",
+    "securities_law_2019"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "2014年版和2019年版证券法对公开发行证券，分别要求报经“核准”还是“注册”？请分别给出条文出处。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "v2014",
+     "label": "2014年版：核准",
+     "evidence_groups": [
+      [
+       "sec14.approval"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "核准"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "v2019",
+     "label": "2019年版：注册",
+     "evidence_groups": [
+      [
+       "sec19.registration"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "注册"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "2014年版第十条要求依法报经核准；2019年版第九条改为依法报经注册，并规定注册制具体范围由国务院规定。",
+   "semantic_rubric": [
+    "两版分别引用",
+    "不得混淆版本"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户审阅通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G09-2",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "securities_law_2014",
+    "securities_law_2019"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "对已经发行证券的欺诈发行行为，2014年版和2019年版证券法规定的罚款幅度分别是多少？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "fine2014",
+     "label": "2014年版罚款幅度",
+     "evidence_groups": [
+      [
+       "sec14.fraud_fine"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "百分之一以上百分之五以下",
+       "1%至5%",
+       "1%-5%"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "fine2019",
+     "label": "2019年版罚款幅度",
+     "evidence_groups": [
+      [
+       "sec19.fraud_fine"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "百分之十以上一倍以下",
+       "10%至1倍",
+       "10%-100%"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "2014年版第一百八十九条：非法所募资金金额百分之一以上百分之五以下；2019年版第一百八十一条：百分之十以上一倍以下。",
+   "semantic_rubric": [
+    "两版条款号与幅度对应正确",
+    "说明处罚明显加重"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户审阅通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G09-3",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "securities_law_2014",
+    "securities_law_2019"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "相比2014年版，2019年版证券法新增了哪两个独立成章的内容？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "disclosure",
+     "label": "信息披露",
+     "evidence_groups": [
+      [
+       "sec19.ch_disclosure"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "信息披露"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "investor",
+     "label": "投资者保护",
+     "evidence_groups": [
+      [
+       "sec19.ch_investor"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "投资者保护"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "新增第五章“信息披露”和第六章“投资者保护”；2014年版共十二章，没有这两章。",
+   "semantic_rubric": [
+    "两章都要答出",
+    "需对照两版章节"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户审阅通过（2026-11-24）"
+   }
+  }
+ ]
+}

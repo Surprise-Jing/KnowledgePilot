@@ -8,9 +8,10 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { CitationsPanel } from '@/features/citations/CitationsPanel'
 import { InspectorProvider } from '@/features/citations/InspectorProvider'
 import { TracePanel } from '@/features/trace/TracePanel'
-import { controlledEventStream, knowledgeBase, routeFetch } from '@/test/fixtures'
+import { controlledEventStream, documentOut, knowledgeBase, routeFetch } from '@/test/fixtures'
 
 import { ChatView } from './ChatView'
+import { ChatScopeProvider } from './ChatScopeProvider'
 
 const conversation = {
   id: 'conv-1',
@@ -94,14 +95,14 @@ const runOut: RunOut = {
   model_retries: 0,
 }
 
-function renderChat() {
+function renderChat(knowledgeBases = [knowledgeBase]) {
   return render(
     <TooltipProvider>
       <ErrorProvider>
         {(banner) => (
           <InspectorProvider>
             {banner}
-            <ChatView knowledgeBases={[knowledgeBase]} currentKbId="kb-1" />
+            <ChatScopeProvider><ChatView knowledgeBases={knowledgeBases} currentKbId={knowledgeBases[0]?.id ?? null} /></ChatScopeProvider>
             <section aria-label="trace-panel">
               <TracePanel />
             </section>
@@ -116,6 +117,144 @@ function renderChat() {
 }
 
 describe('ChatView streaming', () => {
+  it('retries a failed history answer with the original document scope', async () => {
+    const selection = { mode: 'selected' as const, knowledge_base_ids: [], folder_ids: [], document_ids: ['doc-1'] }
+    const snapshot = { selection, labels: ['介绍.txt'], knowledge_base_ids: ['kb-1'], document_ids: ['doc-1'] }
+    const bodies: unknown[] = []
+    const stream = controlledEventStream()
+    vi.stubGlobal('fetch', routeFetch({
+      'GET /api/conversations': () => Response.json([conversation]),
+      'GET /api/conversations/conv-1': () => Response.json({ ...persisted, messages: [
+        { ...persisted.messages[0], scope: snapshot },
+        { ...persisted.messages[1], status: 'failed', content: '', error: '模型超时' },
+      ] }),
+      'GET /api/documents/doc-1': () => Response.json(documentOut({})),
+      'GET /api/runs/run-1': () => Response.json({ ...runOut, status: 'failed' }),
+      'POST /api/conversations/conv-1/messages': ({ body }) => { bodies.push(body); return stream.response },
+    }))
+    const user = userEvent.setup()
+    renderChat()
+    await user.click(screen.getByRole('button', { name: '展开会话列表' }))
+    await user.click(await screen.findByRole('button', { name: /^新对话/ }))
+    await user.click(await screen.findByRole('button', { name: '重试' }))
+    await waitFor(() => expect(bodies).toEqual([{ content: persisted.messages[0].content, scope: selection }]))
+    stream.send('done', { run_id: 'retry-run', stop_reason: 'answered', step_count: 1, usage: { prompt_tokens: 1, completion_tokens: 1 } })
+    stream.close()
+    await waitFor(() => expect(screen.queryByRole('button', { name: '停止' })).not.toBeInTheDocument())
+  })
+
+  it('copies a history answer together with its source names', async () => {
+    vi.stubGlobal('fetch', routeFetch({
+      'GET /api/conversations': () => Response.json([conversation]),
+      'GET /api/conversations/conv-1': () => Response.json(persisted),
+      'GET /api/runs/run-1': () => Response.json(runOut),
+    }))
+    const user = userEvent.setup()
+    const write = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue()
+    renderChat()
+    await user.click(screen.getByRole('button', { name: '展开会话列表' }))
+    await user.click(await screen.findByRole('button', { name: /^新对话/ }))
+    await user.click(await screen.findByRole('button', { name: '复制回答' }))
+    expect(write).toHaveBeenCalledWith(answer + '\n\n来源：\n[c1] 介绍.txt 第 1–3 行')
+    write.mockRestore()
+  })
+
+  it('searches and renames a conversation through the server', async () => {
+    const bodies: unknown[] = []
+    vi.stubGlobal('fetch', routeFetch({
+      'GET /api/conversations': () => Response.json([conversation]),
+      'PATCH /api/conversations/conv-1': ({ body }) => { bodies.push(body); return Response.json({ ...conversation, title: '重命名后的会话' }) },
+    }))
+    const user = userEvent.setup()
+    renderChat()
+    await user.click(screen.getByRole('button', { name: '展开会话列表' }))
+    await user.click(await screen.findByRole('button', { name: '重命名对话 新对话' }))
+    const field = screen.getByRole('textbox', { name: '会话名称' })
+    await user.clear(field)
+    await user.type(field, '重命名后的会话')
+    await user.click(screen.getByRole('button', { name: '保存' }))
+    expect(await screen.findByRole('button', { name: '重命名对话 重命名后的会话' })).toBeInTheDocument()
+    expect(bodies).toEqual([{ title: '重命名后的会话' }])
+    await user.type(screen.getByRole('textbox', { name: '搜索历史会话' }), '不存在的标题')
+    expect(screen.getByText('没有匹配的会话，试试其他关键词')).toBeInTheDocument()
+  })
+
+  it('rechecks the scope before sending and keeps invalid selections from becoming automatic', async () => {
+    const selection = { mode: 'selected' as const, knowledge_base_ids: [], folder_ids: [], document_ids: ['doc-1'] }
+    const snapshot = { selection, labels: ['介绍.txt'], knowledge_base_ids: ['kb-1'], document_ids: ['doc-1'] }
+    let deleted = false
+    let checks = 0
+    const posted: unknown[] = []
+    vi.stubGlobal('fetch', routeFetch({
+      'GET /api/conversations': () => Response.json([conversation]),
+      'GET /api/conversations/conv-1': () => Response.json({ ...persisted, messages: [{ ...persisted.messages[0], scope: snapshot }] }),
+      'GET /api/documents/doc-1': () => {
+        checks++
+        return deleted ? Response.json({ error: { code: 'document_not_found', message: '文档不存在', retryable: false } }, { status: 404 }) : Response.json(documentOut({}))
+      },
+      'POST /api/conversations/conv-1/messages': ({ body }) => { posted.push(body); return new Response('') },
+    }))
+    const user = userEvent.setup()
+    renderChat()
+    await user.click(screen.getByRole('button', { name: '展开会话列表' }))
+    await user.click(await screen.findByRole('button', { name: /^新对话/ }))
+    await screen.findByRole('button', { name: '移除介绍.txt' })
+    await waitFor(() => expect(checks).toBeGreaterThan(0))
+    await user.type(screen.getByRole('textbox', { name: '问题' }), '继续分析')
+    deleted = true
+    await user.click(screen.getByRole('button', { name: '发送' }))
+    expect(await screen.findByText('本次提问未发送')).toBeInTheDocument()
+    expect(posted).toEqual([])
+    expect(screen.getByRole('textbox', { name: '问题' })).toHaveValue('继续分析')
+    expect(screen.getByRole('button', { name: '移除介绍.txt' })).toHaveTextContent('不可用')
+    expect(screen.queryByText('自动查找资料')).not.toBeInTheDocument()
+  })
+
+  it('lets users start chatting without a knowledge base', async () => {
+    vi.stubGlobal('fetch', routeFetch({ 'GET /api/conversations': () => Response.json([]) }))
+    renderChat([])
+    await userEvent.setup().type(screen.getByRole('textbox', { name: '问题' }), '解释一个通用概念')
+    expect(screen.getByRole('button', { name: '发送' })).toBeEnabled()
+    expect(screen.getByText('自动查找资料')).toBeInTheDocument()
+  })
+
+  it('restores the last question scope and sends its document boundary', async () => {
+    const selection = { mode: 'selected' as const, knowledge_base_ids: [], folder_ids: [], document_ids: ['doc-1'] }
+    const snapshot = { selection, labels: ['介绍.txt'], knowledge_base_ids: ['kb-1'], document_ids: ['doc-1'] }
+    const stream = controlledEventStream()
+    const bodies: unknown[] = []
+    vi.stubGlobal('fetch', routeFetch({
+      'GET /api/conversations': () => Response.json([conversation]),
+      'GET /api/conversations/conv-1': () => Response.json({ ...persisted, messages: [{ ...persisted.messages[0], scope: snapshot }] }),
+      'GET /api/documents/doc-1': () => Response.json(documentOut({})),
+      'POST /api/conversations/conv-1/messages': ({ body }) => { bodies.push(body); return stream.response },
+    }))
+    const user = userEvent.setup()
+    renderChat()
+    await user.click(screen.getByRole('button', { name: '展开会话列表' }))
+    await user.click(await screen.findByRole('button', { name: /^新对话/ }))
+    expect(await screen.findByRole('button', { name: '移除介绍.txt' })).toBeInTheDocument()
+    await user.type(screen.getByRole('textbox', { name: '问题' }), '继续说明')
+    await user.click(screen.getByRole('button', { name: '发送' }))
+    await waitFor(() => expect(bodies).toEqual([{ content: '继续说明', scope: selection }]))
+    stream.send('run_started', { run_id: 'run-3', conversation_id: 'conv-1', user_message_id: 'u3', assistant_message_id: 'a3' })
+    stream.send('done', { run_id: 'run-3', stop_reason: 'answered', step_count: 1, usage: { prompt_tokens: 1, completion_tokens: 1 } })
+    stream.close()
+    await waitFor(() => expect(screen.queryByRole('button', { name: '停止' })).not.toBeInTheDocument())
+  })
+
+  it('collapses the history without losing an unsent question', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('[]', { headers: { 'Content-Type': 'application/json' } })))
+    renderChat()
+    const user = userEvent.setup()
+    await user.type(screen.getByRole('textbox', { name: '问题' }), '尚未发送的问题')
+    await user.click(screen.getByRole('button', { name: '展开会话列表' }))
+    expect(screen.getByRole('heading', { name: '历史会话' })).toBeInTheDocument()
+    await user.keyboard('{Escape}')
+    expect(screen.getByRole('textbox', { name: '问题' })).toHaveValue('尚未发送的问题')
+    expect(screen.getByRole('button', { name: '展开会话列表' })).toHaveAttribute('aria-expanded', 'false')
+  })
+
   it('shows text and tool trace step by step, then aligns with the persisted answer', async () => {
     const stream = controlledEventStream()
     let finished = false
@@ -142,7 +281,7 @@ describe('ChatView streaming', () => {
 
     await user.type(screen.getByRole('textbox', { name: '问题' }), '支持哪些功能？{Enter}')
     await waitFor(() => expect(sendBodies).toHaveLength(1))
-    expect(sendBodies[0]).toEqual({ content: '支持哪些功能？', knowledge_base_ids: ['kb-1'] })
+    expect(sendBodies[0]).toEqual({ content: '支持哪些功能？', scope: { mode: 'auto', knowledge_base_ids: [], folder_ids: [], document_ids: [] } })
     expect(screen.getByRole('button', { name: '停止' })).toBeInTheDocument()
 
     stream.send('run_started', {
@@ -164,7 +303,8 @@ describe('ChatView streaming', () => {
     })
     stream.send('token', { delta: '它支持' })
     await waitFor(() => expect(screen.getByTestId('live-answer')).toHaveTextContent('它支持'))
-    expect(trace().getByText(/命中 1 个片段/)).toBeInTheDocument()
+    // The trace panel may commit a tick after the answer text under load.
+    await waitFor(() => expect(trace().getByText(/命中 1 个片段/)).toBeInTheDocument())
     expect(trace().getByText(/成功/)).toBeInTheDocument()
 
     stream.send('token', { delta: '多知识库[c1]。' })
@@ -330,6 +470,7 @@ describe('ChatView degradation and history', () => {
     )
     const user = userEvent.setup()
     renderChat()
+    await user.click(screen.getByRole('button', { name: '展开会话列表' }))
     await user.click(await screen.findByRole('button', { name: /^旧对话/ }))
 
     const notice = await screen.findByTestId('degraded-notice')
@@ -372,6 +513,7 @@ describe('ChatView degradation and history', () => {
     )
     const user = userEvent.setup()
     renderChat()
+    await user.click(screen.getByRole('button', { name: '展开会话列表' }))
     await user.click(await screen.findByRole('button', { name: /^旧对话/ }))
     const panel = within(screen.getByRole('region', { name: 'citations-panel' }))
     const group = await panel.findByRole('listitem', { name: '介绍.txt，2 处引用' })

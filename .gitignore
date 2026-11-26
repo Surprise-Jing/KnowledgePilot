@@ -16,3 +16,4 @@ frontend/dist/
 eval/results/
 # Downloaded third-party reports used for local evaluation only
 examples/financial_reports/
+docs/schedules/

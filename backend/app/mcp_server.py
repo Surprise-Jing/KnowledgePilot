@@ -34,7 +34,7 @@ from app.db import Database
 from app.errors import AppError
 from app.logging_setup import configure_logging
 from app.schemas import ToolError, ToolResult
-from app.services.access import ensure_user
+from app.services.auth import require_user_by_username
 from app.services.knowledge_bases import list_knowledge_bases
 from app.tools.context import MarkerAllocator, ToolContext
 from app.tools.registry import execute_async, openai_tool_specs
@@ -75,7 +75,6 @@ def mcp_tools() -> list[types.Tool]:
 def _allowed_kb_ids(runtime: McpRuntime) -> list[str]:
     # Read at call time so knowledge bases created or deleted in the web app are seen at once.
     with runtime.db.connect() as connection:
-        ensure_user(connection, runtime.user_id)
         return [kb["id"] for kb in list_knowledge_bases(connection, runtime.user_id)]
 
 
@@ -168,8 +167,10 @@ def _startup(settings: Settings) -> McpRuntime:
     db = Database(settings.data_dir / "knowledge.db")
     # migrate(), not initialize(): recovery would fail parsing/answers in a running web app.
     db.migrate()
+    # The MCP server has no login: it acts as a configured, already registered user and never
+    # creates accounts.
     with db.connect() as connection:
-        user_id = ensure_user(connection, settings.mcp_user_id)
+        user_id = require_user_by_username(connection, settings.mcp_username)["id"]
     return McpRuntime(db=db, settings=settings, user_id=user_id)
 
 

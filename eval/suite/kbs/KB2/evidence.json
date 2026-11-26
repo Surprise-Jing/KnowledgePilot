@@ -1,0 +1,170 @@
+{
+ "s50ar.toc9": {
+  "id": "s50ar.toc9",
+  "document": "s50_2024ar",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  },
+  "label": "第9章",
+  "value": "基金份额持有人信息",
+  "unit": null,
+  "anchor": "§9基金份额持有人信息"
+ },
+ "s50ar.toc10": {
+  "id": "s50ar.toc10",
+  "document": "s50_2024ar",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  },
+  "label": "第10章",
+  "value": "开放式基金份额变动",
+  "unit": null,
+  "anchor": "§10开放式基金份额变动"
+ },
+ "s50ar.toc11": {
+  "id": "s50ar.toc11",
+  "document": "s50_2024ar",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  },
+  "label": "第11章",
+  "value": "重大事件揭示",
+  "unit": null,
+  "anchor": "§11重大事件揭示"
+ },
+ "s50ar.toc12": {
+  "id": "s50ar.toc12",
+  "document": "s50_2024ar",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  },
+  "label": "第12章",
+  "value": "影响投资者决策的其他重要信息",
+  "unit": null,
+  "anchor": "§12影响投资者决策的其他重要信息"
+ },
+ "s50ar.toc13": {
+  "id": "s50ar.toc13",
+  "document": "s50_2024ar",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 4
+  },
+  "label": "第13章",
+  "value": "备查文件目录",
+  "unit": null,
+  "anchor": "§13备查文件目录"
+ },
+ "s50ar.mgmt": {
+  "id": "s50ar.mgmt",
+  "document": "s50_2024ar",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 40
+  },
+  "label": "2024年管理费",
+  "value": "5916444.07",
+  "unit": "CNY",
+  "anchor": "当期发生的基金应支付的管理费5,916,444.07"
+ },
+ "s50ar.mgmt_prev": {
+  "id": "s50ar.mgmt_prev",
+  "document": "s50_2024ar",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 40
+  },
+  "label": "2023年管理费",
+  "value": "3037333.35",
+  "unit": "CNY",
+  "anchor": "当期发生的基金应支付的管理费5,916,444.073,037,333.35"
+ },
+ "s50ar.cust": {
+  "id": "s50ar.cust",
+  "document": "s50_2024ar",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 40
+  },
+  "label": "2024年托管费",
+  "value": "1972148.01",
+  "unit": "CNY",
+  "anchor": "当期发生的基金应支付的托管费1,972,148.01"
+ },
+ "s50ir.mgmt": {
+  "id": "s50ir.mgmt",
+  "document": "s50_2025ir",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 26
+  },
+  "label": "2025上半年管理费",
+  "value": "3043055.32",
+  "unit": "CNY",
+  "anchor": "当期发生的基金应支付的管理费3,043,055.32"
+ },
+ "c300ar.mgmt": {
+  "id": "c300ar.mgmt",
+  "document": "c300_2024ar",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 42
+  },
+  "label": "2024年管理费",
+  "value": "251528925.33",
+  "unit": "CNY",
+  "anchor": "当期发生的基金应支付的管理费251,528,925.33"
+ },
+ "c300ar.cust": {
+  "id": "c300ar.cust",
+  "document": "c300_2024ar",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 42
+  },
+  "label": "2024年托管费",
+  "value": "83842975.23",
+  "unit": "CNY",
+  "anchor": "当期发生的基金应支付的托管费83,842,975.23"
+ },
+ "c300ar.cust_prev": {
+  "id": "c300ar.cust_prev",
+  "document": "c300_2024ar",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 42
+  },
+  "label": "2023年托管费",
+  "value": "12423119.96",
+  "unit": "CNY",
+  "anchor": "当期发生的基金应支付的托管费83,842,975.2312,423,119.96"
+ },
+ "sz100ar.mgmt": {
+  "id": "sz100ar.mgmt",
+  "document": "sz100_2024ar",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 40
+  },
+  "label": "2024年管理费",
+  "value": "29309653.21",
+  "unit": "CNY",
+  "anchor": "当期发生的基金应支付的管理费29,309,653.21"
+ },
+ "sz100ar.mgmt_prev": {
+  "id": "sz100ar.mgmt_prev",
+  "document": "sz100_2024ar",
+  "locator": {
+   "kind": "pdf_page",
+   "page": 40
+  },
+  "label": "2023年管理费",
+  "value": "33656568.86",
+  "unit": "CNY",
+  "anchor": "当期发生的基金应支付的管理费29,309,653.2133,656,568.86"
+ }
+}

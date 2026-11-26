@@ -136,10 +136,7 @@ def is_degradable(error: ToolError) -> bool:
     """Permission, scope and argument errors are never degraded (contracts §10.2): the answer
     to "you may not / this does not exist / wrong arguments" must not be replaced."""
     code = error.code
-    return not (
-        code.endswith("_not_found")
-        or code in {"out_of_scope", "invalid_argument", "invalid_user_id"}
-    )
+    return not (code.endswith("_not_found") or code in {"out_of_scope", "invalid_argument"})
 
 
 def apply_fallback(

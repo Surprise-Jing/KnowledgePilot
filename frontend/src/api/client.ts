@@ -1,4 +1,4 @@
-import { getCurrentUser } from '@/lib/user'
+import { notifySessionExpired } from '@/lib/session'
 
 /** Codes produced by the client itself; everything else comes from the backend (contracts §2). */
 export const CLIENT_ERROR_CODES = {
@@ -7,6 +7,9 @@ export const CLIENT_ERROR_CODES = {
   badResponse: 'bad_response',
   aborted: 'aborted',
 } as const
+
+/** The session is missing or expired; the app returns to the login page. */
+export const UNAUTHENTICATED = 'unauthenticated'
 
 export class ApiError extends Error {
   readonly code: string
@@ -133,10 +136,8 @@ function combineSignals(signal: AbortSignal | undefined, timeoutMs: number): Abo
 
 /** Performs a request and returns the raw Response after checking the status. */
 export async function apiFetch(path: string, options: RequestOptions = {}): Promise<Response> {
-  const headers: Record<string, string> = {
-    'X-User-Id': getCurrentUser(),
-    ...options.headers,
-  }
+  // Identity is the HttpOnly session cookie (contracts §15), sent with same-origin requests.
+  const headers: Record<string, string> = { ...options.headers }
   let body: BodyInit | undefined
   if (options.json !== undefined) {
     headers['Content-Type'] = 'application/json'
@@ -150,12 +151,17 @@ export async function apiFetch(path: string, options: RequestOptions = {}): Prom
       method: options.method ?? 'GET',
       headers,
       body,
+      credentials: 'same-origin',
       signal: combineSignals(options.signal, options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
     })
   } catch (error) {
     throw toApiError(error)
   }
-  if (!response.ok) throw await errorFromResponse(response)
+  if (!response.ok) {
+    const error = await errorFromResponse(response)
+    if (error.code === UNAUTHENTICATED) notifySessionExpired()
+    throw error
+  }
   return response
 }
 

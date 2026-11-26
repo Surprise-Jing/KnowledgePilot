@@ -26,7 +26,7 @@ from app.db import Database
 from app.main import create_app
 from app.tools.context import MarkerAllocator, ToolContext
 from app.tools.registry import execute, openai_tool_specs
-from tests.fakes.helpers import make_kb, upload
+from tests.fakes.helpers import login, make_kb, upload
 
 BACKEND = Path(__file__).resolve().parents[1]
 DEMO_CLIENT = BACKEND.parent / "skills" / "knowledgepilot" / "scripts" / "demo_client.py"
@@ -41,6 +41,7 @@ def seeded(tmp_path_factory):
     """Seed data through the HTTP app, exactly as a user of the web UI would."""
     data_dir = tmp_path_factory.mktemp("mcp-data")
     with TestClient(create_app(Settings(_env_file=None, data_dir=data_dir))) as client:
+        login(client)
         kb_a = make_kb(client, "项目资料")
         kb_b = make_kb(client, "空库")
         doc_a = upload(client, kb_a, "plan.txt", f"项目周报。\n{PHRASE}。\n负责人是张三。")
@@ -67,7 +68,7 @@ def server_env(data_dir: Path, user: str = "demo", **overrides: str) -> dict[str
     env = {
         "PYTHONPATH": str(BACKEND),
         "PK_DATA_DIR": str(data_dir),
-        "PK_MCP_USER_ID": user,
+        "PK_MCP_USERNAME": user,
         "PK_RETRIEVER": "cosine",
         "PK_LOG_LEVEL": "INFO",
     }
@@ -145,6 +146,7 @@ def test_scope_is_read_at_call_time(seeded, server_cwd, tmp_path):
 
     def create_kb(name: str) -> str:
         with TestClient(create_app(Settings(_env_file=None, data_dir=data_dir))) as client:
+            login(client)
             return make_kb(client, name)
 
     first = create_kb("先建的库")
@@ -349,11 +351,12 @@ def run_server_expecting_failure(cwd: Path, env: dict[str, str]) -> subprocess.C
     )
 
 
-def test_invalid_user_id_fails_at_startup(tmp_path, server_cwd):
-    completed = run_server_expecting_failure(server_cwd, server_env(tmp_path, user="bad id!"))
+def test_unknown_user_fails_at_startup(tmp_path, server_cwd):
+    # The MCP server never creates accounts; the user must have registered in the web app.
+    completed = run_server_expecting_failure(server_cwd, server_env(tmp_path, user="nobody"))
     assert completed.returncode != 0
     assert completed.stdout == ""
-    assert "启动失败" in completed.stderr and "用户标识" in completed.stderr
+    assert "启动失败" in completed.stderr and "nobody" in completed.stderr
 
 
 def test_newer_database_fails_at_startup(tmp_path, server_cwd):

@@ -1,14 +1,13 @@
 import { getRun } from '@/api/conversations'
 import type { RunOut } from '@/api/types'
-import { getCurrentUser } from '@/lib/user'
 
 // Finished runs never change, so the trace panel and the per-answer degradation notice share
 // one request per run. Running runs and failures are not kept, so polling sees fresh data.
 const cache = new Map<string, Promise<RunOut>>()
 
 export function loadRun(runId: string, options?: { fresh?: boolean }): Promise<RunOut> {
-  // Keyed by user too: run ids are only meaningful within the user that owns them.
-  const key = `${getCurrentUser()}:${runId}`
+  // Cleared when the signed-in user changes (AuthProvider), so run ids never leak across users.
+  const key = runId
   const hit = options?.fresh ? undefined : cache.get(key)
   if (hit) return hit
   const pending = getRun(runId).then(
@@ -25,7 +24,7 @@ export function loadRun(runId: string, options?: { fresh?: boolean }): Promise<R
   return pending
 }
 
-/** Test hook and user switch: forget everything. */
+/** Test hook and sign-in/sign-out: forget everything. */
 export function clearRunCache(): void {
   cache.clear()
 }

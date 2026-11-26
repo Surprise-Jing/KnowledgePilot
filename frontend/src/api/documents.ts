@@ -79,6 +79,26 @@ export async function exportMarkdown(id: string): Promise<{ blob: Blob; filename
   return { blob: await response.blob(), filename }
 }
 
+/**
+ * Original upload bytes for the PDF viewer. Fetched here because the request needs the user
+ * header, which pdf.js could not send if given the URL.
+ */
+export async function getDocumentFile(id: string, signal?: AbortSignal): Promise<ArrayBuffer> {
+  const response = await apiFetch(`/api/documents/${encodeURIComponent(id)}/file`, {
+    signal,
+    timeoutMs: 120_000,
+  })
+  return response.arrayBuffer()
+}
+
+/** Parsed Markdown as text, for the in-viewer preview. */
+export async function getDocumentMarkdown(id: string): Promise<string> {
+  const response = await apiFetch(`/api/documents/${encodeURIComponent(id)}/markdown`, {
+    timeoutMs: 60_000,
+  })
+  return response.text()
+}
+
 export function updateDocument(id: string, patch: DocumentUpdate): Promise<DocumentOut> {
   return request<DocumentOut>(`/api/documents/${encodeURIComponent(id)}`, {
     method: 'PATCH',

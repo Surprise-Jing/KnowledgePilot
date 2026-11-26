@@ -11,6 +11,7 @@ from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
 from app.config import Settings
 from app.main import create_app
+from tests.fakes.helpers import login
 
 
 def sample_file(extension: str) -> bytes:
@@ -63,6 +64,7 @@ def test_smoke_upload_scope_source_restart_delete(
 ) -> None:
     settings = Settings(_env_file=None, data_dir=tmp_path, answer_mode="extractive")
     with TestClient(create_app(settings)) as client:
+        login(client)
         a, b = create_kb(client, "冒烟 A"), create_kb(client, "冒烟 B")
         documents = []
         for kb_id, suffix in [(a, b""), (b, b"\notherlibrary")]:
@@ -97,6 +99,7 @@ def test_smoke_upload_scope_source_restart_delete(
 
     # A fresh app with the same directory checks persistence, not process/launcher behavior.
     with TestClient(create_app(settings)) as client:
+        login(client)
         response = client.get("/api/knowledge-bases")
         assert response.status_code == 200
         assert {kb["id"] for kb in response.json()} == {a, b}
@@ -110,12 +113,14 @@ def test_smoke_upload_scope_source_restart_delete(
         assert {hit["document_id"] for hit in search(client, [a, b])} == {documents[1]}
         assert not (tmp_path / "uploads" / f"{document_id}.{extension}").exists()
     with TestClient(create_app(settings)) as client:
+        login(client)
         assert search(client, [a]) == []
 
 
 def test_smoke_failed_parse_is_not_searchable(tmp_path: Path) -> None:
     settings = Settings(_env_file=None, data_dir=tmp_path, answer_mode="extractive")
     with TestClient(create_app(settings)) as client:
+        login(client)
         kb_id = create_kb(client, "失败解析")
         response = client.post(
             f"/api/knowledge-bases/{kb_id}/documents",

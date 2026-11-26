@@ -1,6 +1,6 @@
 """Real-model end-to-end smoke check against a running KnowledgePilot server.
 
-Steps (docs/briefs/D-testing.md §3):
+Steps:
 
 1. alice creates two knowledge bases and a two-level folder tree, uploads
    examples/knowledge.txt plus a generated DOCX and PDF, and waits until all parse to success

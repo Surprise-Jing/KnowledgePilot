@@ -1,0 +1,93 @@
+{
+ "id": "G19",
+ "title": "模型超时",
+ "knowledge_bases": [
+  "易方达上证50ETF"
+ ],
+ "split": "dev",
+ "dimensions": [
+  "D9"
+ ],
+ "compare": false,
+ "demo_candidate": false,
+ "overrides": {
+  "llm_timeout": 0.001
+ },
+ "changelog": [
+  {
+   "date": "2026-11-24",
+   "change": "用户初审：题目与参考答案无问题，待审题标为 approved"
+  }
+ ],
+ "cases": [
+  {
+   "id": "G19-1",
+   "origin": "drafted",
+   "source_ref": null,
+   "knowledge_bases": [
+    "易方达上证50ETF"
+   ],
+   "documents": [
+    "s50_2025q3"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "510100最新一个季度的净值增长率是多少？"
+    }
+   ],
+   "claims": [],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "timeout",
+    "error_code": "model_timeout"
+   },
+   "reference_answer": "模型超时：返回 model_timeout 错误并以 timeout 结束，界面给出明确提示。",
+   "semantic_rubric": [
+    "不能输出编造的答案",
+    "错误码为 model_timeout"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G19-2",
+   "origin": "drafted",
+   "source_ref": null,
+   "knowledge_bases": [
+    "易方达上证50ETF"
+   ],
+   "documents": [
+    "s50_2025q3"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "列出上证50ETF库里有哪些文件。"
+    }
+   ],
+   "claims": [],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "timeout",
+    "error_code": "model_timeout"
+   },
+   "reference_answer": "模型超时：返回 model_timeout 错误并以 timeout 结束。",
+   "semantic_rubric": [
+    "错误码为 model_timeout"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  }
+ ]
+}

@@ -2,6 +2,7 @@
 
 import type {
   ChatEvent,
+  ScopeSnapshot,
   CitationOut,
   DoneEvent,
   ErrorEvent,
@@ -36,8 +37,11 @@ export type RunPhase = 'connecting' | 'streaming' | 'done' | 'interrupted' | 'st
 
 export interface LiveRun {
   phase: RunPhase
+  startedAt?: number
+  finishedAt?: number
   question: string
   knowledgeBaseIds: string[]
+  scope?: ScopeSnapshot
   runId: string | null
   conversationId: string | null
   userMessageId: string | null
@@ -55,11 +59,11 @@ export interface LiveRun {
 }
 
 export type ChatAction =
-  | { type: 'start'; question: string; knowledgeBaseIds: string[] }
-  | { type: 'event'; event: ChatEvent }
-  | { type: 'stream_end' }
-  | { type: 'stopped' }
-  | { type: 'request_failed'; error: ErrorEvent }
+  | { type: 'start'; question: string; knowledgeBaseIds: string[]; scope?: ScopeSnapshot; startedAt?: number }
+  | { type: 'event'; event: ChatEvent; at?: number }
+  | { type: 'stream_end'; at?: number }
+  | { type: 'stopped'; at?: number }
+  | { type: 'request_failed'; error: ErrorEvent; at?: number }
   | { type: 'reset' }
 
 export function isRunActive(run: LiveRun | null): boolean {
@@ -161,8 +165,10 @@ export function chatReducer(state: LiveRun | null, action: ChatAction): LiveRun 
     case 'start':
       return {
         phase: 'connecting',
+        startedAt: action.startedAt,
         question: action.question,
         knowledgeBaseIds: action.knowledgeBaseIds,
+        scope: action.scope,
         runId: null,
         conversationId: null,
         userMessageId: null,
@@ -184,13 +190,13 @@ export function chatReducer(state: LiveRun | null, action: ChatAction): LiveRun 
     case 'event':
       // Late events after the run settled (e.g. after stop) must not reopen it.
       if (isFinal(state.phase)) return state
-      return applyEvent(state, action.event)
+      return { ...applyEvent(state, action.event), ...(action.event.type === 'done' ? { finishedAt: action.at } : {}) }
     case 'stream_end':
-      return isFinal(state.phase) ? state : { ...state, phase: 'interrupted' }
+      return isFinal(state.phase) ? state : { ...state, phase: 'interrupted', finishedAt: action.at }
     case 'stopped':
-      return isFinal(state.phase) ? state : { ...state, phase: 'stopped' }
+      return isFinal(state.phase) ? state : { ...state, phase: 'stopped', finishedAt: action.at }
     case 'request_failed':
-      return isFinal(state.phase) ? state : { ...state, phase: 'failed', error: action.error }
+      return isFinal(state.phase) ? state : { ...state, phase: 'failed', error: action.error, finishedAt: action.at }
     default:
       return state
   }

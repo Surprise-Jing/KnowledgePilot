@@ -38,6 +38,21 @@ function renderPanel(citations: CitationOut[], highlight: string | null = null) 
 }
 
 describe('CitationsPanel source ranges', () => {
+  it('renders evidence tables safely and lets readers expand the full snapshot', async () => {
+    const source = citation('c1', 1, 3)
+    source.content = '| 指标 | 数值 |\n| --- | --- |\n| 收入 | 42 |\n\n<script>alert(1)</script>'
+    const { container } = renderPanel([source])
+    expect(screen.getByRole('table')).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: '42' })).toBeInTheDocument()
+    expect(container.querySelector('script')).toBeNull()
+    const expand = screen.getByRole('button', { name: '展开完整片段' })
+    expect(expand).toHaveAttribute('aria-expanded', 'false')
+    await userEvent.setup().click(expand)
+    expect(screen.getByRole('button', { name: '收起片段' })).toHaveAttribute('aria-expanded', 'true')
+    await userEvent.setup().click(screen.getByRole('button', { name: '收起片段' }))
+    expect(screen.getByRole('button', { name: '展开完整片段' })).toHaveAttribute('aria-expanded', 'false')
+  })
+
   it('groups adjacent positions while retaining every snapshot and original target', async () => {
     const { container, openDocument } = renderPanel([
       citation('c1', 1, 3), citation('c2', 4, 6), citation('c3', 12, 13),
@@ -49,8 +64,10 @@ describe('CitationsPanel source ranges', () => {
     const highlighted = container.querySelector('[data-marker="c2"]') as HTMLElement
     expect(highlighted).toHaveAttribute('data-highlighted', 'true')
     await userEvent.setup().click(within(highlighted).getByRole('button', { name: /查看原文/ }))
+    // The citation's location travels along so the viewer can jump to the cited page.
     expect(openDocument).toHaveBeenCalledWith({
       documentId: 'document-a', filename: '报告.txt', chunkId: 'chunk-c2',
+      location: citation('c2', 4, 6).location,
     })
   })
 

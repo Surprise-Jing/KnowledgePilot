@@ -101,3 +101,33 @@ export function groupAdjacentCitations<T extends { location: CitationLocation | 
   }
   return groups
 }
+
+export interface CitedChunkMatch {
+  id: string
+  /** `location` when found by position because the cited chunk id is gone (reparsed). */
+  by: 'id' | 'location'
+}
+
+/**
+ * The chunk a citation points to. Reparsing replaces chunk ids (the citation's `chunk_id` then
+ * becomes null or stale), so fall back to the chunk at the same position: same kind, table and
+ * range first, then the first one whose range overlaps.
+ */
+export function findCitedChunk<T extends { id: string; location: CitationLocation }>(
+  chunks: readonly T[],
+  chunkId: string | null | undefined,
+  location: CitationLocation | null | undefined,
+): CitedChunkMatch | null {
+  if (chunkId && chunks.some((c) => c.id === chunkId)) return { id: chunkId, by: 'id' }
+  if (!location) return null
+  const comparable = chunks.filter(
+    (c) => c.location.kind === location.kind && c.location.table === location.table,
+  )
+  const exact = comparable.find(
+    (c) => c.location.start === location.start && c.location.end === location.end,
+  )
+  const overlapping =
+    exact ??
+    comparable.find((c) => c.location.start <= location.end && location.start <= c.location.end)
+  return overlapping ? { id: overlapping.id, by: 'location' } : null
+}

@@ -1,0 +1,62 @@
+{
+  "hotpot-0": {
+    "url": "https://datasets-server.huggingface.co/rows?dataset=hotpotqa/hotpot_qa&config=distractor&split=validation&offset=0&length=100",
+    "sha256": "d2d4806c1337dc8e60958ac06647c630716479695bac029336f0e8ae3ba2234b"
+  },
+  "hotpot-1": {
+    "url": "https://datasets-server.huggingface.co/rows?dataset=hotpotqa/hotpot_qa&config=distractor&split=validation&offset=100&length=100",
+    "sha256": "442a605c314ce2e4554b8b65e4e822ccee0d27918ad9734107e33046797ca79c"
+  },
+  "hotpot-2": {
+    "url": "https://datasets-server.huggingface.co/rows?dataset=hotpotqa/hotpot_qa&config=distractor&split=validation&offset=200&length=100",
+    "sha256": "576d3d3e67a2df3ed7b91cb4dcb962afc8787b1197855e43f5ae651f28a2d231"
+  },
+  "hotpot-3": {
+    "url": "https://datasets-server.huggingface.co/rows?dataset=hotpotqa/hotpot_qa&config=distractor&split=validation&offset=300&length=100",
+    "sha256": "8cb9add5c8fef5ca9d6f1465c7e126b9e26b5b07324a2bebc463d2282f75729e"
+  },
+  "hotpot-4": {
+    "url": "https://datasets-server.huggingface.co/rows?dataset=hotpotqa/hotpot_qa&config=distractor&split=validation&offset=400&length=100",
+    "sha256": "83646e9e4ffc30e7cad7b73b91ec7974b035b580dab6d181f467e43e36b70e3e"
+  },
+  "musique-0": {
+    "url": "https://datasets-server.huggingface.co/rows?dataset=bdsaglam/musique&config=default&split=validation&offset=0&length=100",
+    "sha256": "70cd36e02fb8be780c31f4a427992a06e24fd74b52d9fdeeebe85dcd26a501b7"
+  },
+  "musique-1": {
+    "url": "https://datasets-server.huggingface.co/rows?dataset=bdsaglam/musique&config=default&split=validation&offset=100&length=100",
+    "sha256": "e6783f8a73fdac8559971f64d02da6043af23ab6a93a2b77ef9f761693162596"
+  },
+  "musique-2": {
+    "url": "https://datasets-server.huggingface.co/rows?dataset=bdsaglam/musique&config=default&split=validation&offset=200&length=100",
+    "sha256": "d6727386d41a584432b248065f466901d3878aae1486d3b5abd60f7366bba786"
+  },
+  "musique-3": {
+    "url": "https://datasets-server.huggingface.co/rows?dataset=bdsaglam/musique&config=default&split=validation&offset=300&length=100",
+    "sha256": "ed02ecd51888163802dd6ea1c4c781c6dfc20a6f61bf25cc0ddcff141a6c5cf3"
+  },
+  "musique-4": {
+    "url": "https://datasets-server.huggingface.co/rows?dataset=bdsaglam/musique&config=default&split=validation&offset=400&length=100",
+    "sha256": "63f6d238e4bd64f675dad0f20df515bbbe6d14002d7cad09cea293188fb18df1"
+  },
+  "musique-5": {
+    "url": "https://datasets-server.huggingface.co/rows?dataset=bdsaglam/musique&config=default&split=validation&offset=500&length=100",
+    "sha256": "d40f869e5bf9050df76488dceb1003cb9b4a9360af36e65cd8bf31c8e4c63449"
+  },
+  "musique-6": {
+    "url": "https://datasets-server.huggingface.co/rows?dataset=bdsaglam/musique&config=default&split=validation&offset=600&length=100",
+    "sha256": "8c15cec5d679a922d90ad13b883e2e3355f251ea883bcf022c56f6eccb492a94"
+  },
+  "musique-7": {
+    "url": "https://datasets-server.huggingface.co/rows?dataset=bdsaglam/musique&config=default&split=validation&offset=700&length=100",
+    "sha256": "e688504f81e6f240b8826e4a257b232c482cf90e8bfd0668c15416f8868ae55b"
+  },
+  "musique-8": {
+    "url": "https://datasets-server.huggingface.co/rows?dataset=bdsaglam/musique&config=default&split=validation&offset=800&length=100",
+    "sha256": "723a6eb0f8b6e105b123fe781365d5fbb975cad5c0e5d4caf9f58566c6c3f324"
+  },
+  "musique-9": {
+    "url": "https://datasets-server.huggingface.co/rows?dataset=bdsaglam/musique&config=default&split=validation&offset=900&length=100",
+    "sha256": "987606bfe0b3c5b6fab8fdfde5ffbfb16663bcb457f9dc9c8bee196fdce5e137"
+  }
+}

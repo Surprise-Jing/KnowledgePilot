@@ -1,4 +1,4 @@
-"""ScriptedLLM: a deterministic LLMClient for tests (docs/briefs/D-testing.md §1.1).
+"""ScriptedLLM: a deterministic LLMClient for tests (docs/contracts.md §5.3).
 
 Owner: B1; reused by D. It lives under tests/ and is injected through
 `app.state.llm_factory`; product code never selects it.

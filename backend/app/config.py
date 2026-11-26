@@ -11,8 +11,11 @@ class Settings(BaseSettings):
     data_dir: Path = Path("data")
     # Built frontend (npm run build). Served at "/" when index.html exists.
     frontend_dir: Path = Path(__file__).resolve().parents[2] / "frontend" / "dist"
-    # Used when a request carries no X-User-Id header (local single-user demo).
-    default_user_id: str = "demo"
+    # Login sessions (docs/contracts.md §15). Secure cookies need HTTPS, so local http keeps
+    # it off; turn it on behind TLS.
+    session_ttl_days: int = Field(default=30, ge=1, le=365)
+    cookie_secure: bool = False
+    allow_registration: bool = True
     answer_mode: Literal["extractive", "openai"] = "extractive"
     llm_base_url: str = "https://api.openai.com/v1"
     llm_model: str = ""
@@ -26,7 +29,7 @@ class Settings(BaseSettings):
     agent_max_steps: int = Field(default=6, ge=1, le=20)
     tool_timeout: float = Field(default=15, gt=0)
     context_budget_chars: int = Field(default=24000, ge=2000)
-    # Retrieval strategy, switchable for evaluation (docs/tasks.md Round 2).
+    # Retrieval strategy, switchable for evaluation (docs/contracts.md §9).
     retriever: Literal["cosine", "bm25", "vector", "hybrid"] = "cosine"
     embedding_base_url: str = ""
     embedding_model: str = "bge-m3"
@@ -40,8 +43,8 @@ class Settings(BaseSettings):
     # Change this when a provider replaces weights behind the same model name.
     embedding_revision: str = "1"
     retrieval_candidates: int = Field(default=50, ge=10, le=1000)
-    # User identity for the stdio MCP server, which has no HTTP headers.
-    mcp_user_id: str = "demo"
+    # Username the stdio MCP server acts as; it has no login, so the account must exist.
+    mcp_username: str = "demo"
     # Structured parsing (PDF/DOCX via Docling in a child process). A document is killed and
     # marked failed when parsing exceeds parse_timeout seconds.
     parse_timeout: float = Field(default=1800, gt=0)

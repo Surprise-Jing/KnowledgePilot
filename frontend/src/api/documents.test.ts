@@ -1,7 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { setCurrentUser } from '@/lib/user'
-
 import { exportMarkdown, filenameFromDisposition, reparseDocument, uploadDocument } from './documents'
 
 function mockFetch(response: Response | (() => Response)) {
@@ -21,8 +19,7 @@ describe('document parsing API', () => {
     expect(filenameFromDisposition(null, 'fallback.md')).toBe('fallback.md')
   })
 
-  it('exports Markdown as a blob with the user header', async () => {
-    setCurrentUser('alice')
+  it('exports Markdown as a blob using the session cookie', async () => {
     const fetchMock = mockFetch(
       new Response('# 标题', {
         headers: {
@@ -36,8 +33,8 @@ describe('document parsing API', () => {
     expect(await blob.text()).toBe('# 标题')
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe('/api/documents/doc-1/markdown')
-    const headers = (init?.headers ?? {}) as Record<string, string>
-    expect(headers['X-User-Id']).toBe('alice')
+    expect(init?.headers).not.toHaveProperty('X-User-Id')
+    expect(init?.credentials).toBe('same-origin')
   })
 
   it('sends parse_mode only for enhanced uploads and reparse requests', async () => {

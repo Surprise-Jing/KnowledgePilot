@@ -19,9 +19,15 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel
 
-from app.agent.context import MARKER_PATTERN, TurnItem, build_messages
+from app.agent.context import MARKER_PATTERN, TurnItem, build_messages, final_messages
 from app.agent.evidence import source_inventory
-from app.agent.prompts import SYSTEM_PROMPT, focus_message, scope_message
+from app.agent.prompts import (
+    FINAL_EVIDENCE_HEADER,
+    FINAL_STEP_PROMPT,
+    SYSTEM_PROMPT,
+    focus_message,
+    scope_message,
+)
 from app.config import Settings
 from app.db import Database
 from app.errors import AppError
@@ -111,6 +117,7 @@ class AgentRun:
             allowed_kb_ids=list(setup.knowledge_base_ids),
             run_id=self.run_id,
             markers=MarkerAllocator(),
+            allowed_document_ids=setup.started.scope.document_ids if setup.started.scope else None,
         )
         self.tool_specs = openai_tool_specs()
 
@@ -215,6 +222,12 @@ class AgentRun:
             setup.db, setup.user_id, started.conversation_id, started.run_id
         )
         parts = [SYSTEM_PROMPT, scope_message(names)]
+        if setup_scope := self.setup.started.scope:
+            parts.append(
+                "本轮资料范围："
+                + setup_scope.model_dump_json(exclude={"document_ids", "knowledge_base_ids"})
+                + "。自动模式按需检索；指定模式只能使用这些资料，历史回答不能作为范围外文档的新证据。"
+            )
         focus_text = focus_message(focus)
         if focus_text:
             parts.append(focus_text)
@@ -240,20 +253,45 @@ class AgentRun:
                     retryable=False,
                 )
             self.step_count = step
+            # The last step offers no tools, so a run that keeps searching still ends with an
+            # answer built from what it found; its evidence is sent as text, uncompacted where
+            # the budget allows (context.final_messages). A one-step budget keeps its tools:
+            # with nothing retrieved yet there would be nothing to answer from.
+            final = 1 < settings.agent_max_steps == step
             inventory = source_inventory(
                 [item.message for item in self.turns], previous=self.source_documents
             )
-            current_system = ["\n\n".join([*system, inventory])] if inventory else system
-            messages = build_messages(
-                system=current_system,
-                history=history,
-                question=self.setup.question,
-                turns=self.turns,
-                budget=settings.context_budget_chars,
+            extra = [part for part in (inventory, FINAL_STEP_PROMPT if final else "") if part]
+            current_system = ["\n\n".join([*system, *extra])] if extra else system
+            if final:
+                messages = final_messages(
+                    system=current_system,
+                    history=history,
+                    question=self.setup.question,
+                    turns=self.turns,
+                    budget=settings.context_budget_chars,
+                    evidence_header=FINAL_EVIDENCE_HEADER,
+                )
+            else:
+                messages = build_messages(
+                    system=current_system,
+                    history=history,
+                    question=self.setup.question,
+                    turns=self.turns,
+                    budget=settings.context_budget_chars,
+                )
+            turn_text, requested = await self._call_model_with_retry(
+                messages, [] if final else self.tool_specs
             )
-            turn_text, requested = await self._call_model_with_retry(messages)
             if requested is None:
                 return "answered", None
+            if final:
+                # Some providers still emit tool calls without tools on offer; never run them.
+                return "max_steps", ErrorEvent(
+                    code="max_steps_reached",
+                    message=f"已达到最大执行步数（{settings.agent_max_steps}），回答可能不完整",
+                    retryable=False,
+                )
             parsed = [_recorded_arguments(call) for call in requested.calls]
             self.turns.append(
                 TurnItem(
@@ -277,24 +315,26 @@ class AgentRun:
             step += 1
 
     async def _call_model_with_retry(
-        self, messages: list[dict]
+        self, messages: list[dict], tools: list[dict]
     ) -> tuple[str, ToolCallsRequested | None]:
         """A model failure before any text of this step is retried once (contracts §10.3):
         no event, no extra step. After text was streamed a retry would duplicate it."""
         emitted = len(self.text_parts)
         try:
-            return await self._call_model(messages)
+            return await self._call_model(messages, tools)
         except AppError as exc:
             if exc.code not in RETRYABLE_MODEL_ERRORS or len(self.text_parts) > emitted:
                 raise
             self.model_retries += 1
             logger.warning("retrying model call", extra={"error_code": exc.code})
-        return await self._call_model(messages)
+        return await self._call_model(messages, tools)
 
-    async def _call_model(self, messages: list[dict]) -> tuple[str, ToolCallsRequested | None]:
+    async def _call_model(
+        self, messages: list[dict], tools: list[dict]
+    ) -> tuple[str, ToolCallsRequested | None]:
         turn_text: list[str] = []
         requested: ToolCallsRequested | None = None
-        events = self.setup.llm.stream(messages, self.tool_specs)
+        events = self.setup.llm.stream(messages, tools)
         try:
             async for event in events:
                 if isinstance(event, TextDelta):

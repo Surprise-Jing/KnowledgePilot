@@ -1,0 +1,579 @@
+{
+ "id": "G03",
+ "title": "跨期衔接、范围隔离与新季度",
+ "knowledge_bases": [
+  "易方达上证50ETF",
+  "易方达沪深300ETF",
+  "易方达深证100ETF"
+ ],
+ "split": "dev",
+ "dimensions": [
+  "D2",
+  "D3",
+  "D4",
+  "D6"
+ ],
+ "compare": false,
+ "demo_candidate": false,
+ "overrides": {},
+ "changelog": [
+  {
+   "date": "2026-11-24",
+   "change": "用户初审：题目与参考答案无问题，待审题标为 approved"
+  }
+ ],
+ "cases": [
+  {
+   "id": "AG04",
+   "origin": "finance-v1",
+   "source_ref": "eval/finance/cases.jsonl#AG04",
+   "knowledge_bases": [
+    "易方达上证50ETF"
+   ],
+   "documents": [
+    "s50_2024q4",
+    "s50_2025q1"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "仅根据510100两份季报，能否说它在2024年末和2025年3月末都没有持有债券？请给出两期依据，并说明能否推广为整个期间从未持有债券。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "no_bonds_two_dates",
+     "label": "两个时点均未持有债券",
+     "evidence_groups": [
+      [
+       "s50_2024q4.bonds"
+      ],
+      [
+       "s50_2025q1.bonds"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "未持有债券"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "两个报告期末均未持有债券；期末快照不能证明整个期间从未持有。",
+   "semantic_rubric": [
+    "保留两份来源",
+    "不能将两个时点外推为整个期间",
+    "不将股指期货与债券混为一类",
+    "结论、基金、报告期、单位关联正确；关键词共现不能替代语义核查",
+    "关键结论的引用紧邻对应结论，且原文真正支持结论"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "沿用 eval/finance 人工标注"
+   },
+   "finance_category": "引用聚合",
+   "finance_split": "dev"
+  },
+  {
+   "id": "AG05",
+   "origin": "finance-v1",
+   "source_ref": "eval/finance/cases.jsonl#AG05",
+   "knowledge_bases": [
+    "易方达沪深300ETF"
+   ],
+   "documents": [
+    "c300_2024q4",
+    "c300_2025q1"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "510310的债券投资从2024年末到2025年3月末有什么变化？请说明期末是否持有、2025年一季度末的债券名称和公允价值，并保留两份来源。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "no_bonds_q4",
+     "label": "2024年末无债券",
+     "evidence_groups": [
+      [
+       "c300_2024q4.bonds"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "未持有债券"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "c300_2025q1.bonds",
+     "label": "债券投资公允价值",
+     "evidence_groups": [
+      [
+       "c300_2025q1.bonds"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "34661115.47",
+       "unit": "CNY",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "bond_name",
+     "label": "2025年3月末债券为亿纬转债",
+     "evidence_groups": [
+      [
+       "c300_2025q1.bond_name"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "亿纬转债"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "2024年末未持有债券；2025年3月末持有亿纬转债，公允价值34661115.47元，占基金资产净值0.01%。",
+   "semantic_rubric": [
+    "不得将2024年末状态沿用到2025年3月末",
+    "注意5.11.4未持有处于转股期可转债不等于未持有可转债",
+    "债券名称定位5.5节",
+    "结论、基金、报告期、单位关联正确；关键词共现不能替代语义核查",
+    "关键结论的引用紧邻对应结论，且原文真正支持结论"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "沿用 eval/finance 人工标注"
+   },
+   "finance_category": "引用聚合",
+   "finance_split": "dev"
+  },
+  {
+   "id": "BD04",
+   "origin": "finance-v1",
+   "source_ref": "eval/finance/cases.jsonl#BD04",
+   "knowledge_bases": [
+    "易方达沪深300ETF"
+   ],
+   "documents": [
+    "c300_2024q4",
+    "c300_2025q1"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "510310的2025Q1报告说股票占总资产99.38%，行业表又说股票合计占净资产99.42%；2024Q4也有99.04%与99.17%。这两期报告是否自相矛盾？请解释两个分母。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "c300_2024q4.stock_total_assets",
+     "label": "股票占基金总资产比例",
+     "evidence_groups": [
+      [
+       "c300_2024q4.stock_total_assets"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "99.042",
+       "unit": "percent_of_total_assets",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "c300_2024q4.stock_net_assets",
+     "label": "股票合计占基金净资产比例",
+     "evidence_groups": [
+      [
+       "c300_2024q4.stock_net_assets"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "99.17",
+       "unit": "percent_of_NAV",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "c300_2025q1.stock_total_assets",
+     "label": "股票占基金总资产比例",
+     "evidence_groups": [
+      [
+       "c300_2025q1.stock_total_assets"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "99.382",
+       "unit": "percent_of_total_assets",
+       "tolerance": "0.01"
+      }
+     ]
+    },
+    {
+     "id": "c300_2025q1.stock_net_assets",
+     "label": "股票合计占基金净资产比例",
+     "evidence_groups": [
+      [
+       "c300_2025q1.stock_net_assets"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "99.42",
+       "unit": "percent_of_NAV",
+       "tolerance": "0.01"
+      }
+     ]
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "不矛盾：5.1以基金总资产为分母，5.2.1以基金资产净值为分母；且5.1注明权益投资含可退替代款估值增值，不能只比较百分数认定报表有误。",
+   "semantic_rubric": [
+    "逐期区分总资产与净资产",
+    "不强行将两表股票金额认定完全一致",
+    "引用表下注释，不假设差异仅由四舍五入造成",
+    "结论、基金、报告期、单位关联正确；关键词共现不能替代语义核查",
+    "关键结论的引用紧邻对应结论，且原文真正支持结论"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "沿用 eval/finance 人工标注"
+   },
+   "finance_category": "口径与边界",
+   "finance_split": "dev"
+  },
+  {
+   "id": "BD05",
+   "origin": "finance-v1",
+   "source_ref": "eval/finance/cases.jsonl#BD05",
+   "knowledge_bases": [
+    "易方达上证50ETF"
+   ],
+   "documents": [
+    "s50_2024q4",
+    "s50_2025q1"
+   ],
+   "forbidden_documents": [
+    "c300_2024q4",
+    "c300_2025q1"
+   ],
+   "turns": [
+    {
+     "content": "只依据已选择的510100两份报告，请比较其2025Q1收益与510310同期收益，并说明还需要什么资料。不得从记忆补全另一只基金数值。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "s50_2025q1.return",
+     "label": "季度净值增长率",
+     "evidence_groups": [
+      [
+       "s50_2025q1.return",
+       "s50_2025q1.performance_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-0.55",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "scope_gap",
+     "label": "缺少510310报告依据",
+     "evidence_groups": [],
+     "answer_keywords": [
+      [
+       "无法",
+       "没有",
+       "缺少",
+       "未提供",
+       "未选择"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "可确认510100为-0.55%；当前所选库未提供510310报告，无法完成有依据的比较，需要选择或提供其2025Q1报告。",
+   "semantic_rubric": [
+    "不输出或引用未选库的510310收益",
+    "明确区分局部回答和未完成项",
+    "不能通过知道基金代码而绕过选择范围",
+    "结论、基金、报告期、单位关联正确；关键词共现不能替代语义核查",
+    "关键结论的引用紧邻对应结论，且原文真正支持结论"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "沿用 eval/finance 人工标注"
+   },
+   "finance_category": "口径与边界",
+   "finance_split": "dev"
+  },
+  {
+   "id": "G03-N1",
+   "origin": "drafted",
+   "source_ref": null,
+   "knowledge_bases": [
+    "易方达上证50ETF"
+   ],
+   "documents": [
+    "s50_2025q3"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "510100在2025年第三季度的基金份额净值增长率和业绩比较基准收益率分别是多少？相差多少个百分点？请给出处。"
+    }
+   ],
+   "claims": [
+    {
+     "id": "s50_2025q3.return",
+     "label": "季度净值增长率",
+     "evidence_groups": [
+      [
+       "s50_2025q3.return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "11.33",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q3.benchmark_return",
+     "label": "季度基准收益率",
+     "evidence_groups": [
+      [
+       "s50_2025q3.benchmark_return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "10.21",
+       "unit": "percent",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "s50_2025q3.active",
+     "label": "净值增长率减基准",
+     "evidence_groups": [
+      [
+       "s50_2025q3.return"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "1.12",
+       "unit": "percentage_point",
+       "tolerance": "0.005"
+      }
+     ]
+    }
+   ],
+   "calculations": [
+    {
+     "id": "s50_2025q3.active",
+     "operation": "subtract",
+     "operands": [
+      "s50_2025q3.return",
+      "s50_2025q3.benchmark_return"
+     ],
+     "expected": "1.12",
+     "unit": "percentage_point",
+     "decimal_places": 2
+    }
+   ],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "2025年三季度510100净值增长率11.33%，基准收益率10.21%，高出1.12个百分点。",
+   "semantic_rubric": [
+    "取第4.5节“过去三个月”口径",
+    "差值单位为百分点而非百分比",
+    "引用紧邻数值且来自2025Q3季报"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G03-N2",
+   "origin": "drafted",
+   "source_ref": null,
+   "knowledge_bases": [
+    "易方达深证100ETF"
+   ],
+   "documents": [
+    "sz100_2025q2",
+    "sz100_2025q3"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "易方达深证100ETF在2025年二季度末和三季度末的第一大重仓股是什么？占基金资产净值的比例分别是多少？"
+    },
+    {
+     "content": "那这两个季度末的基金份额总额变化了多少份？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "sz100.top1_q2",
+     "label": "二季度末第一大重仓股占比",
+     "evidence_groups": [
+      [
+       "sz100_2025q2.top1"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "宁德时代"
+      ]
+     ],
+     "answer_numbers": [
+      {
+       "value": "10.06",
+       "unit": "percent_of_NAV",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "sz100.top1_q3",
+     "label": "三季度末第一大重仓股占比",
+     "evidence_groups": [
+      [
+       "sz100_2025q3.top1"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "宁德时代"
+      ]
+     ],
+     "answer_numbers": [
+      {
+       "value": "12.25",
+       "unit": "percent_of_NAV",
+       "tolerance": "0.005"
+      }
+     ]
+    },
+    {
+     "id": "sz100.shares_change",
+     "label": "份额变化",
+     "evidence_groups": [
+      [
+       "sz100_2025q2.shares_end"
+      ],
+      [
+       "sz100_2025q3.shares_end"
+      ]
+     ],
+     "answer_keywords": [],
+     "answer_numbers": [
+      {
+       "value": "-199500000",
+       "unit": "share",
+       "tolerance": "0.5"
+      }
+     ]
+    }
+   ],
+   "calculations": [
+    {
+     "id": "sz100.shares_change",
+     "operation": "subtract",
+     "operands": [
+      "sz100_2025q3.shares_end",
+      "sz100_2025q2.shares_end"
+     ],
+     "expected": "-199500000.00",
+     "unit": "share",
+     "decimal_places": 2
+    }
+   ],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "两个季度末第一大重仓股都是宁德时代，占净值比例由10.06%升至12.25%；追问：期末份额由2,347,130,702.00份降至2,147,630,702.00份，减少199,500,000份。",
+   "semantic_rubric": [
+    "第二轮“这两个季度”须指代上一轮的二、三季度末",
+    "份额减少不能表述为净值或收益下降",
+    "两期数值分别引用各自季报"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户初审通过（2026-11-24）"
+   }
+  }
+ ]
+}

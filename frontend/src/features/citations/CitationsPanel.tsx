@@ -1,5 +1,9 @@
 import { BookOpenIcon, FileTextIcon, QuoteIcon } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+
+import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import { markdownComponents } from '@/lib/markdown-components'
 
 import type { CitationOut } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
@@ -60,9 +64,14 @@ export function CitationsPanel() {
             if (node) refs.current.set(marker, node)
             else refs.current.delete(marker)
           }}
-          onOpen={(chunkId) =>
+          onOpen={(citation) =>
             group.documentId &&
-            openDocument({ documentId: group.documentId, filename: group.filename, chunkId })
+            openDocument({
+              documentId: group.documentId,
+              filename: group.filename,
+              chunkId: citation.chunk_id,
+              location: citation.location,
+            })
           }
         />
       ))}
@@ -80,13 +89,13 @@ function CitationGroupCard({
   group: CitationGroup<CitationOut>
   highlight: string | null
   refFor: (marker: string) => (node: HTMLElement | null) => void
-  onOpen: (chunkId: string | null) => void
+  onOpen: (citation: CitationOut) => void
 }) {
   const deleted = group.documentId === null
   const count = group.citations.length
   return (
     <li
-      className="flex flex-col gap-2 rounded-lg border p-3 text-sm"
+      className="flex min-w-0 flex-col gap-2 rounded-xl border border-border/80 bg-card p-4 text-sm"
       data-document={group.documentId ?? undefined}
       aria-label={`${group.filename}，${count} 处引用`}
     >
@@ -113,7 +122,8 @@ function CitationGroupCard({
                   citation={citation}
                   highlighted={citation.marker === highlight}
                   refCallback={refFor(citation.marker)}
-                  onOpen={deleted ? null : () => onOpen(citation.chunk_id)}
+                  onOpen={deleted ? null : () => onOpen(citation)}
+                  snapshotOnly={deleted}
                 />
               ))}
             </ol>
@@ -129,12 +139,16 @@ function CitationItem({
   highlighted,
   refCallback,
   onOpen,
+  snapshotOnly = false,
 }: {
   citation: CitationOut
   highlighted: boolean
   refCallback: (node: HTMLElement | null) => void
   onOpen: (() => void) | null
+  /** The source is gone: the snapshot is all there is, so show it in full. */
+  snapshotOnly?: boolean
 }) {
+  const [expanded, setExpanded] = useState(false)
   return (
     <li
       ref={refCallback}
@@ -142,7 +156,7 @@ function CitationItem({
       data-highlighted={highlighted || undefined}
       aria-current={highlighted ? 'true' : undefined}
       className={cn(
-        'flex flex-col gap-1.5 rounded-md bg-muted/50 p-2',
+        'flex min-w-0 flex-col gap-1.5 rounded-lg bg-muted/50 p-3',
         highlighted && 'bg-accent ring-2 ring-ring/50',
       )}
     >
@@ -163,7 +177,10 @@ function CitationItem({
           </Button>
         )}
       </div>
-      <p className="line-clamp-6 leading-relaxed whitespace-pre-wrap">{citation.content}</p>
+      <div className={cn('min-w-0 break-words leading-relaxed', !snapshotOnly && !expanded && 'max-h-48 overflow-hidden')}>
+        <Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{citation.content}</Markdown>
+      </div>
+      {!snapshotOnly && <Button size="xs" variant="ghost" className="self-start" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? '收起片段' : '展开完整片段'}</Button>}
     </li>
   )
 }

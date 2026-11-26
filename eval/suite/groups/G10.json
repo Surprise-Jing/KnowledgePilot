@@ -1,0 +1,188 @@
+{
+ "id": "G10",
+ "title": "相似条文干扰：资料保存期限",
+ "knowledge_bases": [
+  "金融法律法规"
+ ],
+ "split": "dev",
+ "dimensions": [
+  "D1",
+  "D2"
+ ],
+ "compare": true,
+ "demo_candidate": false,
+ "overrides": {},
+ "changelog": [
+  {
+   "date": "2026-11-24",
+   "change": "用户审阅：3 道题标为 approved"
+  }
+ ],
+ "cases": [
+  {
+   "id": "G10-1",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "aml_law_2024"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "反洗钱法要求金融机构把客户身份资料至少保存多少年？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "aml",
+     "label": "客户身份资料保存期限",
+     "evidence_groups": [
+      [
+       "aml.records"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "十年",
+       "10年"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "客户身份资料在业务关系结束后、客户交易信息在交易结束后，应当至少保存十年。",
+   "semantic_rubric": [
+    "不得与证券法、期货法的二十年混淆",
+    "说明起算时点"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户审阅通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G10-2",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "futures_law_2022"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "期货和衍生品法中，期货服务机构的信息和资料保存期限是多少？和期货交易场所的要求一样吗？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "service",
+     "label": "期货服务机构",
+     "evidence_groups": [
+      [
+       "fut.service_records"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "十年",
+       "10年"
+      ]
+     ],
+     "answer_numbers": []
+    },
+    {
+     "id": "venue",
+     "label": "期货交易场所等",
+     "evidence_groups": [
+      [
+       "fut.venue_records"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "二十年",
+       "20年"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "不一样：期货服务机构不得少于十年；期货经营机构、期货交易场所、期货结算机构和非期货经营机构结算参与人不得少于二十年。",
+   "semantic_rubric": [
+    "区分两类主体",
+    "同一条款内的两个期限都要答出"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户审阅通过（2026-11-24）"
+   }
+  },
+  {
+   "id": "G10-3",
+   "origin": "drafted",
+   "source_ref": null,
+   "documents": [
+    "securities_fund_law_2015"
+   ],
+   "forbidden_documents": [],
+   "turns": [
+    {
+     "content": "证券投资基金法对基金份额登记机构保存登记数据的期限是怎么规定的？从什么时候开始起算？"
+    }
+   ],
+   "claims": [
+    {
+     "id": "registry",
+     "label": "登记数据保存期限",
+     "evidence_groups": [
+      [
+       "fund.registry_records"
+      ]
+     ],
+     "answer_keywords": [
+      [
+       "二十年",
+       "20年"
+      ],
+      [
+       "销户"
+      ]
+     ],
+     "answer_numbers": []
+    }
+   ],
+   "calculations": [],
+   "expect": {
+    "no_answer": false,
+    "tools": [],
+    "forbidden_tools": [],
+    "stop_reason": "answered",
+    "error_code": null
+   },
+   "reference_answer": "保存期限自基金账户销户之日起不得少于二十年。",
+   "semantic_rubric": [
+    "说明起算时点为基金账户销户之日"
+   ],
+   "review": {
+    "status": "approved",
+    "note": "用户审阅通过（2026-11-24）"
+   }
+  }
+ ]
+}

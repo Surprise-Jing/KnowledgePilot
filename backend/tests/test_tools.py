@@ -31,6 +31,7 @@ from app.tools.registry import (
 from tests.fakes.helpers import (
     hybrid_settings,
     install_embeddings,
+    login,
     make_kb,
     make_settings,
     upload,
@@ -52,6 +53,7 @@ def settings(tmp_path):
 @pytest.fixture
 def client(settings):
     with TestClient(create_app(settings)) as client:
+        login(client)
         yield client
 
 
@@ -389,6 +391,7 @@ def hybrid(tmp_path, monkeypatch):
     provider = install_embeddings(monkeypatch)
     settings = hybrid_settings(tmp_path / "hybrid")
     with TestClient(create_app(settings)) as client:
+        login(client)
         kb = make_kb(client, "向量库")
         upload(client, kb, "guide.txt", "删除文档时同步清理索引。")
         yield {"client": client, "settings": settings, "provider": provider, "kb": kb}

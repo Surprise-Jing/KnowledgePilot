@@ -40,24 +40,24 @@ export function HealthBadge() {
     health.state === 'checking' ? (
       <Badge variant="outline">
         <Spinner data-icon="inline-start" />
-        检查后端
+        <span className="hidden sm:inline">检查后端</span>
       </Badge>
     ) : health.state === 'ok' ? (
       <Badge variant="secondary">
         <ActivityIcon data-icon="inline-start" />
-        后端正常
+        <span className="hidden sm:inline">后端正常</span>
       </Badge>
     ) : (
       <Badge variant="destructive">
         <CircleOffIcon data-icon="inline-start" />
-        后端不可达
+        <span className="hidden sm:inline">后端不可达</span>
       </Badge>
     )
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span tabIndex={0} aria-live="polite">
+        <span tabIndex={0} aria-label={health.state === "ok" ? "后端正常" : health.state === "down" ? "后端不可达" : "检查后端"} aria-live="polite">
           {badge}
         </span>
       </TooltipTrigger>

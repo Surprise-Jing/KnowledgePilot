@@ -43,13 +43,20 @@ _MARKER_NUMBER = re.compile(r"c(\d+)")
 
 
 def _search_with_fallback(
-    ctx: ToolContext, request: SearchRequest
+    ctx: ToolContext, request: SearchRequest, scope_kb_ids: list[str] | None = None
 ) -> tuple[list[SearchHit], dict | None]:
     """Vector/hybrid retrieval; when the embedding side fails, the same query and scope run on
     BM25 instead. The service layer itself never degrades (contracts §9); this explicit,
     visible substitution is the only one, and the result says so in `degraded`."""
+    kwargs = (
+        {"allowed_document_ids": ctx.allowed_document_ids}
+        if ctx.allowed_document_ids is not None
+        else {}
+    )
+    if scope_kb_ids is not None:
+        kwargs["scope_kb_ids"] = scope_kb_ids
     try:
-        return search(ctx.db, ctx.user_id, request, ctx.settings), None
+        return search(ctx.db, ctx.user_id, request, ctx.settings, **kwargs), None
     except AppError as exc:
         if ctx.settings.retriever not in VECTOR_RETRIEVERS or not exc.code.startswith("embedding_"):
             raise
@@ -58,7 +65,10 @@ def _search_with_fallback(
             extra={"reason": exc.code, "retriever": ctx.settings.retriever},
         )
         bm25 = ctx.settings.model_copy(update={"retriever": "bm25"})
-        return search(ctx.db, ctx.user_id, request, bm25), {"kind": "bm25", "reason": exc.code}
+        return search(ctx.db, ctx.user_id, request, bm25, **kwargs), {
+            "kind": "bm25",
+            "reason": exc.code,
+        }
 
 
 class ListKnowledgeBasesTool:
@@ -87,7 +97,13 @@ class ListKnowledgeBasesTool:
                     # Deleted after the question was asked: it is simply no longer available.
                     logger.info("knowledge base in scope no longer exists", extra={"kb": kb_id})
                     continue
-                listing = list_files(connection, ctx.user_id, kb_id, limit=1)
+                listing = list_files(
+                    connection,
+                    ctx.user_id,
+                    kb_id,
+                    limit=1,
+                    allowed_document_ids=ctx.allowed_document_ids,
+                )
                 knowledge_bases.append(
                     {"id": kb["id"], "name": kb["name"], "document_count": listing.total}
                 )
@@ -159,11 +175,13 @@ class SearchChunksTool:
             return {"hits": []}
         request = SearchRequest(
             query=query,
-            knowledge_base_ids=kb_ids,
+            knowledge_base_ids=kb_ids[:20],
             top_k=arguments["top_k"],
             document_ids=arguments.get("document_ids"),
         )
-        results, degraded = _search_with_fallback(ctx, request)
+        results, degraded = _search_with_fallback(
+            ctx, request, kb_ids if len(kb_ids) > 20 else None
+        )
         hits = []
         for hit in results:
             location = hit.location.model_dump()
@@ -274,6 +292,7 @@ class ListFilesTool:
                 recursive=arguments["recursive"],
                 offset=arguments["offset"],
                 limit=arguments["limit"],
+                allowed_document_ids=ctx.allowed_document_ids,
             )
         return listing.model_dump()
 
@@ -320,6 +339,11 @@ class ReadDocumentTool:
             # Ownership first (other users' documents are "not found"), then question scope.
             document = require_document(connection, ctx.user_id, arguments["document_id"])
             _require_in_scope(ctx, document["knowledge_base_id"])
+            if (
+                ctx.allowed_document_ids is not None
+                and document["id"] not in ctx.allowed_document_ids
+            ):
+                raise _out_of_scope()
             document_range = read_document_range(
                 connection,
                 ctx.user_id,

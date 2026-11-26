@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { ErrorProvider } from '@/components/error-feedback'
 import { InspectorProvider } from '@/features/citations/InspectorProvider'
+import { InspectorContext, type InspectorValue } from '@/features/citations/inspector-context'
 import { documentOut, knowledgeBase, routeFetch } from '@/test/fixtures'
 
 import { FileTable } from './FileTable'
@@ -58,6 +59,40 @@ describe('FileTable', () => {
     expect(screen.getAllByRole('button', { name: '重试' })).toHaveLength(1)
     await userEvent.click(within(failed).getByRole('button', { name: '重试' }))
     expect(onRetry).toHaveBeenCalledWith(docs[3])
+  })
+
+  it('offers an OCR reparse next to retry on failed standard-mode PDF rows only', async () => {
+    const enhancedFailed = documentOut({
+      id: 'e',
+      filename: 'scan.pdf',
+      file_type: 'pdf',
+      status: 'failed',
+      parse_mode: 'enhanced',
+    })
+    const docxFailed = documentOut({ id: 'd', filename: 'bad.docx', file_type: 'docx', status: 'failed' })
+    const { onReparse } = renderTable(vi.fn(), [...docs, enhancedFailed, docxFailed])
+    const ocr = screen.getAllByRole('button', { name: '增强模式（OCR）重新解析' })
+    expect(ocr).toHaveLength(1)
+    expect(within(row('broken.pdf')).getByRole('button', { name: '增强模式（OCR）重新解析' })).toBe(ocr[0])
+    await userEvent.click(ocr[0])
+    expect(onReparse).toHaveBeenCalledWith(docs[3], 'enhanced')
+  })
+
+  it('explains the single-file parse queue and the slower enhanced mode', () => {
+    const queuedPdf = documentOut({ id: 'qp', filename: 'wait.pdf', file_type: 'pdf', status: 'queued' })
+    const ocrParsing = documentOut({
+      id: 'op',
+      filename: 'ocr.pdf',
+      file_type: 'pdf',
+      status: 'parsing',
+      parse_mode: 'enhanced',
+    })
+    renderTable(vi.fn(), [...docs, queuedPdf, ocrParsing])
+    expect(within(row('wait.pdf')).getByText(/同一时间只解析一份 PDF\/DOCX/)).toBeInTheDocument()
+    expect(within(row('ocr.pdf')).getByText(/91 页约 6 分钟/)).toBeInTheDocument()
+    // TXT is parsed in-process, so it never waits in that queue.
+    expect(within(row('queued.txt')).queryByText(/同一时间只解析/)).toBeNull()
+    expect(within(row('parsing.pdf')).queryByText(/91 页约 6 分钟/)).toBeNull()
   })
 
   it('only allows viewing the original text of parsed files', () => {
@@ -139,5 +174,32 @@ describe('FilesView polling', () => {
     await user.click(within(row('queued.txt')).getByRole('button', { name: /更多操作/ }))
     expect(screen.queryByRole('menuitem', { name: /重新解析/ })).toBeNull()
     expect(screen.queryByRole('menuitem', { name: '导出 Markdown' })).toBeNull()
+  })
+})
+
+describe('FilesView 查看原文', () => {
+  it('passes the file type so PDFs open on the original-PDF tab', async () => {
+    const pdf = documentOut({ id: 'p1', filename: '财报.pdf', file_type: 'pdf', page_count: 91 })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(routeFetch({ 'GET /api/knowledge-bases/kb-1/documents': () => Response.json([pdf]) })),
+    )
+    const openDocument = vi.fn()
+    const inspector: InspectorValue = {
+      subject: null, setSubject: vi.fn(), highlight: null, focusCitation: vi.fn(),
+      tab: 'citations', setTab: vi.fn(), panelOpen: false, setPanelOpen: vi.fn(),
+      document: null, openDocument, closeDocument: vi.fn(),
+    }
+    render(
+      <ErrorProvider>
+        {() => (
+          <InspectorContext.Provider value={inspector}>
+            <FilesView knowledgeBase={knowledgeBase} folders={[]} foldersKnown folderId={null} refreshToken={0} />
+          </InspectorContext.Provider>
+        )}
+      </ErrorProvider>,
+    )
+    await userEvent.click(await screen.findByRole('button', { name: '查看原文' }))
+    expect(openDocument).toHaveBeenCalledWith({ documentId: 'p1', filename: '财报.pdf', fileType: 'pdf' })
   })
 })

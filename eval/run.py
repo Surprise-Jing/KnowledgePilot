@@ -1,4 +1,4 @@
-"""KnowledgePilot evaluation runner (docs/briefs/D-testing.md §2, docs/eval-report.md).
+"""KnowledgePilot evaluation runner (eval/README.md §3, docs/eval-report.md).
 
 Every run starts from a fresh temporary data directory, builds the corpus (eval/build_corpus.py),
 creates the knowledge bases and folders, uploads the files through the HTTP API and waits until
@@ -59,9 +59,23 @@ CASES_PATH = EVAL_DIR / "cases.jsonl"
 RESULTS_DIR = EVAL_DIR / "results"
 STRATEGIES = ("cosine", "bm25", "vector", "hybrid")
 EVAL_USER = "eval"
-HEADERS = {"X-User-Id": EVAL_USER}
 PARSE_TIMEOUT_SECONDS = 300
 REQUEST_TIMEOUT_SECONDS = 300
+
+
+def authorize(client, db) -> None:
+    """Sign `client` in as the eval user of this app's database. Evaluation runs against a
+    temporary data directory, so the account is created without a password and the session
+    is opened directly; requests then carry it as an ordinary session cookie."""
+    from app.services import auth
+
+    with db.connect() as connection:
+        connection.execute(
+            "INSERT OR IGNORE INTO users(id, name, username) VALUES (?, ?, ?)",
+            (EVAL_USER, EVAL_USER, EVAL_USER),
+        )
+        token = auth.create_session(connection, EVAL_USER, ttl_days=1)
+    client.cookies.set(auth.SESSION_COOKIE, token)
 
 
 # ---- cases ----
@@ -168,7 +182,7 @@ def setup_corpus(client: httpx.Client, build_dir: Path) -> CorpusIds:
     paths = build_corpus.build(build_dir)
     ids = CorpusIds()
     for name in build_corpus.KNOWLEDGE_BASES:
-        kb = client.post("/api/knowledge-bases", headers=HEADERS, json={"name": name})
+        kb = client.post("/api/knowledge-bases", json={"name": name})
         ids.knowledge_bases[name] = expect_status(kb, 201)["id"]
     for item in build_corpus.CORPUS:
         kb_id = ids.knowledge_bases[item.knowledge_base]
@@ -177,14 +191,11 @@ def setup_corpus(client: httpx.Client, build_dir: Path) -> CorpusIds:
             key = (item.knowledge_base, item.folder[:depth])
             if key not in ids.folders:
                 body = {"name": item.folder[depth - 1], "parent_id": parent}
-                folder = client.post(
-                    f"/api/knowledge-bases/{kb_id}/folders", headers=HEADERS, json=body
-                )
+                folder = client.post(f"/api/knowledge-bases/{kb_id}/folders", json=body)
                 ids.folders[key] = expect_status(folder, 201)["id"]
             parent = ids.folders[key]
         upload = client.post(
             f"/api/knowledge-bases/{kb_id}/documents",
-            headers=HEADERS,
             files={"file": (item.filename, paths[item.filename].read_bytes())},
             data={"folder_id": parent or ""},
         )
@@ -192,7 +203,7 @@ def setup_corpus(client: httpx.Client, build_dir: Path) -> CorpusIds:
     deadline = time.monotonic() + PARSE_TIMEOUT_SECONDS
     while True:
         statuses = {
-            name: expect_status(client.get(f"/api/documents/{doc}", headers=HEADERS), 200)
+            name: expect_status(client.get(f"/api/documents/{doc}"), 200)
             for name, doc in ids.documents.items()
         }
         if all(s["status"] in ("success", "failed") for s in statuses.values()):
@@ -206,9 +217,29 @@ def setup_corpus(client: httpx.Client, build_dir: Path) -> CorpusIds:
     return ids
 
 
-def search(client: httpx.Client, query: str, kb_ids: list[str], top_k: int) -> list[dict]:
+def search(
+    client: httpx.Client,
+    query: str,
+    kb_ids: list[str],
+    top_k: int,
+    retries: int = 3,
+    retry_delay_s: float = 2.0,
+) -> list[dict]:
+    """Errors the API marks retryable (a sporadic embedding-provider failure) are retried on the
+    same path; the search never falls back, so a retried query is scored like any other."""
     body = {"query": query, "knowledge_base_ids": kb_ids, "top_k": top_k}
-    return expect_status(client.post("/api/search", headers=HEADERS, json=body), 200)
+    for attempt in range(retries + 1):
+        response = client.post("/api/search", json=body)
+        if response.status_code == 200 or attempt == retries:
+            break
+        try:
+            retryable = response.json()["error"]["retryable"] is True
+        except (ValueError, KeyError, TypeError):
+            retryable = False
+        if not retryable:
+            break
+        time.sleep(retry_delay_s * (attempt + 1))
+    return expect_status(response, 200)
 
 
 # ---- retrieval mode ----
@@ -255,12 +286,14 @@ def run_retrieval(env_file: Path | None, strategies: list[str], cases: list[dict
         data_dir = Path(tmp) / "data"
         base = make_settings(env_file, data_dir, retriever=ingest_with)
         with TestClient(create_app(base)) as client:
+            authorize(client, client.app.state.db)
             ids = setup_corpus(client, Path(tmp) / "corpus")
         results = []
         for strategy in strategies:
             settings = base.model_copy(update={"retriever": strategy})
             # A separate app over the same data directory, configured for this strategy.
             with TestClient(create_app(settings)) as client:
+                authorize(client, client.app.state.db)
                 results.append(evaluate_retrieval(client, ids, cases, strategy, top_k))
     return {"top_k": top_k, "ingested_with": ingest_with, "strategies": results}
 
@@ -300,7 +333,6 @@ def stream_turn(client: httpx.Client, conversation_id: str, content: str, kb_ids
     with client.stream(
         "POST",
         f"/api/conversations/{conversation_id}/messages",
-        headers=HEADERS,
         json={"content": content, "knowledge_base_ids": kb_ids},
     ) as response:
         if response.status_code != 200:
@@ -406,7 +438,7 @@ def retrieval_coverage(client: httpx.Client, ids: CorpusIds, case: dict, turn: d
 
 def run_case(client: httpx.Client, replay: httpx.Client, ids: CorpusIds, case: dict) -> dict:
     conversation = expect_status(
-        client.post("/api/conversations", headers=HEADERS, json={"title": f"eval {case['id']}"}),
+        client.post("/api/conversations", json={"title": f"eval {case['id']}"}),
         201,
     )
     turns = []
@@ -415,7 +447,7 @@ def run_case(client: httpx.Client, replay: httpx.Client, ids: CorpusIds, case: d
             if action["action"] != "delete_document":
                 raise ValueError(f"unknown action {action['action']}")
             document_id = ids.documents[action["file"]]
-            expect_status(replay.delete(f"/api/documents/{document_id}", headers=HEADERS), 204)
+            expect_status(replay.delete(f"/api/documents/{document_id}"), 204)
         events, ttft, total = stream_turn(
             client, conversation["id"], turn["content"], ids.kb_ids(case["knowledge_bases"])
         )
@@ -423,7 +455,7 @@ def run_case(client: httpx.Client, replay: httpx.Client, ids: CorpusIds, case: d
         result.update(question=turn["content"], ttft_s=ttft, latency_s=total)
         result["retrieval_covered"] = retrieval_coverage(replay, ids, case, result)
         if result["run_id"]:
-            run = expect_status(client.get(f"/api/runs/{result['run_id']}", headers=HEADERS), 200)
+            run = expect_status(client.get(f"/api/runs/{result['run_id']}"), 200)
             result["run_status"] = run["status"]
             result["trace_tool_calls"] = len(run["tool_calls"])
         turns.append(result)
@@ -517,10 +549,12 @@ def run_agent(env_file: Path, strategy: str, cases: list[dict]) -> dict:
             key = json.dumps(overrides, sort_keys=True)
             if key not in servers:
                 settings = base.model_copy(update=overrides)
-                servers[key] = stack.enter_context(LiveServer(create_app(settings)))
+                app = create_app(settings)
+                servers[key] = stack.enter_context(LiveServer(app))
                 clients[key] = stack.enter_context(
                     httpx.Client(base_url=servers[key].base_url, timeout=REQUEST_TIMEOUT_SECONDS)
                 )
+                authorize(clients[key], app.state.db)
             return clients[key]
 
         replay = client_for({})

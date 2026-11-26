@@ -83,9 +83,9 @@ export function KnowledgeSidebar({
   const kbs = knowledgeBases.data ?? []
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-medium">知识库</h2>
+        <h2 className="text-xs font-semibold tracking-wide text-muted-foreground">知识库</h2>
         <Button size="xs" variant="outline" onClick={() => setDialog({ kind: 'create-kb' })}>
           <PlusIcon data-icon="inline-start" />
           新建
@@ -130,12 +130,12 @@ export function KnowledgeSidebar({
                 data-selected={selected}
                 className={cn(
                   'flex min-w-0 items-center gap-1 rounded-md pr-1 text-sm hover:bg-muted',
-                  selected && 'bg-accent text-accent-foreground',
+                  selected && 'bg-accent font-medium text-accent-foreground ring-1 ring-primary/10',
                 )}
               >
                 <button
                   type="button"
-                  className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                  className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                   aria-current={selected ? 'true' : undefined}
                   onClick={() => onSelectKb(kb.id)}
                   title={kb.name}
@@ -177,7 +177,7 @@ export function KnowledgeSidebar({
       {selectedKbId && (
         <>
           <Separator />
-          <h2 className="text-sm font-medium">目录</h2>
+          <h2 className="text-xs font-semibold tracking-wide text-muted-foreground">目录</h2>
           <div className="min-h-0 flex-1 overflow-y-auto">
             {folders.error && (
               <ErrorAlert
