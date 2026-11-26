@@ -1,4 +1,4 @@
-"""KnowledgePilot evaluation runner (docs/briefs/D-testing.md §2, docs/eval-report.md).
+"""KnowledgePilot evaluation runner (eval/README.md §3, docs/eval-report.md).
 
 Every run starts from a fresh temporary data directory, builds the corpus (eval/build_corpus.py),
 creates the knowledge bases and folders, uploads the files through the HTTP API and waits until
@@ -217,9 +217,29 @@ def setup_corpus(client: httpx.Client, build_dir: Path) -> CorpusIds:
     return ids
 
 
-def search(client: httpx.Client, query: str, kb_ids: list[str], top_k: int) -> list[dict]:
+def search(
+    client: httpx.Client,
+    query: str,
+    kb_ids: list[str],
+    top_k: int,
+    retries: int = 3,
+    retry_delay_s: float = 2.0,
+) -> list[dict]:
+    """Errors the API marks retryable (a sporadic embedding-provider failure) are retried on the
+    same path; the search never falls back, so a retried query is scored like any other."""
     body = {"query": query, "knowledge_base_ids": kb_ids, "top_k": top_k}
-    return expect_status(client.post("/api/search", json=body), 200)
+    for attempt in range(retries + 1):
+        response = client.post("/api/search", json=body)
+        if response.status_code == 200 or attempt == retries:
+            break
+        try:
+            retryable = response.json()["error"]["retryable"] is True
+        except (ValueError, KeyError, TypeError):
+            retryable = False
+        if not retryable:
+            break
+        time.sleep(retry_delay_s * (attempt + 1))
+    return expect_status(response, 200)
 
 
 # ---- retrieval mode ----

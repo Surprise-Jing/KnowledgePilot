@@ -190,3 +190,23 @@ def test_case_level_knowledge_bases_narrow_the_allowed_scope():
         GROUP, case, [turn("增长 [c1]", [cite("notes.l12", location)])], EVIDENCE, DOCUMENTS
     )
     assert result["leaked_files"] == ["notes.txt"]
+
+
+@pytest.mark.parametrize(
+    ("answer", "spec", "ok"),
+    [
+        # Unit in a table header: a seven-digit-plus amount cannot match by coincidence.
+        ("|资产净值（元）|3,454,232,757.38[c5]|", {"value": "3454232757.385", "unit": "CNY"}, True),
+        ("|期末基金份额总额|1439606830.00|", {"value": "1439606830.00", "unit": "share"}, True),
+        # Small amounts and percentages still need their unit next to the number.
+        ("|单位净值|3.0412|", {"value": "3.0412", "unit": "CNY/share"}, False),
+        ("|管理费|5916.07|", {"value": "5916.07", "unit": "CNY"}, False),
+        ("|收益率|1.23|", {"value": "1.23", "unit": "percent"}, False),
+        # A bare number with a scale is not a header-unit amount.
+        ("|净值|34.54亿|", {"value": "3454232757.385", "unit": "CNY"}, False),
+        # The usual adjacent-unit match keeps working.
+        ("净值为3,454,232,757.38元", {"value": "3454232757.385", "unit": "CNY"}, True),
+    ],
+)
+def test_value_signal_accepts_large_amounts_with_header_units(answer, spec, ok):
+    assert scoring.value_signal(answer, {**spec, "tolerance": "0.01"}) is ok

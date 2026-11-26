@@ -2,9 +2,30 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 import metrics
 from finance.dataset import normalize
-from finance.scoring import number_signal
+from finance.scoring import NUMBER, number_signal
+
+# Absolute amounts at least this large match bare: answers put "（元）" or "份额" in a table
+# header, and a seven-digit-plus value equal to within the tolerance cannot be a coincidence.
+# Percentages and small amounts (unit NAV, fees in 元) still need their unit beside them.
+_HEADER_UNIT_KINDS = {"CNY", "share"}
+_HEADER_UNIT_MIN = Decimal(1_000_000)
+
+
+def value_signal(answer: str, spec: dict) -> bool:
+    if number_signal(answer, spec):
+        return True
+    expected, tolerance = Decimal(spec["value"]), Decimal(spec["tolerance"])
+    if spec["unit"] not in _HEADER_UNIT_KINDS or abs(expected) < _HEADER_UNIT_MIN:
+        return False
+    text = normalize(answer).replace(",", "").replace("，", "").replace("−", "-")
+    return any(
+        match[2] is None and match[3] is None and abs(Decimal(match[1]) - expected) <= tolerance
+        for match in NUMBER.finditer(text)
+    )
 
 
 def _anchor_in(item: dict, content: str) -> bool:
@@ -51,7 +72,7 @@ def judge(group: dict, case: dict, turns: list[dict], evidence: dict, documents:
             for alternatives in groups
         ]
         signals = metrics.keyword_hits(answer, atom["answer_keywords"]) + [
-            number_signal(answer, spec) for spec in atom["answer_numbers"]
+            value_signal(answer, spec) for spec in atom["answer_numbers"]
         ]
         claims.append(
             {

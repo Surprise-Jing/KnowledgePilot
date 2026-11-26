@@ -75,16 +75,36 @@ def snapshot_key(suite_fingerprint: str, settings) -> str:
     return hashlib.sha256(payload.encode()).hexdigest()[:16]
 
 
-def wait_parsed(client, document_ids: dict[str, str], timeout_s: int, poll_s: float = 1.0) -> None:
+def wait_parsed(
+    client, document_ids: dict[str, str], timeout_s: int, poll_s: float = 1.0, retries: int = 3
+) -> None:
+    """Wait until every document is parsed. A failed document is retried through the product's
+    own retry endpoint up to `retries` times: the embedding provider fails sporadically, and one
+    blip would otherwise abort a snapshot of hundreds of documents."""
     deadline = time.monotonic() + timeout_s
+    attempts: dict[str, int] = {}
     while True:
         statuses = {
             key: legacy.expect_status(client.get(f"/api/documents/{value}"), 200)
             for key, value in document_ids.items()
         }
         failed = [key for key, item in statuses.items() if item["status"] == "failed"]
+        exhausted = [key for key in failed if attempts.get(key, 0) >= retries]
+        if exhausted:
+            raise RuntimeError(f"文档解析失败：{exhausted}（查看后端解析日志）")
+        for key in failed:
+            attempts[key] = attempts.get(key, 0) + 1
+            print(
+                f"[suite] {key} 解析失败（{statuses[key].get('error')}），"
+                f"第 {attempts[key]}/{retries} 次重试",
+                file=sys.stderr,
+                flush=True,
+            )
+            response = client.post(f"/api/documents/{document_ids[key]}/retry")
+            legacy.expect_status(response, 202)
         if failed:
-            raise RuntimeError(f"文档解析失败：{failed}（查看后端解析日志）")
+            time.sleep(poll_s)
+            continue
         pending = [key for key, item in statuses.items() if item["status"] != "success"]
         if not pending:
             return

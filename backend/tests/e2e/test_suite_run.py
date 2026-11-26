@@ -138,7 +138,72 @@ def test_wait_parsed_fails_fast_on_failed_document():
         transport=httpx.MockTransport(lambda r: httpx.Response(200, json={"status": "failed"})),
     )
     with pytest.raises(RuntimeError, match="解析失败"):
-        suite_run.wait_parsed(client, {"a": "1"}, timeout_s=60, poll_s=0)
+        suite_run.wait_parsed(client, {"a": "1"}, timeout_s=60, poll_s=0, retries=0)
+
+
+def _flaky_documents(failures: int):
+    """Document "1" reports `failed` until it has been retried `failures` times."""
+    retried = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            assert request.url.path == "/api/documents/1/retry"
+            retried.append(request.url.path)
+            return httpx.Response(202, json={"status": "queued"})
+        status = "failed" if len(retried) < failures else "success"
+        return httpx.Response(200, json={"status": status, "error": "向量模型调用失败"})
+
+    return httpx.Client(base_url="http://test", transport=httpx.MockTransport(handler)), retried
+
+
+def _search_client(statuses: list[int]):
+    calls = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        status = statuses[min(len(calls), len(statuses) - 1)]
+        calls.append(status)
+        if status == 200:
+            return httpx.Response(200, json=[{"chunk_id": "c"}])
+        retryable = status in (502, 504)
+        return httpx.Response(
+            status, json={"error": {"code": "x", "message": "m", "retryable": retryable}}
+        )
+
+    return httpx.Client(base_url="http://test", transport=httpx.MockTransport(handler)), calls
+
+
+def test_search_retries_retryable_provider_errors():
+    import run as legacy
+
+    client, calls = _search_client([502, 504, 200])
+    assert legacy.search(client, "q", ["kb"], 5, retry_delay_s=0) == [{"chunk_id": "c"}]
+    assert calls == [502, 504, 200]
+
+
+def test_search_does_not_retry_other_errors_or_forever():
+    import run as legacy
+
+    client, calls = _search_client([403])
+    with pytest.raises(RuntimeError, match="403"):
+        legacy.search(client, "q", ["kb"], 5, retry_delay_s=0)
+    assert calls == [403]
+    client, calls = _search_client([502])
+    with pytest.raises(RuntimeError, match="502"):
+        legacy.search(client, "q", ["kb"], 5, retry_delay_s=0)
+    assert len(calls) == 4
+
+
+def test_wait_parsed_retries_transient_failures():
+    client, retried = _flaky_documents(failures=2)
+    suite_run.wait_parsed(client, {"a": "1"}, timeout_s=60, poll_s=0, retries=3)
+    assert len(retried) == 2
+
+
+def test_wait_parsed_gives_up_after_retries():
+    client, retried = _flaky_documents(failures=99)
+    with pytest.raises(RuntimeError, match="解析失败"):
+        suite_run.wait_parsed(client, {"a": "1"}, timeout_s=60, poll_s=0, retries=2)
+    assert len(retried) == 2
 
 
 def test_snapshot_copy_isolates_deletions(snapshot, tmp_path):
