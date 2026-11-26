@@ -152,6 +152,21 @@ def test_tools_from_earlier_turns_count():
     assert scoring.judge(GROUP, case, turns, EVIDENCE, DOCUMENTS)["tool_check"] is True
 
 
+def test_claims_answered_in_an_earlier_turn_count():
+    # A follow-up does not restate the first answer; claims belong to the whole conversation.
+    case = make_case(keywords=[["Nolan"]])
+    location = {"kind": "txt_lines", "start": 1, "end": 3}
+    turns = [
+        turn("导演是 Christopher Nolan [c1]", [cite("film.dir", location)]),
+        turn("上映年份是 2010 年。", []),
+    ]
+    verdict = scoring.judge(GROUP, case, turns, EVIDENCE, DOCUMENTS)
+    assert verdict["claims"][0]["rule_satisfied"] is True
+    # Structural checks still look at the final turn only.
+    turns[-1]["stop_reason"] = "max_steps"
+    assert scoring.judge(GROUP, case, turns, EVIDENCE, DOCUMENTS)["rule_passed"] is False
+
+
 def test_fault_case_checks_stop_reason_and_error_code():
     case = make_case(evidence_id=None, stop_reason="timeout", error_code="model_timeout")
     ok = turn("", [], stop_reason="timeout", error_code="model_timeout")

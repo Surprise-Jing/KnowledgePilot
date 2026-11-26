@@ -103,6 +103,42 @@ def test_packets_one_per_group_repeat_with_evidence_and_pseudo_claim(built):
     assert [c["claim_id"] for c in no_answer["claims"]] == [packets.ANSWER_CLAIM]
 
 
+def test_packets_carry_how_the_final_turn_ended(tmp_path):
+    # Fault cases are judged on the error or degradation notice, which never reaches the
+    # answer text: an empty answer must not read as "no notice".
+    fault = result_case("G01-2", [], secret_answer="")
+    fault["turns"][-1].update(stop_reason="timeout", error_code="model_timeout", degraded=False)
+    result = {"groups": [{"id": "G01", "repeat_index": 0,
+                          "cases": [result_case("G01-1", ["c1", "c2"]), fault]}]}  # fmt: skip
+    path = packets.build_packets(result, SUITE, tmp_path / "packets", "run.json")[0]
+    first, timed_out = json.loads(path.read_text("utf-8"))["cases"]
+    assert timed_out["outcome"] == {
+        "stop_reason": "timeout",
+        "error_code": "model_timeout",
+        "degraded": False,
+    }
+    assert first["outcome"] == {"stop_reason": None, "error_code": None, "degraded": None}
+
+
+def test_packets_include_earlier_turns_of_a_conversation(tmp_path):
+    case = result_case("G01-1", ["c1", "c2"], secret_answer="追问的回答")
+    first = {"question": "第一问", "answer": "第一问的回答 [c1]",
+             "citations": [{"marker": "c1", "filename": "r.pdf", "location_label": "第 2 页",
+                            "content": "期末值2.00元"}]}  # fmt: skip
+    case["turns"].insert(0, first)
+    result = {"groups": [{"id": "G01", "repeat_index": 0,
+                          "cases": [case, result_case("G01-2", [])]}]}  # fmt: skip
+    path = packets.build_packets(result, SUITE, tmp_path / "packets", "run.json")[0]
+    multi, single = json.loads(path.read_text("utf-8"))["cases"]
+    assert multi["answer"] == "追问的回答"
+    assert multi["earlier_turns"] == [
+        {"question": "第一问", "answer": "第一问的回答 [c1]",
+         "citations": [{"marker": "c1", "filename": "r.pdf", "location_label": "第 2 页",
+                        "content": "期末值2.00元"}]}
+    ]  # fmt: skip
+    assert "earlier_turns" not in single
+
+
 def test_verdicts_reject_missing_and_unknown_claims(built, tmp_path):
     packet = built["G01-r1.json"]
     path = verdict_file(tmp_path / "x.json", packet,

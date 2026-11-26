@@ -278,6 +278,19 @@ def test_fingerprint_changes_when_prompt_changes(tmp_suite):
     assert dataset.fingerprint(tmp_suite) != before
 
 
+def test_ingest_fingerprint_follows_documents_only(tmp_suite):
+    # Snapshots hold parsed documents; editing questions or the judge prompt must not force
+    # re-parsing hundreds of files.
+    before = dataset.ingest_fingerprint(tmp_suite)
+    (tmp_suite / "judge/PROMPT.md").write_text("新的评审说明", encoding="utf-8")
+    group = next((tmp_suite / "groups").glob("G*.json"))
+    group.write_text(group.read_text("utf-8").replace("}", " }", 1), encoding="utf-8")
+    assert dataset.ingest_fingerprint(tmp_suite) == before
+    manifest = next((tmp_suite / "kbs").glob("*/manifest.json"))
+    manifest.write_text(manifest.read_text("utf-8") + "\n", encoding="utf-8")
+    assert dataset.ingest_fingerprint(tmp_suite) != before
+
+
 # ---- Task 2: source fetching, conversion and anchor verification ----
 
 import hashlib

@@ -33,6 +33,15 @@ def _reference(atom: dict) -> str:
     return "; ".join(parts)
 
 
+def _citation(c: dict) -> dict:
+    return {
+        "marker": c.get("marker"),
+        "filename": c.get("filename"),
+        "location_label": c.get("location_label") or c.get("label"),
+        "content": c.get("content"),
+    }
+
+
 def _packet_case(case: dict, row: dict, suite) -> dict:
     final = row["turns"][-1]
     rules = {claim["id"]: claim for claim in row["claims"]}
@@ -63,25 +72,29 @@ def _packet_case(case: dict, row: dict, suite) -> dict:
              "evidence_excerpts": [], "rule": {"value_signal": row["rule_passed"],
                                                "rule_satisfied": row["rule_passed"]}}
         ]  # fmt: skip
-    return {
+    packet = {
         "case_id": case["id"],
         "turns": [turn["question"] for turn in row["turns"]],
         "answer": final["answer"],
-        "citations": [
-            {
-                "marker": c.get("marker"),
-                "filename": c.get("filename"),
-                "location_label": c.get("location_label") or c.get("label"),
-                "content": c.get("content"),
-            }
-            for c in final["citations"]
-        ],
+        # Fault cases are judged on the error or degradation notice, which the answer text
+        # never contains (a timed-out turn has an empty answer).
+        "outcome": {key: final.get(key) for key in ("stop_reason", "error_code", "degraded")},
+        "citations": [_citation(c) for c in final["citations"]],
         "reference_answer": case["reference_answer"],
         "semantic_rubric": case["semantic_rubric"],
         "expect_no_answer": bool(case["expect"].get("no_answer")),
         "structural_ok": all(row["structural_checks"].values()) and row["tool_check"] is not False,
         "claims": claims,
     }
+    if len(row["turns"]) > 1:
+        # Claims may be answered in any turn; markers are only valid within their own turn.
+        packet["earlier_turns"] = [
+            {"question": turn["question"], "answer": turn["answer"],
+             "citations": [_citation(c) for c in turn["citations"]]}
+            for turn in row["turns"][:-1]
+        ]  # fmt: skip
+        packet["turn_note"] = "要点可能在任一轮回答中给出；引用标记只在各自那一轮内有效。"
+    return packet
 
 
 def build_packets(result: dict, suite, out_dir: Path, result_file: str) -> list[Path]:

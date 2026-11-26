@@ -237,6 +237,16 @@ def fingerprint(root: Path = SUITE) -> str:
     return digest.hexdigest()
 
 
+def ingest_fingerprint(root: Path = SUITE) -> str:
+    """Hash of what ingestion reads: the document manifests. Questions, evidence and the judge
+    prompt change scoring only, so they must not invalidate a parsed snapshot."""
+    digest = hashlib.sha256()
+    for path in sorted(root.glob("kbs/*/manifest.json")):
+        digest.update(path.relative_to(root).as_posix().encode())
+        digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
 def import_finance(finance_root: Path) -> tuple[dict, list[dict]]:
     """Convert the hand-annotated E Fund benchmark into suite evidence and cases, unchanged
     in substance: same claims, values, anchors, calculations and questions."""

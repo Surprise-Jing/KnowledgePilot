@@ -10,7 +10,7 @@ Usage (from the repository root):
     uv run --directory backend python ../eval/suite/run.py --mode agent --retriever hybrid \\
         --env-file backend/.env --split dev --repeat 3
 
-Every document is parsed once into a snapshot data directory keyed by the dataset fingerprint
+Every document is parsed once into a snapshot data directory keyed by the document manifests
 and the parse/embedding settings; each run copies it to a fresh temporary directory. Groups
 without settings overrides or document deletions share one copy and one app; the others get
 their own. Results go to eval/results/suite/ (git-ignored) and contain no keys or URLs.
@@ -289,7 +289,7 @@ def describe_settings(settings) -> dict:
 
 def ensure_snapshot(args, suite) -> tuple[Path, str]:
     probe = legacy.make_settings(args.env_file, Path(tempfile.gettempdir()) / "kp-probe")
-    key = snapshot_key(dataset.fingerprint(), probe)
+    key = snapshot_key(dataset.ingest_fingerprint(), probe)
     path = SNAPSHOTS / key
     if not (path / "ids.json").exists():
         # Ingest with hybrid so vectors exist for every strategy evaluated later.

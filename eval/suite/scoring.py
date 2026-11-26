@@ -61,18 +61,22 @@ def judge(group: dict, case: dict, turns: list[dict], evidence: dict, documents:
     leaked = sorted({item["filename"] for item in citations} - allowed)
     markers = [item["marker"] for item in citations]
     claims = []
+    # A follow-up does not restate the first answer, so a claim may be given in any turn;
+    # structural checks below still apply to the final turn.
+    conversation = "\n".join(turn["answer"] or "" for turn in turns)
+    all_citations = [citation for turn in turns for citation in turn["citations"]]
     for atom in case["claims"]:
         groups = atom["evidence_groups"]
         covered = [
             any(
                 evidence_matches(evidence[key], citation, documents)
                 for key in alternatives
-                for citation in citations
+                for citation in all_citations
             )
             for alternatives in groups
         ]
-        signals = metrics.keyword_hits(answer, atom["answer_keywords"]) + [
-            value_signal(answer, spec) for spec in atom["answer_numbers"]
+        signals = metrics.keyword_hits(conversation, atom["answer_keywords"]) + [
+            value_signal(conversation, spec) for spec in atom["answer_numbers"]
         ]
         claims.append(
             {
